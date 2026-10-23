@@ -72,7 +72,118 @@
     "title": "Theme"
   },
   "studio": {
-    "title": "Studio"
+    "title": "Studio",
+    "renderPlayground": {
+      "eyebrow": "Development · Render engine",
+      "title": "A little lab for every look.",
+      "description": "Tune the palette, seed and details, then compare every wallpaper, icon and preview. Settings stay in this URL so you can return to the same render.",
+      "activeSeed": "Seed {seed}",
+      "invalidUrl": "The URL contained invalid settings. Default settings are shown.",
+      "controls": "Make it your own",
+      "palette": "Palette",
+      "wallpaper": "Preview wallpaper",
+      "font": "Clock font",
+      "weight": "Glyph weight",
+      "pattern": "Pattern variant",
+      "sky": "Sky variant",
+      "seed": "Seed",
+      "invalidSeed": "Enter a whole number from 0 to 2147483647.",
+      "grain": "Grain · {amount}",
+      "applySeed": "Apply seed",
+      "shuffle": "Shuffle seed",
+      "photo": "Local photo",
+      "photoHint": "Choose a JPEG, PNG or WebP up to 15 MiB and 16.7 million pixels. It stays in this tab and is not uploaded.",
+      "photoInvalid": "Choose a valid JPEG, PNG or WebP within the size and pixel limits.",
+      "checkingPhoto": "Checking your photo…",
+      "photoReady": "Photo ready: {name}",
+      "removePhoto": "Remove photo",
+      "photoEmpty": "Choose a local photo to preview this image design.",
+      "choosePhoto": "Choose a photo",
+      "loading": "Loading glyphs and preparing designs…",
+      "rendering": "Creating preview…",
+      "renderError": "This preview could not be created. Try again.",
+      "imageAlt": "Rendered preview: {title}",
+      "warnings": "Render warnings: {count}",
+      "download": "Download PNG",
+      "iconTitle": "{fill} · {platform}",
+      "homePreview": "Home screen",
+      "lockPreview": "Lock screen",
+      "developmentOnly": "Development preview only",
+      "sections": {
+        "wallpapers": "Every wallpaper",
+        "icons": "Icon fills · iOS and shaped",
+        "widgets": "Four matching widgets",
+        "previews": "On the phone"
+      },
+      "palettes": {
+        "lavender": "Lavender",
+        "sunset": "Sunset",
+        "matcha": "Matcha",
+        "midnight": "Midnight"
+      },
+      "kinds": {
+        "mesh": "Soft mesh",
+        "blobs": "Organic blobs",
+        "waves": "Layered waves",
+        "pattern": "Repeating pattern",
+        "scatter": "Scattered glyphs",
+        "aurora": "Aurora",
+        "sky": "Sky",
+        "shapes": "Playful shapes",
+        "image": "Photo wallpaper"
+      },
+      "fonts": {
+        "readex-pro": "Readex Pro",
+        "fraunces": "Fraunces",
+        "pacifico": "Pacifico",
+        "space-grotesk": "Space Grotesk",
+        "el-messiri": "El Messiri",
+        "jetbrains-mono": "JetBrains Mono"
+      },
+      "weights": {
+        "thin": "Thin",
+        "light": "Light",
+        "regular": "Regular",
+        "bold": "Bold",
+        "fill": "Filled",
+        "duotone": "Duotone"
+      },
+      "patterns": {
+        "checker": "Checkerboard",
+        "gingham": "Gingham",
+        "dots": "Dots",
+        "stripes": "Stripes",
+        "grid": "Grid",
+        "y2k-grid": "Y2K grid",
+        "hearts": "Hearts",
+        "stars": "Stars",
+        "bows": "Bows",
+        "leopard": "Leopard"
+      },
+      "skyModes": {
+        "day": "Daylight",
+        "sunset": "Sunset",
+        "night": "Night"
+      },
+      "fills": {
+        "solid": "Solid",
+        "gradient": "Gradient",
+        "glass": "Glass",
+        "outline": "Outline",
+        "pattern": "Pattern",
+        "wallpaper": "Wallpaper"
+      },
+      "platforms": {
+        "ios": "iOS",
+        "shaped": "Shaped"
+      },
+      "widgetKinds": {
+        "glyphBadge": "Glyph badge",
+        "ring": "Activity ring",
+        "stickerCollage": "Sticker collage",
+        "photoFrame": "Photo frame"
+      }
+    }
   },
   "setup": {
     "title": "Set up your theme"

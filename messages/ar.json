@@ -72,7 +72,118 @@
     "title": "الثيم"
   },
   "studio": {
-    "title": "الاستوديو"
+    "title": "الاستوديو",
+    "renderPlayground": {
+      "eyebrow": "التطوير · محرّك التصميم",
+      "title": "مختبر صغير لكل إطلالة.",
+      "description": "عدّل الألوان والبذرة والتفاصيل، وقارن الخلفيات والأيقونات والمعاينات. تُحفظ الإعدادات في الرابط لتعود إلى التصميم نفسه.",
+      "activeSeed": "البذرة {seed}",
+      "invalidUrl": "يحتوي الرابط على إعدادات غير صالحة. نعرض الإعدادات الافتراضية.",
+      "controls": "أضف لمستك",
+      "palette": "لوحة الألوان",
+      "wallpaper": "خلفية المعاينة",
+      "font": "خط الساعة",
+      "weight": "سُمك الرموز",
+      "pattern": "نوع النقش",
+      "sky": "حالة السماء",
+      "seed": "البذرة",
+      "invalidSeed": "أدخل عددًا صحيحًا من 0 إلى 2147483647.",
+      "grain": "الحبيبات · {amount}",
+      "applySeed": "طبّق البذرة",
+      "shuffle": "بذرة عشوائية",
+      "photo": "صورة من جهازك",
+      "photoHint": "اختر صورة JPEG أو PNG أو WebP بحجم لا يتجاوز 15 MiB و16.7 مليون بكسل. تبقى في علامة التبويب هذه ولا تُرفع.",
+      "photoInvalid": "اختر صورة JPEG أو PNG أو WebP صالحة ضمن حدود الحجم وعدد البكسلات.",
+      "checkingPhoto": "جارٍ التحقّق من الصورة…",
+      "photoReady": "الصورة جاهزة: {name}",
+      "removePhoto": "أزل الصورة",
+      "photoEmpty": "اختر صورة من جهازك لمعاينة هذا التصميم.",
+      "choosePhoto": "اختر صورة",
+      "loading": "جارٍ تحميل الرموز وتجهيز التصاميم…",
+      "rendering": "جارٍ إنشاء المعاينة…",
+      "renderError": "تعذّر إنشاء هذه المعاينة. حاول مجددًا.",
+      "imageAlt": "معاينة التصميم: {title}",
+      "warnings": "تنبيهات التصميم: {count}",
+      "download": "نزّل PNG",
+      "iconTitle": "{fill} · {platform}",
+      "homePreview": "الشاشة الرئيسية",
+      "lockPreview": "شاشة القفل",
+      "developmentOnly": "معاينة للتطوير فقط",
+      "sections": {
+        "wallpapers": "كل الخلفيات",
+        "icons": "أنماط الأيقونات · iOS والأشكال",
+        "widgets": "أربع أدوات متناسقة",
+        "previews": "على الهاتف"
+      },
+      "palettes": {
+        "lavender": "لافندر",
+        "sunset": "غروب",
+        "matcha": "ماتشا",
+        "midnight": "منتصف الليل"
+      },
+      "kinds": {
+        "mesh": "تدرّج ناعم",
+        "blobs": "أشكال عضوية",
+        "waves": "موجات متراكبة",
+        "pattern": "نقش متكرّر",
+        "scatter": "رموز متناثرة",
+        "aurora": "شفق",
+        "sky": "سماء",
+        "shapes": "أشكال مرحة",
+        "image": "خلفية صورة"
+      },
+      "fonts": {
+        "readex-pro": "Readex Pro",
+        "fraunces": "Fraunces",
+        "pacifico": "Pacifico",
+        "space-grotesk": "Space Grotesk",
+        "el-messiri": "El Messiri",
+        "jetbrains-mono": "JetBrains Mono"
+      },
+      "weights": {
+        "thin": "رفيع جدًا",
+        "light": "رفيع",
+        "regular": "عادي",
+        "bold": "عريض",
+        "fill": "ممتلئ",
+        "duotone": "ثنائي الدرجات"
+      },
+      "patterns": {
+        "checker": "مربعات",
+        "gingham": "مربعات قماشية",
+        "dots": "نقاط",
+        "stripes": "خطوط",
+        "grid": "شبكة",
+        "y2k-grid": "شبكة الألفينات",
+        "hearts": "قلوب",
+        "stars": "نجوم",
+        "bows": "شرائط",
+        "leopard": "نقش فهدي"
+      },
+      "skyModes": {
+        "day": "نهار",
+        "sunset": "غروب",
+        "night": "ليل"
+      },
+      "fills": {
+        "solid": "لون موحّد",
+        "gradient": "تدرّج",
+        "glass": "زجاج",
+        "outline": "إطار",
+        "pattern": "نقش",
+        "wallpaper": "خلفية"
+      },
+      "platforms": {
+        "ios": "iOS",
+        "shaped": "شكل مخصّص"
+      },
+      "widgetKinds": {
+        "glyphBadge": "شارة رمز",
+        "ring": "حلقة نشاط",
+        "stickerCollage": "مجموعة ملصقات",
+        "photoFrame": "إطار صورة"
+      }
+    }
   },
   "setup": {
     "title": "جهّز ثيمك"
