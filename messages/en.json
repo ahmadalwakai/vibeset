@@ -31,5 +31,15 @@
       "arabicSample": "Free aesthetic themes for your phone",
       "footer": "A little preview of what’s to come."
     }
+  },
+  "auth": {
+    "magicLinkEmail": {
+      "subject": "Sign in to Vibeset",
+      "title": "Your Vibeset sign-in link",
+      "introduction": "Use this link to sign in to your Vibeset account.",
+      "action": "Sign in to Vibeset",
+      "expiry": "This link expires in 10 minutes.",
+      "ignore": "If you did not request this email, you can ignore it."
+    }
   }
 }

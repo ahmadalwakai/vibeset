@@ -2,6 +2,7 @@
 node_modules
 .tmp
 drizzle/migrations
+db/schema/auth.ts
 public/glyphs
 playwright-report
 test-results

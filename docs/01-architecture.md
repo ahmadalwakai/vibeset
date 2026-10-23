@@ -273,6 +273,10 @@ iOS canvas limits: keep any canvas ≤ 16.7M pixels and release canvases after u
 - Protections: an admin cannot demote or ban themselves; the last admin cannot be demoted.
 - Test-only email+password sign-in exists only when `E2E_TEST_AUTH=1`, and env validation refuses that flag when `VERCEL_ENV=production`.
 
+Better Auth's default session and database rate-limit storage would retain raw IPs. `databaseHooks.session.create.before` hashes the session IP with `sha256(ip + IP_HASH_SALT)`. Its database-backed custom limiter hashes the complete per-IP/path key with the same salt before writing `rate_limit`. The conditional upsert makes the admission decision atomically, preserving Better Auth's rolling inactivity window; a denial-only read computes Retry-After without read-modify-write. IP tracking remains enabled for abuse protection. These callbacks import server-only modules lazily so the auth CLI can load its configuration.
+
+The authenticated Better Auth deletion hook calls `cleanupUserContent(userId)` before deleting the auth user: non-published owned themes are deleted, published themes survive with `owner_id = NULL`, and dependent private records cascade. This hook-specific service returns `void` because it removes private content and does not invalidate shared public cache tags. R2 cleanup is added in P11. Google is omitted until both OAuth credentials are configured; a partial credential pair fails configuration. Magic-link delivery fails explicitly until Resend credentials are provided.
+
 ---
 
 ## 9. Storage (R2)

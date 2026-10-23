@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792786456478,
+      "tag": "0000_early_jazinda",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792786485685,
+      "tag": "0001_search_extensions",
+      "breakpoints": true
+    }
+  ]
+}

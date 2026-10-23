@@ -51,9 +51,11 @@ All tables from `docs/02` exist on the Neon dev branch through reviewed migratio
    });
    ```
    Verify each option name against the installed Better Auth version's types; adjust names (not behaviour) if the API differs, and note it in your summary.
+   Preserve the global no-raw-IP rule: hash session IPs before persistence and use atomic database-backed auth rate-limit storage with salted hashed keys (see architecture §8). Import server-only email/account/privacy callbacks lazily so the auth CLI can load this file. Generated auth timestamps retain the CLI's UTC representation; domain timestamps use time zones.
    - `server/services/account.ts` → `cleanupUserContent(userId)`: delete the user's themes whose status ≠ `published` (published ones keep existing with `owner_id` set null by FK). Favourites, collections, uploads, creator profile cascade by FK. R2 cleanup is added in P11.
 
-5. **Generate the auth schema**: `npx @better-auth/cli@latest generate --config ./server/auth.ts --output ./db/schema/auth.ts`. If the CLI cannot resolve imports, fix the import paths (relative) — never hand-write the tables. Confirm `user` has `role`, `banned`, `ban_reason`, `ban_expires`, `locale`, and that a `rate_limit` table exists.
+5. **Generate the auth schema**: `npx dotenv -e .env.local -- npx auth@1.7.12 generate --config ./server/auth.ts --output ./db/schema/auth.ts --yes`. If the CLI cannot resolve imports, fix the import paths (relative) — never hand-write the tables. Confirm `user` has `role`, `banned`, `ban_reason`, `ban_expires`, `locale`, and that a `rate_limit` table exists.
+   For the first generation, before auth tables exist, temporarily omit the adapter import/config and add `--adapter drizzle --dialect postgresql`. Then wire the schema-aware adapter and regenerate from the complete configuration. Keep CLI/runtime versions aligned.
 
 6. **Domain schema** — create exactly as in `docs/02` §3: `db/custom-types.ts`, `db/schema/{themes,taxonomy,catalog,collections,engagement,moderation,system}.ts`, `db/schema/index.ts` (re-exports, including `auth`), `db/relations.ts` (§3.10). Aliased imports only as `import type`.
 

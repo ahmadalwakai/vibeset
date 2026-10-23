@@ -243,6 +243,8 @@ RETURNING count;
 
 Allowed when `count ≤ limit`. Keys: `{scope}:{userId|ipHash}`. Rows older than 2 days are purged by the daily cron. Better Auth endpoints use Better Auth's own limiter (database storage).
 
+Better Auth retains its route/plugin limits but uses `server/auth-rate-limit.ts` as its database-backed storage: salted SHA-256 keys, atomic conditional upsert into `rate_limit`, and a denial-only read for Retry-After. Session creation also hashes its IP field before persistence; no raw authentication IP is stored.
+
 ---
 
 ## 7. Cache tags & invalidation matrix (`server/cache.ts`)

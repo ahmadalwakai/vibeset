@@ -7,7 +7,7 @@ applyTo: 'db/**,drizzle/**,drizzle.config.ts,scripts/**'
 
 - Schema must match `docs/02-data-model.md` exactly (names, types, defaults, indexes, checks). Change the doc first if the schema must change.
 - Explicit snake_case column names; `uuid().defaultRandom()` PKs (Better Auth tables use text ids); `timestamp(…, { withTimezone: true })`; `updatedAt` with `$onUpdate(() => new Date())`.
-- `db/schema/auth.ts` is **generated** by `npx @better-auth/cli@latest generate --config ./server/auth.ts --output ./db/schema/auth.ts`. Never hand-edit it.
+- `db/schema/auth.ts` is **generated** by `npx dotenv -e .env.local -- npx auth@1.7.12 generate --config ./server/auth.ts --output ./db/schema/auth.ts --yes`. Never hand-edit it.
 - Files in `db/**` use **relative imports** for runtime code; aliased imports only as `import type` (drizzle-kit and the Better Auth CLI load these files outside Next). Never import `server-only` here.
 - Clients: `db/index.ts` exports `db` (`drizzle-orm/neon-http` + `neon(DATABASE_URL)`); `db/pool.ts` exports `dbPool` (`drizzle-orm/neon-serverless` + `Pool`, `idleTimeoutMillis: 10_000`, `pool.on('error', …)` logging, `attachDatabasePool(pool)` from `@vercel/functions` when available). Both receive the full `schema` (tables + relations).
 - neon-http has no interactive transactions: use `db.batch([...])` for atomic multi-statement writes; use `dbPool.transaction()` only when you must read-then-write atomically.
