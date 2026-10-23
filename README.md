@@ -46,7 +46,7 @@ P01 verification passed: typecheck, lint, production build and all 137 tests, in
 
 ## Codemagic build
 
-The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the private `ahmadalwakai/vibeset-workflow` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.
+The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the public `ahmadalwakai/vibeset` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.
 
 The default Mac mini M2 runner produces `vibeset-web-darwin-arm64.tar.gz` plus a JUnit report. Extract the archive on a compatible Node 24/macOS ARM64 host and run `node server.js`. For a Linux deployment artifact, select an eligible Linux runner in the YAML before building; native modules match the build machine. Codemagic performs the build; hosting remains a separate step.
 
