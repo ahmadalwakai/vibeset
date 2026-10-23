@@ -1,0 +1,76 @@
+import { defineTokens } from '@chakra-ui/react';
+
+export const tokens = defineTokens({
+  sizes: {
+    container: { xl: { value: '1280px' } },
+  },
+  borderWidths: {
+    hairline: { value: '1px' },
+  },
+  colors: {
+    brand: {
+      50: { value: '#fbf3fd' },
+      100: { value: '#f5e3fa' },
+      200: { value: '#ecc6f5' },
+      300: { value: '#de9eed' },
+      400: { value: '#cc70e2' },
+      500: { value: '#b44bd0' },
+      600: { value: '#9734b1' },
+      700: { value: '#7a2990' },
+      800: { value: '#5f2271' },
+      900: { value: '#491b56' },
+      950: { value: '#2d0d36' },
+    },
+    peach: {
+      50: { value: '#fff5ef' },
+      100: { value: '#ffe8db' },
+      200: { value: '#ffceb4' },
+      300: { value: '#ffae86' },
+      400: { value: '#ff8b58' },
+      500: { value: '#f86e39' },
+      600: { value: '#e2522a' },
+      700: { value: '#ba3f21' },
+      800: { value: '#94341f' },
+      900: { value: '#772e1e' },
+      950: { value: '#40140c' },
+    },
+    neutral: {
+      50: { value: '#faf8fc' },
+      100: { value: '#f3f0f6' },
+      200: { value: '#e5e0eb' },
+      300: { value: '#cdc6d7' },
+      400: { value: '#a89eb6' },
+      500: { value: '#837894' },
+      600: { value: '#665c76' },
+      700: { value: '#50475e' },
+      800: { value: '#373042' },
+      900: { value: '#231e2c' },
+      950: { value: '#16121d' },
+    },
+  },
+  radii: {
+    card: { value: '24px' },
+    sheet: { value: '28px' },
+    input: { value: '14px' },
+    chip: { value: '{radii.full}' },
+    button: { value: '{radii.full}' },
+    phone: { value: '44px' },
+  },
+  durations: {
+    instant: { value: '80ms' },
+    fast: { value: '140ms' },
+    moderate: { value: '220ms' },
+    slow: { value: '320ms' },
+    slower: { value: '480ms' },
+  },
+  easings: {
+    standard: { value: 'cubic-bezier(0.2,0,0,1)' },
+    decelerate: { value: 'cubic-bezier(0,0,0.2,1)' },
+    accelerate: { value: 'cubic-bezier(0.4,0,1,1)' },
+    emphasized: { value: 'cubic-bezier(0.05,0.7,0.1,1)' },
+  },
+  fonts: {
+    body: { value: 'var(--font-body), system-ui, sans-serif' },
+    heading: { value: 'var(--font-display), var(--font-el-messiri), Georgia, serif' },
+  },
+});

@@ -1,0 +1,9 @@
+.next
+node_modules
+.tmp
+drizzle/migrations
+public/glyphs
+playwright-report
+test-results
+blob-report
+package-lock.json

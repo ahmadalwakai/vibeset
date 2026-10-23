@@ -1,0 +1,35 @@
+{
+  "common": {
+    "bootstrap": {
+      "title": "A little colour. A whole new mood.",
+      "description": "A soft, playful starting point for your next home screen. Free themes, made to feel like you.",
+      "stage": "Design system · P00",
+      "brandName": "vibeset",
+      "skipLink": "Skip to content",
+      "toggleColorMode": "Toggle color mode",
+      "paletteTitle": "Meet your new favourite colours",
+      "paletteDescription": "Orchid, peach and a little breathing room. Made for bright days and late nights.",
+      "brandLabel": "Orchid",
+      "peachLabel": "Peach",
+      "neutralLabel": "Soft neutrals",
+      "brandButton": "Try orchid",
+      "peachButton": "Try peach",
+      "buttonHint": "Try a button, then switch between light and dark.",
+      "successTitle": "Looking good",
+      "successDescription": "Your colours and interactions are ready.",
+      "typographyTitle": "A few words, with feeling",
+      "display2xl": "Make room for good vibes.",
+      "displayXl": "Your phone, your mood.",
+      "displayLg": "A fresh start feels good.",
+      "headingMd": "Little details. A lovely difference.",
+      "headingSm": "Something that feels like you.",
+      "bodyMd": "A calm canvas for the things you love. Mix a little colour into your everyday.",
+      "bodySm": "Thoughtful colours, gentle motion and space to breathe.",
+      "caption": "Small details, considered.",
+      "arabicTitle": "Good vibes, in every language",
+      "arabicDescription": "Designed to feel at home in English and Arabic.",
+      "arabicSample": "Free aesthetic themes for your phone",
+      "footer": "A little preview of what’s to come."
+    }
+  }
+}
