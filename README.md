@@ -1,6 +1,6 @@
 # Vibeset
 
-P00–P04 foundations: Next.js 16 with Cache Components, React 19.2, Chakra UI v3, an English/Arabic site shell and sign-in screens, Neon/Drizzle schema, guarded Better Auth endpoints and a deterministic theme renderer. Catalog and Studio arrive in later phases.
+P00–P05 foundations: Next.js 16 with Cache Components, React 19.2, Chakra UI v3, an English/Arabic site shell and sign-in screens, Neon/Drizzle schema, guarded Better Auth endpoints, a deterministic theme renderer and versioned publishing services. Catalog and Studio arrive in later phases.
 
 ## Local development
 
@@ -72,11 +72,29 @@ npm run fonts:fetch
 npm run render:sample
 ```
 
-With the development server running, open `/dev/render` or `/ar/dev/render`. Controls persist in the URL, and PNG previews can be downloaded. Local JPEG/PNG/WebP photo bytes stay in the tab. The development route returns 404 in production. Server samples are written to `.tmp/render-sample/`, including phone wallpaper, previews, OG and six icons. The measured 1320×2868 wallpaper JPEG was 59,668 bytes and rendered in 2.2 seconds while other checks were running (budgets: 3 MiB and 3 seconds).
+With the development server running, open `/dev/render` or `/ar/dev/render`. Controls persist in the URL, and PNG previews can be downloaded. Local JPEG/PNG/WebP photo bytes stay in the tab. The development route returns 404 in production. Server samples are written to `.tmp/render-sample/`, including phone wallpaper, previews, OG and six icons. The measured 1320×2868 wallpaper JPEG was 59,668 bytes and rendered in 2.2 seconds while other checks were running (budgets: 3 MB and 3 seconds).
 
 Visual tuning spread sparse stars/scatter across the canvas, darkened aurora/night backgrounds, strengthened Y2K grids, and fixed off-canvas filtered-cloud crashes in resvg. Photo icon tests cover transparent source pixels: iOS remains fully opaque and shaped exports retain their alpha mask. Midnight sample icon contrast is 7.61:1. Matching Chakra style-property order fixes a streamed hydration class mismatch; the convention is recorded in the UI instructions.
 
 P04 verification: 487 tests pass, including live isolated Neon/auth tests, renderer snapshots, native pixel checks and client resource-lifecycle checks. Typecheck, lint and production build pass. Browser checks cover English/Arabic artifacts, seed validation and persistence after reload, palette/font/glyph/sky/grain changes and the 360px RTL layout without horizontal overflow. Local photo selection and automatic inspection of downloaded Blob PNGs remain manual: the Chrome connector requires file-URL access for the picker and cannot retrieve Blob downloads. No live CDN photo fetch was claimed. Google/Resend sign-in and R2 publication still need the provider credentials being added to `.env.local`.
+
+## P05 storage and publishing
+
+Publishing renders matching wallpapers, previews, thumbnail and OG assets into an isolated UUID attempt path inside each asset version. A short transaction verifies the captured status, spec hash and version before updating the theme and audit atomically. Concurrent or failed attempts cannot delete another attempt's files. Lost commit acknowledgements preserve uploaded files; retrying without `--force` repairs cache invalidation and retention without rerendering unchanged assets. Retention keeps the current and previous versions.
+
+The state machine validates actor rights, source, ownership and submission requirements. Its conditional update/audit statement cannot record a successful transition when the state is stale, and it rechecks creator approval at submission. Publishing is the only path into `published`. Storage validates paths, streams bounded object reads, signs content-type-bound PUT URLs and handles pagination and partial deletion failures. Phone JPEGs and thumbnails must meet their 3,000,000-byte and 80,000-byte budgets before upload.
+
+```sh
+npm run themes:sample
+npm run themes:publish -- --status=approved --concurrency=3
+# Use --ids=<comma-separated UUIDs> to retry specific themes, or --force to render another version.
+```
+
+The sample helper is idempotent and refuses production. The publish CLI validates selection, reports per-item results, drains active work on interruption, and prints explicit retry commands for post-commit failures. Admin and internal endpoints use `private, no-store`; internal cache refresh requires the exact bearer secret. Local HTTP checks verified denial of anonymous publication and internal cache refresh, plus successful authenticated cache refresh. Live isolated database tests use in-memory storage and real image rendering, including concurrency, stale edits/status changes, photo crops, retention, failure audits and uncertain commit recovery.
+
+P05 local verification passes: typecheck, lint, all 777 tests (including the isolated database suites) and the final production build. A detailed-photo regression reproduces the oversized q80 thumbnail and verifies the bounded output. Native wallpaper regressions disable unnecessary system-font scanning to remain stable alongside the publishing tests.
+
+Live R2 upload/CDN cache headers, bucket CORS/lifecycle settings and Google/Resend sign-in remain unverified while credentials are being configured. The development sample remains approved for that live check; no R2 publication is claimed. Local implementation continues with those checks pending.
 
 ## Codemagic build
 

@@ -113,7 +113,7 @@ describe('wallpaper renderer', () => {
         },
       });
       const result = renderWallpaper(spec, 'home', { w: 180, h: 390 }, fixtureGlyphs);
-      const raster = await renderAsync(result.svg);
+      const raster = await renderAsync(result.svg, { font: { loadSystemFonts: false } });
       expect(raster.width).toBe(180);
       expect(raster.height).toBe(390);
       expect(raster.asPng().byteLength).toBeGreaterThan(1000);

@@ -20,7 +20,9 @@
     "admin:list": "dotenv -e .env.local -- tsx --conditions=react-server scripts/admin-user.ts --list",
     "glyphs:build": "tsx scripts/generate-glyphs.ts",
     "fonts:fetch": "tsx scripts/fetch-fonts.ts",
-    "render:sample": "tsx --conditions=react-server scripts/render-sample.ts"
+    "render:sample": "tsx --conditions=react-server scripts/render-sample.ts",
+    "themes:publish": "dotenv -e .env.local -- tsx --conditions=react-server scripts/publish-themes.ts",
+    "themes:sample": "dotenv -e .env.local -- tsx --conditions=react-server scripts/dev-sample-theme.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

@@ -25,8 +25,8 @@ async function main(): Promise<void> {
     quality: 92,
   });
   const renderMs = performance.now() - started;
-  if (phone.byteLength > 3 * 1024 * 1024)
-    throw new Error('Phone wallpaper exceeds the 3 MiB budget');
+  if (phone.byteLength > 3_000_000)
+    throw new Error('Phone wallpaper exceeds the 3 MB budget');
   if (renderMs >= 3000)
     throw new Error(`Phone wallpaper rendering exceeds 3 s (${renderMs.toFixed(0)} ms)`);
   await writeFile(path.join(target, 'wallpaper-phone.jpg'), phone);

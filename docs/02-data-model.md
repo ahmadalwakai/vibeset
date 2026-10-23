@@ -503,7 +503,7 @@ Announcement links accept safe app-relative paths or HTTP(S) URLs; protocol-rela
 
 ## 7. Theme status state machine
 
-All status changes go through **one** function: `transitionThemeStatus({ themeId, to, actor, reason? })` in `server/services/theme-status.ts`. It validates the transition, actor rights and preconditions, writes the row and an `audit_log` entry in one `db.batch`, and returns the cache tags to invalidate.
+All status changes share the policy in `server/services/theme-status.ts`. `transitionThemeStatus({ themeId, to, actor, reason? })` validates actor rights and preconditions and commits the guarded change and audit atomically. Its conditional batch statement inserts an audit only when the update returns a row; conflicts never record a successful transition. Every transition into `published` is reserved for the publish service, which uses the same policy and a short interactive transaction for its final publication update and audit.
 
 | From → To | Allowed actor | Preconditions / side effects |
 |---|---|---|
@@ -517,7 +517,9 @@ All status changes go through **one** function: `transitionThemeStatus({ themeId
 | rejected → draft | owner (on edit) | clears `rejection_reason` |
 | rejected → approved | admin (override) | — |
 | published → archived | admin | hidden from all public lists and pages (404) |
-| archived → published | admin via publish service | re-render if `assets_spec_hash ≠ spec_hash` |
+| archived → published | admin via publish service | renders a new immutable asset version; unchanged-publication skipping applies only while already published |
+
+Rejection reasons normalize to plain text with control characters and excess whitespace removed. Accept 1–500 normalized characters (at most 2,000 raw characters); audit metadata stores only that normalized reason.
 
 Edit rules:
 

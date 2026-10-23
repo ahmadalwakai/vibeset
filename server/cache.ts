@@ -5,16 +5,7 @@ import { z } from 'zod';
 
 export { cacheLife, cacheTag } from 'next/cache';
 
-export const CacheTags = {
-  themes: 'themes',
-  theme: (slug: string): string => `theme:${slug}`,
-  collections: 'collections',
-  collection: (slug: string): string => `collection:${slug}`,
-  taxonomy: 'taxonomy',
-  apps: 'apps',
-  settings: 'settings',
-  creator: (handle: string): string => `creator:${handle}`,
-} as const;
+export { CacheTags } from '../lib/cache-tags';
 
 const invalidationSchema = z.object({
   tags: z.array(z.string().min(1).max(256)),

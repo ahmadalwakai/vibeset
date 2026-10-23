@@ -218,7 +218,7 @@ Icon colour candidates: `solid` → (primary / surface|ink), (surface / primary|
 3. Visible palette: OKLab ΔE(bg, primary) ≥ 0.08 and ΔE(primary, accent) ≥ 0.06.
 4. All glyph names exist in the manifest.
 5. **Duplicate check**: render a 72 × 156 thumbnail (resvg), dHash (sharp: greyscale → 9 × 8 → 64 bits). Hamming distance ≤ 6 against any existing theme (draft/pending/approved/published) or earlier candidate in the same run → skip (`skipped_duplicates`).
-6. At publish: phone JPEG ≤ 3 MB (else re-encode at q88), thumb ≤ 80 KB.
+6. At publish: phone JPEG ≤ 3,000,000 bytes (else re-encode at q88), thumb ≤ 80,000 bytes. Thumbnails start at WebP q80; bounded lower-quality retries use the original resized preview, then publication fails if the size still exceeds the budget.
 
 Oversample: generate `count × 3` candidates to hit `count` accepted drafts; stop early when reached.
 

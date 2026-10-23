@@ -266,7 +266,7 @@ iOS canvas limits: keep any canvas ≤ 16.7M pixels and release canvases after u
    - Server Actions → `updateTag(tag)` when the acting user must immediately see their change on a cached page; otherwise `revalidateTag(tag, 'max')`.
    - Route Handlers → `revalidateTag(tag, 'max')` (`updateTag` is Server-Action-only).
    - CLI scripts → `POST /api/internal/revalidate` with `INTERNAL_API_SECRET`.
-5. Cache tag registry: `server/cache.ts` (`CacheTags`). Never hand-write tag strings elsewhere. Invalidation matrix: `docs/03` §7.
+5. Cache tag registry: pure `lib/cache-tags.ts` (`CacheTags` and tag-shape validation), re-exported by `server/cache.ts` alongside Next invalidation helpers. Services/scripts import the pure registry. Never hand-write tag strings elsewhere. Invalidation matrix: `docs/03` §7.
 6. Per-user data (session, favourites, collections, remixes, admin/creator data) is **never** cached in shared caches. Admin and creator reads live in `server/admin-queries/*` (no `'use cache'`).
 7. Public API responses set `Cache-Control: public, s-maxage=300, stale-while-revalidate=86400`. User endpoints set `Cache-Control: private, no-store`.
 8. R2 assets use versioned, immutable keys (`themes/{id}/v{n}/…`, `Cache-Control: public, max-age=31536000, immutable`); a re-render bumps `v{n}`.
@@ -308,7 +308,7 @@ The authenticated Better Auth deletion hook calls `cleanupUserContent(userId)` b
 
 | Prefix | Content | Cache |
 |---|---|---|
-| `themes/{themeId}/v{n}/` | thumb.webp, preview-home.webp, preview-lock.webp, og.jpg, wallpaper-{phone,tablet,desktop}.jpg | immutable |
+| `themes/{themeId}/v{n}/{attemptId}/` | thumb.webp, preview-home.webp, preview-lock.webp, og.jpg, wallpaper-{phone,tablet,desktop}.jpg | immutable |
 | `uploads/incoming/{userId}/{uploadId}` | raw creator upload (presigned PUT) | lifecycle rule: delete after 1 day |
 | `uploads/wallpapers/{uploadId}/` | full.jpg (≤ 2868 px tall), preview.webp | immutable |
 | `avatars/{userId}/{hash}.webp` | creator avatar | immutable |
@@ -316,8 +316,11 @@ The authenticated Better Auth deletion hook calls `cleanupUserContent(userId)` b
 - Bucket is served publicly only through the custom domain `cdn.vibeset.app` (Cloudflare caches it; cached hits do not count as R2 reads).
 - CORS: `GET` from app origins (client fetches blobs for sharing/canvas), `PUT` from app origins with `Content-Type` header (presigned uploads).
 - S3 client: `region: 'auto'`, endpoint `https://{accountId}.r2.cloudflarestorage.com`, `requestChecksumCalculation: 'WHEN_REQUIRED'`, `responseChecksumValidation: 'WHEN_REQUIRED'` (keeps presigned URLs browser-compatible).
+- The adapter validates keys/prefixes and caps each object read/write at 32 MiB. Reads are streamed and cancelled on overflow; SDK failures are sanitized. Prefix listing is paginated; deletion drains bounded pages and checks partial failures.
 - Presigned PUT cannot enforce size → server `HeadObject` checks size after upload and deletes oversize objects.
 - All keys are built by `server/storage/keys.ts`; public URLs by `server/storage/urls.ts` (and `lib/utils` for client CDN URLs). No string-concatenated keys elsewhere.
+- Each publish attempt gets a UUID subprefix. Rendering/uploads happen outside a database transaction. A short row-lock transaction verifies the loaded asset version, status and spec hash before updating publication fields and inserting its audit. A concurrent loser can delete only its own attempt prefix; it never deletes the shared version prefix. This also isolates late storage operations after a lost acknowledgement. If database commit outcome is uncertain, preserve uploaded objects rather than risk deleting a committed publication. Retention removes whole versions older than the current and previous versions, after checking current database state.
+- Theme/upload/attempt identifiers are UUIDs. Better Auth user identifiers are opaque text, validated as safe path segments rather than forced into UUID format.
 
 ---
 
