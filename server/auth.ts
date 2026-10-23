@@ -1,9 +1,12 @@
 import { betterAuth } from 'better-auth';
+import { APIError, createAuthMiddleware, getAuthoritativeSessionFromCtx } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { getSessionCookie } from 'better-auth/cookies';
 import { nextCookies } from 'better-auth/next-js';
 import { admin, magicLink } from 'better-auth/plugins';
 import { env } from '../lib/env.server';
 import type { AuthRateLimitDecision } from '../lib/auth';
+import { disabledAuthPaths } from '../lib/auth';
 import { dbPool } from '../db/pool';
 import * as schema from '../db/schema/index';
 
@@ -15,6 +18,7 @@ export const auth = betterAuth({
   appName: 'Vibeset',
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
+  disabledPaths: disabledAuthPaths,
   trustedOrigins: [env.NEXT_PUBLIC_SITE_URL, ...env.BETTER_AUTH_TRUSTED_ORIGINS],
   database: drizzleAdapter(dbPool, { provider: 'pg', schema }),
   emailAndPassword: { enabled: env.E2E_TEST_AUTH === '1' },
@@ -38,6 +42,22 @@ export const auth = betterAuth({
         return consumeAuthRateLimit(key, rule);
       },
     },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (context) => {
+      if (context.path === '/get-session' || context.path === '/sign-out') return;
+      // Core account endpoints must not recover a revoked session from its cookie cache.
+      if (context.headers && getSessionCookie(context.headers)) {
+        const current = await getAuthoritativeSessionFromCtx(context);
+        if (current?.user.banned === true) {
+          throw new APIError('FORBIDDEN', {
+            code: 'BANNED_USER',
+            message: 'This account is unavailable',
+          });
+        }
+      }
+      return { context: { query: { ...context.query, disableCookieCache: true } } };
+    }),
   },
   databaseHooks: {
     session: {

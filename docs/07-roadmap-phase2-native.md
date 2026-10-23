@@ -2,7 +2,7 @@
 
 Phase 1 (web) cannot put live widgets on a home screen — no web app can. Phase 2 adds a small native app that turns any Vibeset theme into real widgets. It reuses everything Phase 1 builds: `/api/v1`, `ThemeSpec` tokens, the renderer, the content.
 
-**Decision gate** — start Phase 2 when the web app shows real pull: ≥ 10k monthly visitors and ≥ 25% activation (download/icon export). Before that, widgets are a cost without proven demand.
+**Delivery order** — complete and verify the web product (P00–P17), then build the Expo native companion and submit its first iOS beta to TestFlight. Web usage and activation still guide the scope and timing of a public native release; they do not block the requested private beta preparation.
 
 ---
 

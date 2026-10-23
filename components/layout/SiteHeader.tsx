@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   Container,
   Flex,
   HStack,
@@ -9,20 +8,21 @@ import {
   Link as ChakraLink,
   Popover,
   Portal,
+  SkeletonCircle,
   Stack,
   Text,
 } from '@chakra-ui/react';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/ssr/DotsThree';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/ssr/MagnifyingGlass';
-import { SparkleIcon } from '@phosphor-icons/react/dist/ssr/Sparkle';
-import { UserCircleIcon } from '@phosphor-icons/react/dist/ssr/UserCircle';
 import { getTranslations } from 'next-intl/server';
-import type { ReactElement } from 'react';
+import { Suspense, type ReactElement } from 'react';
+import { BrandWordmark } from '@/components/common/BrandWordmark';
 import { ColorModeButton } from '@/components/ui/color-mode';
 import { Link } from '@/i18n/navigation';
 import { DesktopNav } from './BottomNav';
 import { HideOnScroll } from './HideOnScroll';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { HeaderAccount } from './HeaderAccount';
 
 export async function SiteHeader(): Promise<ReactElement> {
   const [common, nav] = await Promise.all([getTranslations('common'), getTranslations('nav')]);
@@ -55,18 +55,7 @@ export async function SiteHeader(): Promise<ReactElement> {
               focusRing="outside"
             >
               <Link href="/" aria-label={common('brandName')}>
-                <Icon asChild boxSize="6" color="brand.fg">
-                  <SparkleIcon aria-hidden weight="fill" />
-                </Icon>
-                <Text
-                  as="span"
-                  fontFamily="heading"
-                  fontSize="2xl"
-                  fontWeight="semibold"
-                  lineHeight="1"
-                >
-                  {common('brandName')}
-                </Text>
+                <BrandWordmark label={common('brandName')} />
               </Link>
             </ChakraLink>
 
@@ -92,17 +81,9 @@ export async function SiteHeader(): Promise<ReactElement> {
               <HStack display={{ base: 'none', md: 'flex' }} gap={{ base: '0', lg: '1' }}>
                 <LocaleSwitcher compact />
                 <ColorModeButton rounded="button" />
-                <Button
-                  asChild
-                  variant="outline"
-                  colorPalette="brand"
-                  size="sm"
-                  minH="11"
-                  px="3"
-                  rounded="button"
-                >
-                  <Link href="/sign-in">{common('signIn')}</Link>
-                </Button>
+                <Suspense fallback={<SkeletonCircle size="8" />}>
+                  <HeaderAccount />
+                </Suspense>
               </HStack>
 
               <Box display={{ base: 'block', md: 'none' }}>
@@ -130,20 +111,9 @@ export async function SiteHeader(): Promise<ReactElement> {
                               <Text textStyle="body.sm">{common('toggleColorMode')}</Text>
                               <ColorModeButton rounded="button" />
                             </Flex>
-                            <Button
-                              asChild
-                              colorPalette="brand"
-                              variant="subtle"
-                              minH="11"
-                              rounded="button"
-                            >
-                              <Link href="/sign-in">
-                                <Icon asChild boxSize="5">
-                                  <UserCircleIcon aria-hidden />
-                                </Icon>
-                                {common('signIn')}
-                              </Link>
-                            </Button>
+                            <Suspense fallback={<SkeletonCircle size="8" />}>
+                              <HeaderAccount />
+                            </Suspense>
                           </Stack>
                         </Popover.Body>
                       </Popover.Content>

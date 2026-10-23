@@ -273,9 +273,15 @@ iOS canvas limits: keep any canvas ≤ 16.7M pixels and release canvases after u
 
 - Better Auth with Drizzle adapter (`dbPool`), Google OAuth + magic link (Resend), `admin` plugin (`role`, `banned`), `nextCookies()` last in plugins. Session cookie cache enabled (5 min) to save DB round trips.
 - Roles: `user.role ∈ {'user','admin'}`. **Creator is a capability**, not an auth role: `creator_profiles.status = 'approved'`.
-- `proxy.ts` does an **optimistic** check only (session cookie present) for `/admin` and `/creator`. Real authorisation happens in every Server Action, Route Handler, admin query and page data function (`server/guards.ts`). Layouts are UX, not security.
+- `proxy.ts` does an **optimistic** check only (session cookie present) for `/admin`, `/creator` and `/account`, including locale-prefixed paths. Real authorisation happens in every Server Action, Route Handler, admin query and page data function (`server/guards.ts`). Layouts are UX, not security.
 - Protections: an admin cannot demote or ban themselves; the last admin cannot be demoted.
 - Test-only email+password sign-in exists only when `E2E_TEST_AUTH=1`, and env validation refuses that flag when `VERCEL_ENV=production`.
+
+Vibeset's request-cached `getSession()` bypasses the five-minute cookie cache for authorization, so session revocation, bans and role changes take effect immediately. The Better Auth cookie cache remains enabled for its own client session reads. The auth handler and guarded session lookup load validated server configuration at request time, after the dynamic boundary; public shell prerendering does not need server credentials. Serving sign-in or authentication requests still requires valid core server configuration.
+
+Better Auth's `/admin/*` HTTP endpoints are disabled. Role and moderation changes go through Vibeset's guarded services and audit log, preventing alternate plugin endpoints from bypassing its safeguards. The system role-management service serializes role changes with a transaction advisory lock and checks the last-admin invariant before writing the role and audit record in that transaction.
+
+The authentication before-hook also forces authoritative session reads for core account endpoints and refuses banned sessions. Its public `get-session` endpoint retains cookie caching for UI reads; `sign-out` remains available to clear stale or banned sessions. Vibeset guards independently perform fresh session checks before any protected operation.
 
 Better Auth's default session and database rate-limit storage would retain raw IPs. `databaseHooks.session.create.before` hashes the session IP with `sha256(ip + IP_HASH_SALT)`. Its database-backed custom limiter hashes the complete per-IP/path key with the same salt before writing `rate_limit`. The conditional upsert makes the admission decision atomically, preserving Better Auth's rolling inactivity window; a denial-only read computes Retry-After without read-modify-write. IP tracking remains enabled for abuse protection. These callbacks import server-only modules lazily so the auth CLI can load its configuration.
 

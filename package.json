@@ -14,7 +14,10 @@
     "chakra:typegen": "chakra typegen ./design/system.ts",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
-    "db:studio": "dotenv -e .env.local -- drizzle-kit studio"
+    "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
+    "admin:grant": "dotenv -e .env.local -- tsx --conditions=react-server scripts/admin-user.ts --grant",
+    "admin:revoke": "dotenv -e .env.local -- tsx --conditions=react-server scripts/admin-user.ts --revoke",
+    "admin:list": "dotenv -e .env.local -- tsx --conditions=react-server scripts/admin-user.ts --list"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

@@ -493,9 +493,11 @@ Each key has a Zod schema in `server/services/settings.ts`; reads fall back to d
 
 | Key | Value | Default |
 |---|---|---|
-| `home.hero` | `{ collectionSlug: string \| null }` | `null` (Home uses the first pinned collection) |
-| `home.announcement` | `{ enabled: boolean; textEn: string; textAr: string; href: string \| null; tone: 'info' \| 'celebrate' \| 'warning' }` | disabled |
+| `home.hero` | `{ collectionSlug: string \| null }` | `{ collectionSlug: null }` (Home uses the first pinned collection) |
+| `home.announcement` | `{ enabled: boolean; textEn: string; textAr: string; href: string \| null; tone: 'info' \| 'celebrate' \| 'warning' }` | `{ enabled: false, textEn: '', textAr: '', href: null, tone: 'info' }` |
 | `features` | `{ creatorApplicationsOpen: boolean; uploadsEnabled: boolean; reportsEnabled: boolean }` | all `true` |
+
+Announcement links accept safe app-relative paths or HTTP(S) URLs; protocol-relative paths, backslashes, control characters and URL credentials are rejected. Missing or invalid stored settings fall back to their complete per-key defaults.
 
 ---
 
