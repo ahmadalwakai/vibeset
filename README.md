@@ -1,6 +1,6 @@
 # Vibeset
 
-P00–P03 foundations: Next.js 16 with Cache Components, React 19.2, Chakra UI v3, an English/Arabic site shell and sign-in screens, Neon/Drizzle schema, guarded Better Auth endpoints and validated ThemeSpec tokens. Catalog and Studio arrive in later phases.
+P00–P04 foundations: Next.js 16 with Cache Components, React 19.2, Chakra UI v3, an English/Arabic site shell and sign-in screens, Neon/Drizzle schema, guarded Better Auth endpoints and a deterministic theme renderer. Catalog and Studio arrive in later phases.
 
 ## Local development
 
@@ -61,6 +61,22 @@ npm run admin:revoke -- former-admin@example.com
 Role changes and audit records share a serialized transaction; concurrent demotions cannot remove the last admin. Production changes require `--force-production`. No real user's role was changed during verification.
 
 P03 local verification passed typecheck, lint, all 330 tests (including ten existing database tests and three new live authentication-authority regressions), production compilation and standalone-server startup. HTTP checks confirm `/api/auth/ok`, translated sign-in responses and protected Arabic redirects with repeated query values. Browser checks cover 360px English/Arabic sign-in with unavailable providers; real Google OAuth, magic-link mailbox delivery and authenticated menu interaction remain pending provider configuration. `admin:list` runs successfully and currently returns no admins. For a local standalone run, set `HOSTNAME=localhost` when accessing `http://localhost:3000` so locale rewrites use the same host.
+
+## P04 render engine
+
+The shared renderer produces nine wallpaper kinds, ten pattern variants, six icon fills for iOS and shaped exports, four decorative widgets, and language-neutral home/lock previews. Ordered layers preserve photo crops, grain and shape transparency across server and browser rasterizers. Fixed clock outlines embed the six OFL display fonts without external font requests from SVG images. The generic glyph catalog contains 1,432 names in six weights; all 125 app references are validated. Minecraft uses the available `hammer` glyph in place of the unavailable `pickaxe`.
+
+```sh
+npm run glyphs:build
+npm run fonts:fetch
+npm run render:sample
+```
+
+With the development server running, open `/dev/render` or `/ar/dev/render`. Controls persist in the URL, and PNG previews can be downloaded. Local JPEG/PNG/WebP photo bytes stay in the tab. The development route returns 404 in production. Server samples are written to `.tmp/render-sample/`, including phone wallpaper, previews, OG and six icons. The measured 1320×2868 wallpaper JPEG was 59,668 bytes and rendered in 2.2 seconds while other checks were running (budgets: 3 MiB and 3 seconds).
+
+Visual tuning spread sparse stars/scatter across the canvas, darkened aurora/night backgrounds, strengthened Y2K grids, and fixed off-canvas filtered-cloud crashes in resvg. Photo icon tests cover transparent source pixels: iOS remains fully opaque and shaped exports retain their alpha mask. Midnight sample icon contrast is 7.61:1. Matching Chakra style-property order fixes a streamed hydration class mismatch; the convention is recorded in the UI instructions.
+
+P04 verification: 487 tests pass, including live isolated Neon/auth tests, renderer snapshots, native pixel checks and client resource-lifecycle checks. Typecheck, lint and production build pass. Browser checks cover English/Arabic artifacts, seed validation and persistence after reload, palette/font/glyph/sky/grain changes and the 360px RTL layout without horizontal overflow. Local photo selection and automatic inspection of downloaded Blob PNGs remain manual: the Chrome connector requires file-URL access for the picker and cannot retrieve Blob downloads. No live CDN photo fetch was claimed. Google/Resend sign-in and R2 publication still need the provider credentials being added to `.env.local`.
 
 ## Codemagic build
 

@@ -17,7 +17,10 @@
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "admin:grant": "dotenv -e .env.local -- tsx --conditions=react-server scripts/admin-user.ts --grant",
     "admin:revoke": "dotenv -e .env.local -- tsx --conditions=react-server scripts/admin-user.ts --revoke",
-    "admin:list": "dotenv -e .env.local -- tsx --conditions=react-server scripts/admin-user.ts --list"
+    "admin:list": "dotenv -e .env.local -- tsx --conditions=react-server scripts/admin-user.ts --list",
+    "glyphs:build": "tsx scripts/generate-glyphs.ts",
+    "fonts:fetch": "tsx scripts/fetch-fonts.ts",
+    "render:sample": "tsx --conditions=react-server scripts/render-sample.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

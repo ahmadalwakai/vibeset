@@ -168,7 +168,7 @@ Grain: post-process (seeded noise tile), `0` = off. Recipes use 0.04–0.14.
 
 ## 4. Icons (`lib/render/icon.ts`)
 
-`renderIconSvg(style, glyphMarkup, { size, platform: 'ios' | 'shaped', wallpaperSvgDefs? })`
+`renderIcon(style, glyphMarkup, { size, platform: 'ios' | 'shaped', palette, glyphs, wallpaper?, prefix? })` returns `RenderResult`. Explicit palette and glyph-source context resolves glass fills and sticker glyphs without ambient state. An optional rendered wallpaper supplies wallpaper fills and photo placement. `prefix` avoids SVG id collisions in compositions.
 
 - **iOS**: opaque, full-bleed square (iOS applies its own mask; transparent pixels render black). `shape` is ignored.
 - **Shaped** (Android/desktop): composition clipped to `squircle` (superellipse n = 5, 64 points), `circle`, `rounded` (r = 22%) or `square`; outside transparent.
@@ -180,10 +180,11 @@ Grain: post-process (seeded noise tile), `0` = off. Recipes use 0.04–0.14.
 
 Used in previews and as static decor exports (no text in exports): `glyphBadge` (small), `ring` (small, progress ring + glyph), `stickerCollage` (medium, 3–5 decor glyphs), `photoFrame` (large, framed empty area with decor corners). Server previews may add digits (time) because they are language-neutral.
 
-## 6. Previews (`lib/render/preview.ts`, server only for text)
+## 6. Previews (`lib/render/preview.ts`)
 
-- `renderHomePreview(spec, glyphs, { w, h })`: generic phone silhouette, status bar (digits + cell/wifi/battery glyphs), one medium widget, 4 × 4 icons from the 16 top-ranked catalogue apps, dock with 4 icons on a glass panel. Labels are rounded pills (no words).
-- `renderLockPreview(spec, glyphs, { w, h })`: big time "10:24" in the display font, two small widgets, lock wallpaper. Time colour = white or ink, whichever contrasts better with the top-area colour estimate.
+- `renderHomePreview(spec, glyphs, apps, { w, h, prefix? })`: generic phone silhouette, status bar (digits + cell/wifi/battery glyphs), one medium widget, 4 × 4 icons from the 16 top-ranked catalogue apps, dock with 4 icons on a glass panel. Apps are explicit ranked catalog input; labels are rounded pills (no words).
+- `renderLockPreview(spec, glyphs, { w, h, prefix? })`: big time "10:24" in the display font, two small widgets, lock wallpaper. Time colour = white or ink, whichever contrasts better with the top-area colour estimate.
+- Clocks use generated font outlines from `content/clock-outlines.json`, rather than SVG text needing external fonts. Both functions return `RenderResult`, preserving image placement, deterministic noise and warnings.
 
 ---
 
@@ -382,7 +383,7 @@ Glyphs are generic Phosphor symbols. Names are text labels only. Rank ≤ 24 = d
 | 114 | calm | Calm | health | moon |
 | 115 | flo | Flo | health | drop |
 | 116 | roblox | Roblox | games | cube |
-| 117 | minecraft | Minecraft | games | pickaxe |
+| 117 | minecraft | Minecraft | games | hammer |
 | 118 | pubg | PUBG Mobile | games | target |
 | 119 | clash-royale | Clash Royale | games | crown |
 | 120 | candy-crush | Candy Crush | games | cookie |

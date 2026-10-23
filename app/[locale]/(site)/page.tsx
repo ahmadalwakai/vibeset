@@ -20,7 +20,7 @@ export default async function HomePage(): Promise<ReactElement> {
       <Box flex="1" maxW="2xl">
         <FadeIn>
           <Stack gap={{ base: '6', md: '8' }} align="start">
-            <Flex align="center" gap="2" color="brand.fg" textStyle="caption">
+            <Flex align="center" gap="2" textStyle="caption" color="brand.fg">
               <SparkleIcon weight="fill" aria-hidden />
               <Text>{t('eyebrow')}</Text>
             </Flex>

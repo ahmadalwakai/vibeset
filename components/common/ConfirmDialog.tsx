@@ -101,7 +101,7 @@ function ConfirmationForm({
           </Field.Root>
         ) : null}
         {errorCode || failure ? (
-          <Text role="alert" color="red.fg" textStyle="body.sm" mt="4">
+          <Text role="alert" textStyle="body.sm" color="red.fg" mt="4">
             {errors(errorCode ?? failure ?? 'INTERNAL')}
           </Text>
         ) : null}

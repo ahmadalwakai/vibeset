@@ -177,7 +177,7 @@ One pure TypeScript renderer, `lib/render`, turns a `ThemeSpec` (JSON tokens, `d
 
 - Pure functions only. No `window`, `document`, `fs`, `fetch`, React, `Math.random`, `Date`.
 - All randomness from a seeded PRNG (`prng.ts`, mulberry32). Same spec ⇒ byte-identical SVG (snapshot-tested).
-- Allowed SVG features (identical in resvg and browsers): paths, basic shapes, linear/radial gradients, `<pattern>`, `clipPath`, `mask`, `opacity`, transforms, `feGaussianBlur`, `feDropShadow`. **Forbidden**: `<text>` (except server preview composition), `<foreignObject>`, `<script>`, external `href`, `feTurbulence`, CSS.
+- Allowed SVG features (identical in resvg and browsers): paths, basic shapes, linear/radial gradients, `<pattern>`, `clipPath`, `mask`, `opacity`, transforms, `feGaussianBlur`, `feDropShadow`. **Forbidden**: free text, `<foreignObject>`, `<script>`, external `href`, `feTurbulence`, CSS. Preview clocks use generated digit outlines rather than loading fonts inside an SVG image.
 - Glyph markup is injected through a `GlyphSource` interface (`get(name, weight) → string | undefined`) — the renderer never loads data itself.
 - Every user-controlled value reaching SVG is validated by Zod first (hex colours, enums, bounded numbers, glyph names `^[a-z0-9-]{1,48}$`, asset keys by strict regex). No free text ever reaches SVG.
 
@@ -186,23 +186,38 @@ One pure TypeScript renderer, `lib/render`, turns a `ThemeSpec` (JSON tokens, `d
 ```ts
 interface RenderResult {
   svg: string;                       // everything drawable as vector
+  width: number;                     // intrinsic SVG coordinate dimensions
+  height: number;
   background?: {                     // photo wallpapers only
     kind: 'image'; assetKey: string; focalX: number; focalY: number; dim: number;
+    placement?: {                    // optional composed photo viewport
+      x: number; y: number; w: number; h: number;
+      shape?: 'square' | 'rounded' | 'circle' | 'squircle'; radius?: number;
+    };
   };
   grain: number;                     // 0..1 — applied as a post-process, NOT in SVG
+  noiseSeed: number;                 // deterministic raster noise
+  warnings: string[];                // e.g. missing glyph fallback
+  layers?: Array<{                   // ordered scene; rasterizers use these instead of parent SVG
+    result: RenderResult; x: number; y: number; w: number; h: number;
+    shape?: 'square' | 'rounded' | 'circle' | 'squircle'; radius?: number;
+  }>;
 }
 ```
 
-- **Grain** (film noise) is a post-process for speed and consistency: server = `sharp.composite` of a seeded RGBA noise tile (`tile: true`, `blend: 'soft-light'`); client = canvas pattern from the same seeded tile; DOM preview = CSS overlay. Same seed, same tile.
-- **Photo wallpapers** (`kind: 'image'`): the SVG contains only overlays (dim, decorations). Rasterizers draw the photo first: server fetches the R2 object via the SDK; client fetches the CDN URL with CORS and `createImageBitmap`; DOM preview uses a CSS background. SVG-in-`<img>` cannot load external images, so never put the photo inside the SVG.
+- **Grain** (film noise) is a post-process for speed and consistency: server = `sharp.composite` of a seeded RGBA noise tile (`tile: true`, `blend: 'soft-light'`); client = canvas pattern from the same seeded tile; DOM preview = CSS overlay. Same `noiseSeed`, same tile. Rasterizers preserve the original alpha mask so grain cannot paint outside a shaped export.
+- **Photo wallpapers** (`kind: 'image'`): the SVG contains only overlays (including dim, applied once). Rasterizers draw the photo first: the server accepts `focalBackground` bytes supplied by the publish/storage caller (R2 loading is added in P05); the client fetches the validated CDN URL with CORS and `createImageBitmap`, or accepts a local JPEG/PNG/WebP `focalBackground` Blob (≤ 15 MiB) for the development playground and upload preview. DOM preview uses a CSS background. Optional placement is in intrinsic SVG coordinates and carries the photo's viewport and shape into compositions. SVG-in-`<img>` cannot load external images, so never put the photo inside the SVG.
+- **Preview scenes** retain ordered `layers` so wallpaper photos, icon crops, grain, and clipping are composed independently in both rasterizers. Their parent SVG is a vector-only inspection representation and is not rasterized a second time. Shared photo bytes are decoded once per export. Rasterizers reject cycles, more than 128 nodes, depth over eight, any canvas over 16.7M pixels, and aggregate layer work over four times that budget.
+- Composition callers supply deterministic unique `prefix` values for SVG ids; standalone renderers provide stable defaults. Canonical public types live in `lib/render/types.ts`.
+- Wallpaper photo icons composite an opaque palette background beneath the photo and overlays before applying the export shape once. This keeps iOS exports opaque and shaped exports transparent only outside their shape, including when local source pixels have alpha. Photo metadata may coexist with ordered layers for inspection; rasterizers follow the layers.
 
 ### 4.3 Glyph data
 
-`scripts/generate-glyphs.ts` reads `@phosphor-icons/core` and writes `public/glyphs/v1/{weight}.json` (`{ [name]: innerSvgMarkup }`, sanitised) + `public/glyphs/v1/manifest.json` (names, categories, tags). Server reads these from disk (traced via `outputFileTracingIncludes`); browser fetches only the weight in use (immutable cache).
+`scripts/generate-glyphs.ts` reads `@phosphor-icons/core` and writes `public/glyphs/v1/{weight}.json` (`{ [name]: innerSvgMarkup }`, sanitised) + `public/glyphs/v1/manifest.json` (names, categories, tags). Brand-category entries and `-logo` glyphs are excluded (1,432 generic glyphs with Phosphor 2.1.1), following D9. Server reads these from disk (traced via `outputFileTracingIncludes`); browser fetches only the weight in use (immutable cache). Both loaders validate records with the same pure markup validator before exposing a `GlyphSource`.
 
 ### 4.4 Fonts
 
-OFL fonts (list in `docs/04`) exist twice: `next/font/google` for DOM, and TTF files in `assets/fonts/` for resvg. Server preview images are **language-neutral** (no words: digits + shapes only) so one image serves both locales. Client exports (wallpapers, icons, decor widgets) contain no text.
+OFL fonts (list in `docs/04`) exist twice: `next/font/google` for DOM, and TTF files in `assets/fonts/` for resvg. `fonts:fetch` also generates committed `content/clock-outlines.json` with fixed `10:24` and `9:41` digit paths through resvg's font conversion, normalized to their bounds. Resvg uses each variable font's default instance; the generated clock paths do not promise variable-weight interpolation. Both preview renderers embed those same paths for font-shape parity; browser SVG images never depend on external fonts. Preview images are **language-neutral** (no words: digits + shapes only) so one image serves both locales. Client exports (wallpapers, icons, decor widgets) contain no text.
 
 ### 4.5 Output sizes
 

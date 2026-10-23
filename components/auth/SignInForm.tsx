@@ -178,7 +178,7 @@ export function SignInForm({
         <Heading as="h1" textStyle="display.lg">
           {t('signInTitle')}
         </Heading>
-        <Text color="fg.muted" textStyle="body.sm">
+        <Text textStyle="body.sm" color="fg.muted">
           {t('signInDescription')}
         </Text>
       </Stack>

@@ -8,7 +8,7 @@ export default async function NotFound(): Promise<ReactElement> {
   return (
     <Container as="main" id="main" tabIndex={-1} maxW="container.xl" px="4" py="20">
       <Stack align="center" gap="6" textAlign="center">
-        <Text color="brand.fg" textStyle="display.lg" aria-hidden="true">
+        <Text textStyle="display.lg" color="brand.fg" aria-hidden="true">
           404
         </Text>
         <Heading as="h1" textStyle="display.lg">

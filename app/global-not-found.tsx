@@ -15,7 +15,7 @@ export default function GlobalNotFound(): ReactElement {
           <Provider>
             <Container as="main" maxW="2xl" px="4" py="20">
               <Stack gap="10" align="center" textAlign="center">
-                <Text color="brand.fg" textStyle="display.lg" aria-hidden="true">
+                <Text textStyle="display.lg" color="brand.fg" aria-hidden="true">
                   404
                 </Text>
                 <Box lang="en" dir="ltr">

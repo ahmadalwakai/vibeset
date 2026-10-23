@@ -34,9 +34,9 @@ One deterministic renderer that turns a `ThemeSpec` into wallpapers, icons, widg
    - `noise.ts` — `noiseTile(seed, grain, size = 128)` → `Uint8ClampedArray` RGBA (alpha = round(grain × 255 × value)).
    - `palette.ts` — `deriveWallpaperColors(spec.palette, kind)`, `inkMuted(palette)`.
    - `wallpaper/{index,mesh,blobs,waves,pattern,scatter,aurora,sky,shapes,image}.ts` + `shapes/bow.ts` — algorithms from `docs/05` §3. `index.ts` exports `renderWallpaper(spec, which: 'home' | 'lock', { w, h }, glyphs): RenderResult` with `warnings`.
-   - `icon.ts` — `renderIcon(style, glyphMarkup, { size, platform: 'ios' | 'shaped', wallpaper?: RenderResult })` per `docs/05` §4 (iOS opaque full-bleed; shaped clip + transparent).
+   - `icon.ts` — `renderIcon(style, glyphMarkup, { size, platform: 'ios' | 'shaped', palette, glyphs, wallpaper?: RenderResult, prefix? })` per `docs/05` §4 (iOS opaque full-bleed; shaped clip + transparent).
    - `widgets.ts` — `renderWidget(kind: 'glyphBadge' | 'ring' | 'stickerCollage' | 'photoFrame', spec, { w, h }, glyphs)` (no text).
-   - `preview.ts` — `renderHomePreview(spec, glyphs, apps, { w, h })`, `renderLockPreview(spec, glyphs, { w, h })` (only file allowed to use `<text>`: digits + ":" with `font-family` from `spec.type.display`).
+   - `preview.ts` — `renderHomePreview(spec, glyphs, apps, { w, h, prefix? })`, `renderLockPreview(spec, glyphs, { w, h, prefix? })`; embed fixed clock outlines generated from the chosen display font, following architecture §4.4, so SVG image decoding does not rely on external fonts.
    - `devices.ts` — presets `phone` 1320×2868, `tablet` 2048×2732, `desktop` 2560×1440, `desktop4k` 3840×2160, `thumb` 360×780, `preview` 720×1560, `og` 1200×630.
    - `index.ts` — public API re-exports.
 
@@ -53,7 +53,7 @@ One deterministic renderer that turns a `ThemeSpec` into wallpapers, icons, widg
 
 ## Acceptance checks
 
-- [ ] `npm run glyphs:build` and `npm run fonts:fetch` succeed; manifest lists ~1,500 glyphs; all app glyphs valid.
+- [ ] `npm run glyphs:build` and `npm run fonts:fetch` succeed; manifest lists 1,432 generic glyphs with Phosphor 2.1.1 (brands excluded); all app glyphs valid.
 - [ ] `/dev/render` shows every kind and fill; changing seed changes output; same seed is stable after reload.
 - [ ] `.tmp/` outputs from `scripts/render-sample.ts` match the browser playground visually (colours, layout, grain).
 - [ ] Phone wallpaper JPEG ≤ 3 MB; server render of a phone wallpaper < 3 s locally.
