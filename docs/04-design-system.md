@@ -165,7 +165,7 @@ Signature interactions:
 
 **Site — mobile**: glass top app bar 56 px (wordmark at start, search icon, overflow menu: language, colour mode, account) that hides on scroll down and reappears on scroll up. Glass bottom tab bar 64 px + safe area: Home (house), Explore (magnifying-glass), Studio (magic-wand), Saved (heart), Account (user-circle). Content gets matching bottom padding.
 
-**Site — md+**: top nav (wordmark, Home, Explore, Studio, Saved, search input, language switch, colour mode, user menu). No bottom bar. Footer with legal links and language switch.
+**Site — md+**: top nav (wordmark, Home, Explore, Studio, Saved, search input, language switch, colour mode, user menu). P02 uses the prompt's search icon linking to `/explore?focus=1`; P07 adds the working search input. No bottom bar. Footer with legal links and language switch.
 
 **Theme grid**: `SimpleGrid columns={{ base: 2, sm: 3, md: 4, xl: 5 }} gap={{ base: 3, md: 5 }}`. Card = `AspectRatio ratio={9 / 19.5}` image with `rounded="card"`, `bg={dominantColor}` placeholder, `loading="lazy"`, `decoding="async"`, `width/height` attributes; first row `fetchPriority="high"` and no lazy. Cards use `contentVisibility: 'auto'` + `containIntrinsicSize`.
 

@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import createNextIntlPlugin from 'next-intl/plugin';
 import { z } from 'zod';
 
 const cdnOrigin = new URL(
@@ -33,7 +34,11 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   agentRules: false,
   poweredByHeader: false,
-  experimental: { optimizePackageImports: ['@chakra-ui/react', '@phosphor-icons/react'] },
+  output: 'standalone',
+  experimental: {
+    globalNotFound: true,
+    optimizePackageImports: ['@chakra-ui/react', '@phosphor-icons/react'],
+  },
   serverExternalPackages: ['@resvg/resvg-js'],
   outputFileTracingIncludes: {
     '/api/admin/**': ['./public/glyphs/**/*', './assets/fonts/**/*'],
@@ -62,4 +67,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+
+export default withNextIntl(nextConfig);

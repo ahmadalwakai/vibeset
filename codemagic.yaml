@@ -1,0 +1,46 @@
+workflows:
+  web-production:
+    name: Vibeset web production build
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      node: 24
+      vars:
+        NEXT_PUBLIC_SITE_URL: https://vibeset.app
+        NEXT_PUBLIC_CDN_URL: https://cdn.vibeset.app
+        NEXT_TELEMETRY_DISABLED: '1'
+        E2E_TEST_AUTH: '0'
+    cache:
+      cache_paths:
+        - $HOME/.npm
+    scripts:
+      - name: Install dependencies
+        script: npm ci --include=dev --include=optional
+      - name: Generate Chakra token declarations
+        script: npm run chakra:typegen
+      - name: Typecheck
+        script: npm run typecheck
+      - name: Lint
+        script: npm run lint
+      - name: Unit tests
+        script: |
+          set -euo pipefail
+          mkdir -p build
+          npm test -- --reporter=default --reporter=junit --outputFile=build/test-results.xml
+        test_report: build/test-results.xml
+      - name: Build Next.js
+        script: npm run build
+      - name: Package standalone server
+        script: |
+          set -euo pipefail
+          test -f .next/standalone/server.js
+          mkdir -p .next/standalone/.next build
+          cp -R .next/static .next/standalone/.next/static
+          if [ -d public ]; then
+            cp -R public .next/standalone/public
+          fi
+          artifact="build/vibeset-web-$(node -p process.platform)-$(node -p process.arch).tar.gz"
+          tar --exclude='.env*' --exclude='**/.env*' -czf "$artifact" -C .next/standalone .
+    artifacts:
+      - build/*.tar.gz
+      - build/test-results.xml

@@ -156,7 +156,11 @@ Naming rule: **"Theme" always means the product entity** (table `themes`, type `
 
 ---
 
-P00 temporarily uses `app/layout.tsx` and `app/page.tsx` for the design-system verification page. P02 replaces these with the locale-root layout above; the temporary page reads its copy from both message dictionaries without introducing locale routing early.
+P02 replaces the P00 verification page with `app/[locale]/layout.tsx` and the localized site shell. `app/global-not-found.tsx` supplies its own bilingual document for unmatched routes (Next 16.4 still requires `experimental.globalNotFound`). The locale catch-all calls `notFound()` so unknown paths retain their language. The temporary Home has translated hero copy and decorative brand artwork; the catalog and destination pages arrive in their ordered phases.
+
+`npm run typecheck` first runs `next typegen` so a fresh checkout has the generated `LayoutProps` and `next/root-params` declarations without requiring a production build.
+
+Codemagic can run the manual `web-production` workflow in the root `codemagic.yaml`. Next configuration enables standalone output; packaging adds `.next/static` and `public` to the traced server and excludes environment files. The archive is specific to the runner OS/architecture. The initial runner is Mac mini M2; use an eligible Linux runner for a Linux server artifact. This CI build does not deploy the app or run database migrations.
 
 The root layout wraps the Chakra provider in `components/ui/emotion-registry.tsx` (per [Chakra's streaming integration](https://chakra-ui.com/docs/get-started/frameworks/next-app)). The registry collects Emotion styles per render and flushes them with `useServerInsertedHTML`, preventing style/script hydration mismatches with Cache Components. `@emotion/cache` is a direct dependency for this integration. Next.js 16.4 also requires an explicit `partialPrefetching: true` for new Cache Components apps. Set `agentRules: false` to preserve this repository's own agent instructions.
 

@@ -1,36 +1,87 @@
 {
   "common": {
-    "bootstrap": {
-      "title": "A little colour. A whole new mood.",
-      "description": "A soft, playful starting point for your next home screen. Free themes, made to feel like you.",
-      "stage": "Design system · P00",
-      "brandName": "vibeset",
-      "skipLink": "Skip to content",
-      "toggleColorMode": "Toggle color mode",
-      "paletteTitle": "Meet your new favourite colours",
-      "paletteDescription": "Orchid, peach and a little breathing room. Made for bright days and late nights.",
-      "brandLabel": "Orchid",
-      "peachLabel": "Peach",
-      "neutralLabel": "Soft neutrals",
-      "brandButton": "Try orchid",
-      "peachButton": "Try peach",
-      "buttonHint": "Try a button, then switch between light and dark.",
-      "successTitle": "Looking good",
-      "successDescription": "Your colours and interactions are ready.",
-      "typographyTitle": "A few words, with feeling",
-      "display2xl": "Make room for good vibes.",
-      "displayXl": "Your phone, your mood.",
-      "displayLg": "A fresh start feels good.",
-      "headingMd": "Little details. A lovely difference.",
-      "headingSm": "Something that feels like you.",
-      "bodyMd": "A calm canvas for the things you love. Mix a little colour into your everyday.",
-      "bodySm": "Thoughtful colours, gentle motion and space to breathe.",
-      "caption": "Small details, considered.",
-      "arabicTitle": "Good vibes, in every language",
-      "arabicDescription": "Designed to feel at home in English and Arabic.",
-      "arabicSample": "Free aesthetic themes for your phone",
-      "footer": "A little preview of what’s to come."
+    "brandName": "vibeset",
+    "save": "Save",
+    "cancel": "Cancel",
+    "retry": "Try again",
+    "close": "Close",
+    "back": "Back",
+    "loading": "Loading…",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "skipToContent": "Skip to content",
+    "toggleColorMode": "Toggle colour mode",
+    "signIn": "Sign in",
+    "search": "Search",
+    "errorTitle": "Something went wrong",
+    "confirmationLabel": "Confirm this action",
+    "confirmationHint": "Type {value} to confirm.",
+    "confirmationMismatch": "The text does not match. Enter it exactly as shown.",
+    "confirmationPending": "Please wait for this action to finish.",
+    "emptyTitle": "Nothing here yet",
+    "emptyDescription": "When there is something to show, you will find it here.",
+    "dismissSheet": "Close panel",
+    "loadingMore": "Loading more…",
+    "loadMore": "Load more",
+    "endOfList": "You’re all caught up.",
+    "footer": {
+      "description": "A fresh look for your phone, made yours.",
+      "copyright": "© Vibeset. All rights reserved."
+    },
+    "notFound": {
+      "title": "This page wandered off.",
+      "description": "We could not find that page. Head home and find a little inspiration.",
+      "home": "Back to home"
     }
+  },
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "studio": "Studio",
+    "saved": "Saved",
+    "account": "Account",
+    "primary": "Primary navigation",
+    "mobile": "Main tabs",
+    "label": "Navigation",
+    "more": "More options",
+    "language": "Language",
+    "languageName": "English",
+    "languages": {
+      "en": "English",
+      "ar": "العربية"
+    },
+    "switchLanguage": "Switch to {language}"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "A little colour. A fresh feeling.",
+      "title": "Your phone. Your mood.",
+      "subtitle": "Free wallpapers, matching icons and a little room to make them yours.",
+      "explore": "Explore themes",
+      "studio": "Open Studio"
+    },
+    "metadata": {
+      "title": "Vibeset · Free phone themes",
+      "description": "Find your next look with free aesthetic wallpapers, matching icons and themes you can make your own. In English and Arabic."
+    }
+  },
+  "explore": {
+    "title": "Explore themes"
+  },
+  "theme": {
+    "title": "Theme"
+  },
+  "studio": {
+    "title": "Studio"
+  },
+  "setup": {
+    "title": "Set up your theme"
+  },
+  "saved": {
+    "title": "Saved"
+  },
+  "account": {
+    "title": "Account"
   },
   "auth": {
     "magicLinkEmail": {
@@ -41,5 +92,31 @@
       "expiry": "This link expires in 10 minutes.",
       "ignore": "If you did not request this email, you can ignore it."
     }
+  },
+  "creator": {
+    "title": "Creator space"
+  },
+  "admin": {
+    "title": "Administration"
+  },
+  "errors": {
+    "UNAUTHENTICATED": "Sign in to continue.",
+    "FORBIDDEN": "You do not have access to this action. Return home or try another account.",
+    "NOT_FOUND": "We could not find this item. Try another link.",
+    "VALIDATION": "Check the highlighted details and try again.",
+    "RATE_LIMITED": "Too many requests. Wait a moment and try again.",
+    "CONFLICT": "This item has changed. Refresh and try again.",
+    "INVALID_STATE": "This action is no longer available. Refresh and try again.",
+    "UPLOAD_INVALID": "This image could not be uploaded. Check its format and size, then try again.",
+    "RENDER_FAILED": "We could not create this preview. Try again.",
+    "FEATURE_DISABLED": "This feature is currently unavailable. Check back later.",
+    "INTERNAL": "Something went wrong. Try again in a moment.",
+    "NETWORK": "We could not connect. Check your connection and try again.",
+    "OFFLINE": "You’re offline. Reconnect and try again."
+  },
+  "legal": {
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "copyright": "Copyright"
   }
 }
