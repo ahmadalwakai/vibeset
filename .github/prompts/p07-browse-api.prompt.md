@@ -13,7 +13,7 @@ Fast, cached, beautiful browsing for everyone, and the stable public API that th
 
 ## Tasks
 
-1. **Contracts**: `lib/dto.ts` exactly as `docs/03` §3.3; `lib/utils/cursor.ts` (`encodeCursor`, `decodeCursor` with Zod, offset variant); `lib/validation/themes.ts` → `themeListQuerySchema` (parses URL search params: `q`, `tags` comma list ≤ 5, `color`, `sort` default `trending`, `cursor`, `limit` 1–48 default 24, `ids` comma list ≤ 100).
+1. **Contracts**: `lib/dto.ts` as `docs/03` §3.3 including its page-only extensions; `lib/utils/cursor.ts` (`encodeCursor`, `decodeCursor` with Zod, offset and collection variants) per §3.4; `lib/validation/themes.ts` → `themeListQuerySchema` (parses URL search params: `q`, `tags` comma list ≤ 5, `color`, `sort` default `trending`, `cursor`, `limit` 1–48 default 24, `ids` comma list ≤ 100), plus a canonical serializer shared by pages, filters and client pagination. IDs mode ignores limit/cursor and returns all unique requested published IDs in order.
 
 2. **Mappers** — `server/queries/mappers.ts`: `toThemeCard(row)`, `toThemeDetail(row)`, `toCollectionCard`, `toTag`, `toApp`. URLs via `cdnUrl`. One place only.
 
@@ -22,7 +22,7 @@ Fast, cached, beautiful browsing for everyone, and the stable public API that th
    - `server/queries/taxonomy.ts`: `listTags(kind?)`, `getAestheticTag(slug)` (tags `taxonomy`; `cacheLife('days')`).
    - `server/queries/collections.ts`: `listPublicCollections()`, `getHomeCollections()` (pinned editorial + seasonal whose window contains "now" — compute `new Date()` inside the cached function, `cacheLife('hours')`), `getCollection(slug, cursor)` (tags `collections`, `collection:{slug}`).
    - `server/queries/settings.ts`: `getPublicSettings()` → `{ announcement, heroCollectionSlug }` (tag `settings`).
-   - `server/queries/creators.ts`: `getCreatorPublic(handle)` (approved only; tag `creator:{handle}`).
+   - `server/queries/creators.ts`: `getCreatorPublic(handle, cursor?)` (approved only, published theme page of 24 sorted by new; tag `creator:{handle}` plus `themes`).
    - `server/queries/apps.ts`: `listApps()` (tag `apps`, `cacheLife('days')`).
 
 4. **API v1** (`app/api/v1/…/route.ts`, `handleRoute`, Zod parse, `Cache-Control: public, s-maxage=300, stale-while-revalidate=86400`): `themes`, `themes/[slug]`, `collections`, `collections/[slug]`, `tags`, `apps` — exactly `docs/03` §5. Unknown slug → 404 JSON.
@@ -36,10 +36,11 @@ Fast, cached, beautiful browsing for everyone, and the stable public API that th
 6. **Pages** (`app/[locale]/(site)/…`):
    - `page.tsx` **Home** (replace P02's temporary page): hero (hero collection or brand hero with gradient sparkle), "Trending" rail, "New" rail, aesthetic chips (links to `/a/[slug]`), active seasonal collection rail, "Make your own" Studio CTA. Each section its own component; metadata translated.
    - `explore/page.tsx` — static header + `FilterBar`; results in `<Suspense fallback={<ThemeGridSkeleton />}>` (awaits `searchParams`, parses with the schema, calls `listThemes`, renders first page + `InfiniteThemeGrid`). Empty state with "clear filters" + popular aesthetics; invalid params → normalised redirect.
-   - `a/[slug]/page.tsx` — aesthetic landing: `generateStaticParams` from aesthetic tags; title/description (EN/AR); grid sorted by trending; 404 if not an aesthetic tag; metadata + canonical.
+   - `a/[slug]/page.tsx` — aesthetic landing: `generateStaticParams` from curated aesthetic definitions; title/description (EN/AR); grid sorted by trending; runtime DB validation and 404 if not an aesthetic tag; metadata + canonical.
    - `collections/page.tsx`, `collections/[slug]/page.tsx` — editorial/seasonal only (user collections come in P11).
    - `c/[handle]/page.tsx` — creator profile (avatar, display name, bio, links with `rel="nofollow ugc noopener"`, their published themes).
-   - Add `AnnouncementBanner` to the site shell (reads `getPublicSettings()` inside Suspense).
+   - Add `AnnouncementBanner` to the site shell (reads `getPublicSettings()` inside Suspense); its dismissal id is derived from announcement content by the settings query.
+   - Credential-free builds retain static shells: each data child awaits `connection()` before dynamically importing any query module that eagerly loads DB/env. Cached queries remain independently shared and must not call `connection()` inside their cache scope. Metadata/static params use curated definitions or static translated text; DB validation runs at request time. Do not invoke DB-backed `getTopThemeSlugs()` during a build without database credentials.
 
 7. **Messages**: `home.*`, `explore.*`, collections and creator strings (EN + AR).
 

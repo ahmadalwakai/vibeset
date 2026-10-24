@@ -114,6 +114,14 @@ The dry run and development database each contain 473 candidates: 39 aesthetics 
 
 Visual corrections reserve a clear scatter status band, space coquette bows, adapt sky preview contrast, provide patterned preview status scrims, and add a primary-color glyph badge to wallpaper-filled icons. The preview scrims and icon badges leave wallpaper fingerprints unchanged. Final P06 checks pass: typecheck, lint, all 1,141 tests (including isolated live database suites) and production build. One earlier test run hit the auth module's setup timeout during concurrent image rendering; its isolated rerun and the subsequent full run passed. Local implementation continues while live R2/CDN and provider sign-in checks await credentials; no R2 publication is claimed.
 
+## P07 browsing and public API
+
+Home, Explore, aesthetic, public collection and approved creator pages now share cached, published-only DTO queries. Explore supports bilingual search, tag/colour filters, relevance-ranked search, three catalog sorts and abort-safe infinite pagination. The six public API endpoints validate requests, return documented data envelopes and public cache headers, and sanitize private error responses. IDs mode preserves requested order and excludes unpublished rows; timestamp cursors preserve database microseconds.
+
+P07 verification passes typecheck, lint, all 1,232 tests (including isolated database suites) and the production build with 115 static shells/paths. Local HTTP checks cover real DTOs and assets, all three sorts across six pages of 30 unique published fixtures, ordered IDs, draft exclusion, validation and 404 responses. Temporary query logging confirms a repeated identical request performs no additional database queries. Browser checks cover English/Arabic, 360/768/1440px layouts, filters/search, history restoration, infinite loading to 30 unique cards, RTL rail controls, collection/creator pages, image loading and announcement dismissal after reload. Fixtures and local CDN files are confined to the isolated test workflow; no draft was published to the main database or R2.
+
+Streamed preview testing exposed Chakra's single-child aspect-ratio check; catalog previews now use CSS aspect ratios, and matching style-prop order avoids streamed hydration class differences. Lighthouse scores, real provider sign-in and live CDN/R2 verification remain pending; no performance score or live publication is claimed.
+
 ## Codemagic build
 
 The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the public `ahmadalwakai/vibeset` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.

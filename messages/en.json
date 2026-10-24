@@ -32,6 +32,11 @@
       "title": "This page wandered off.",
       "description": "We could not find that page. Head home and find a little inspiration.",
       "home": "Back to home"
+    },
+    "pagination": {
+      "next": "Next page",
+      "previous": "Previous page",
+      "first": "Back to first page"
     }
   },
   "nav": {
@@ -58,18 +63,124 @@
       "title": "Your phone. Your mood.",
       "subtitle": "Free wallpapers, matching icons and a little room to make them yours.",
       "explore": "Explore themes",
-      "studio": "Open Studio"
+      "studio": "Open Studio",
+      "collectionLabel": "The current edit",
+      "viewCollection": "Explore collection",
+      "collectionAlt": "{name} — collection preview"
     },
     "metadata": {
       "title": "Vibeset · Free phone themes",
       "description": "Find your next look with free aesthetic wallpapers, matching icons and themes you can make your own. In English and Arabic."
+    },
+    "sections": {
+      "trending": "Trending now",
+      "new": "Fresh arrivals",
+      "aesthetics": "Find your aesthetic",
+      "collections": "Collected for the moment",
+      "viewAll": "View all"
+    },
+    "empty": {
+      "themesTitle": "Fresh looks are on the way.",
+      "themesDescription": "Explore an aesthetic or make something of your own while new themes arrive.",
+      "collectionsTitle": "The next edit is coming together.",
+      "collectionsDescription": "Explore individual themes for a little inspiration in the meantime."
+    },
+    "cta": {
+      "eyebrow": "A little more you",
+      "title": "Make a look of your own.",
+      "description": "Choose your colours and details. Give your phone a feeling that fits.",
+      "action": "Open Studio"
+    },
+    "announcement": {
+      "dismiss": "Dismiss announcement"
     }
   },
   "explore": {
-    "title": "Explore themes"
+    "title": "Find your next feeling.",
+    "description": "Explore wallpapers and matching icons by mood, colour or aesthetic.",
+    "searchLabel": "Search themes",
+    "searchPlaceholder": "Try lavender, calm or Y2K…",
+    "clearSearch": "Clear search",
+    "filters": "Filters",
+    "applyFilters": "Apply filters",
+    "resetFilters": "Reset filters",
+    "activeFilters": "Active filters",
+    "removeFilter": "Remove {name}",
+    "clearAll": "Clear all",
+    "sortLabel": "Sort themes",
+    "sort": {
+      "trending": "Trending",
+      "new": "Newest",
+      "popular": "Most downloaded",
+      "relevance": "Relevance"
+    },
+    "groups": {
+      "aesthetic": "Aesthetic",
+      "mood": "Mood",
+      "season": "Season",
+      "style": "Style",
+      "color": "Colour"
+    },
+    "colors": {
+      "pink": "Pink",
+      "red": "Red",
+      "orange": "Orange",
+      "yellow": "Yellow",
+      "green": "Green",
+      "teal": "Teal",
+      "blue": "Blue",
+      "purple": "Purple",
+      "brown": "Brown",
+      "black": "Black",
+      "white": "White",
+      "gray": "Grey",
+      "multi": "Multicolour"
+    },
+    "empty": {
+      "title": "No themes match just yet.",
+      "description": "Try a different word or give your filters a little more room.",
+      "clear": "Clear filters"
+    },
+    "popularAesthetics": "Explore an aesthetic",
+    "filterLimit": "Choose up to {count} tags.",
+    "metadata": {
+      "title": "Explore themes",
+      "description": "Find free phone themes by aesthetic, mood and colour. Discover wallpapers with matching icons."
+    },
+    "aesthetic": {
+      "eyebrow": "Find your aesthetic",
+      "fallbackTitle": "Aesthetic themes",
+      "emptyTitle": "This look is taking shape.",
+      "emptyDescription": "There are no published themes in this aesthetic yet. Explore another look in the meantime.",
+      "browse": "Explore more themes"
+    },
+    "collections": {
+      "title": "A little inspiration, collected.",
+      "description": "Discover thoughtful edits and seasonal looks for your phone.",
+      "metadata": {
+        "title": "Theme collections",
+        "description": "Browse curated edits and seasonal collections of free phone themes."
+      },
+      "emptyTitle": "New collections are on the way.",
+      "emptyDescription": "Explore individual themes while the next collection comes together.",
+      "browse": "Explore themes",
+      "detailTitle": "Theme collection",
+      "detailDescription": "Discover a curated collection of free phone themes.",
+      "emptyItemsTitle": "This collection is taking shape.",
+      "emptyItemsDescription": "There are no published themes in this collection yet.",
+      "themeCount": "{count, plural, =0 {No themes} one {{formattedCount} theme} other {{formattedCount} themes}}"
+    }
   },
   "theme": {
-    "title": "Theme"
+    "title": "Theme",
+    "previewAlt": "{name} — home screen preview",
+    "previewUnavailable": "Preview unavailable",
+    "open": "View {name}",
+    "by": "By",
+    "rail": {
+      "previous": "Previous in {label}",
+      "next": "Next in {label}"
+    }
   },
   "studio": {
     "title": "Studio",
@@ -231,7 +342,16 @@
     "administration": "Administration"
   },
   "creator": {
-    "title": "Creator space"
+    "title": "Creator space",
+    "public": {
+      "eyebrow": "Made by a creator",
+      "themes": "Published themes",
+      "metadataTitle": "Creator themes",
+      "metadataDescription": "Discover original phone themes shared by Vibeset creators.",
+      "emptyTitle": "A new collection of ideas.",
+      "emptyDescription": "This creator has no published themes yet. Explore other looks while they create.",
+      "browse": "Explore themes"
+    }
   },
   "admin": {
     "title": "Administration"

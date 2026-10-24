@@ -8,6 +8,7 @@ import {
   Link as ChakraLink,
   Popover,
   Portal,
+  Skeleton,
   SkeletonCircle,
   Stack,
   Text,
@@ -17,6 +18,7 @@ import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/ssr/MagnifyingGl
 import { getTranslations } from 'next-intl/server';
 import { Suspense, type ReactElement } from 'react';
 import { BrandWordmark } from '@/components/common/BrandWordmark';
+import { SearchInput } from '@/components/explore/SearchInput';
 import { ColorModeButton } from '@/components/ui/color-mode';
 import { Link } from '@/i18n/navigation';
 import { DesktopNav } from './BottomNav';
@@ -63,6 +65,12 @@ export async function SiteHeader(): Promise<ReactElement> {
               <DesktopNav />
             </Box>
 
+            <Box display={{ base: 'none', lg: 'block' }} flex="1" minW="24" maxW="64">
+              <Suspense fallback={<Skeleton h="11" rounded="full" w="full" />}>
+                <SearchInput compact />
+              </Suspense>
+            </Box>
+
             <HStack ms="auto" gap={{ base: '1', md: '0', lg: '1' }} flexShrink="0">
               <IconButton
                 asChild
@@ -70,6 +78,7 @@ export async function SiteHeader(): Promise<ReactElement> {
                 size="lg"
                 rounded="button"
                 aria-label={common('search')}
+                display={{ base: 'inline-flex', lg: 'none' }}
               >
                 <Link href="/explore?focus=1">
                   <Icon asChild boxSize="5">

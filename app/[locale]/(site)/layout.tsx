@@ -1,9 +1,10 @@
 import { Box, Container, Link as ChakraLink } from '@chakra-ui/react';
 import { getTranslations } from 'next-intl/server';
-import type { ReactElement } from 'react';
+import { Suspense, type ReactElement } from 'react';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
+import { SiteAnnouncement } from '@/components/layout/SiteAnnouncement';
 
 export default async function SiteLayout({
   children,
@@ -29,6 +30,9 @@ export default async function SiteLayout({
         {t('skipToContent')}
       </ChakraLink>
       <SiteHeader />
+      <Suspense fallback={null}>
+        <SiteAnnouncement />
+      </Suspense>
       <Container
         as="main"
         id="main"
