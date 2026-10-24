@@ -1831,6 +1831,59 @@
     "OFFLINE": "You’re offline. Reconnect and try again."
   },
   "legal": {
+    "support": {
+      "title": "Support",
+      "description": "Help with Vibeset wallpapers, calendar widgets and saved choices, in the iPhone app and on the web.",
+      "navigation": "Support navigation",
+      "home": "Vibeset home",
+      "otherLanguage": "العربية",
+      "privacy": "Read our Privacy notice",
+      "contact": {
+        "title": "Contact support",
+        "description": "For help or a content concern, email {name}, the operator of Vibeset.",
+        "include": "Include your device model, iOS or browser version, app version/build if available, language and the steps that led to the problem. A theme link or a screenshot with private information removed can help.",
+        "safety": "Do not send passwords, sign-in links, private photos, payment details or other sensitive information. We will not ask for your Apple Account password."
+      },
+      "iphone": {
+        "title": "Using the iPhone app",
+        "description": "The initial app lets you browse published themes, keep device-local favorites, save or share a phone wallpaper, and use a theme’s colors for a small or medium calendar and time widget. You can report a theme or hide content on your device without signing in.",
+        "availability": "You need a compatible installed app build to use native features. Opening this website or downloading a wallpaper does not install the iPhone app or its widget. Website accounts, Studio editing and icon-pack export are separate from the initial native app."
+      },
+      "wallpaper": {
+        "title": "Save and set a wallpaper",
+        "choose": "Open a theme in the iPhone app and choose Save wallpaper to Photos, or Share wallpaper.",
+        "save": "Allow adding photos if iOS asks. The save feature does not need to read your existing photo library. You can use Share if Photos access is unavailable.",
+        "apply": "Open the saved image in Photos, use Share → Use as Wallpaper, then adjust and confirm with the iOS controls. Menu names can vary by iOS version.",
+        "trouble": "If saving fails, check your connection and the app’s Photos access in iOS Settings, then try again. A theme may not have a downloadable phone wallpaper yet; contact support if its file remains unavailable.",
+        "scope": "The current native download is the phone home wallpaper. Lock-screen artwork shown in a preview is not a separate full-resolution native download. Vibeset does not change your wallpaper or replace app icons automatically."
+      },
+      "widget": {
+        "title": "Add the calendar widget",
+        "choose": "Open a theme in the app and choose Use for my calendar. The Widgets tab shows your selected colors.",
+        "add": "On the iPhone Home Screen, touch and hold an empty area, open the widget gallery and look for Vibeset. Choose a small or medium calendar widget and add it. The exact iOS controls can vary.",
+        "size": "The in-app preview does not add or place a widget for you. If Vibeset is missing from the gallery, open the installed app once, return to the Home Screen and try again; contact support if it is still missing.",
+        "refresh": "iOS controls widget refresh timing. If the date or theme looks out of date, reopen Vibeset and try applying the theme again. The widget uses your device’s date and time; it does not provide weather or account data.",
+        "language": "After changing the app language, apply the theme again to update the widget language. Clearing the calendar theme in the app resets its selection; remove the widget itself using the iOS Home Screen controls."
+      },
+      "connection": {
+        "title": "Connection and saved choices",
+        "description": "Browsing and downloading need a connection to Vibeset’s public catalogue and image services. If an error appears, check your connection and choose Retry. Offline or service errors do not mean that a theme was saved successfully.",
+        "storage": "Native favorites, language, appearance, hidden themes and hidden creators stay on this device. They do not sync with a website account. If the app cannot read saved choices, use its retry option before changing them. Reinstalling the app or clearing its data may remove local choices."
+      },
+      "safety": {
+        "title": "Report or hide content",
+        "report": "On a theme’s detail screen, choose Report this theme, select a reason and submit. An account is not required. The theme identifier, reason and any details you enter are sent for moderation only when you submit; do not include sensitive personal information.",
+        "hide": "Hide this theme or Hide this creator changes what appears on this device. You can undo these choices in Settings. Hiding does not send a report or remove content for other people; a matching selected calendar theme is cleared.",
+        "contact": "If reporting is unavailable, email support with the theme link and your concern. For copyright questions, see the Copyright page linked below."
+      },
+      "web": {
+        "title": "Using Vibeset in a browser",
+        "description": "For website wallpaper downloads, icon exports and manual setup, use the guide for your device. If an Instagram or TikTok browser cannot save a file, open the page in Safari or Chrome and try again.",
+        "ios": "iPhone setup guide",
+        "android": "Android setup guide",
+        "desktop": "Desktop setup guide"
+      }
+    },
     "terms": "Terms",
     "privacy": "Privacy",
     "copyright": "Copyright",

@@ -82,6 +82,7 @@ vibeset/
 │  │  │  ├─ become-creator/page.tsx
 │  │  │  └─ legal/[doc]/page.tsx    terms | privacy | copyright
 │  │  ├─ (auth)/sign-in/page.tsx
+│  │  ├─ support/page.tsx          Public bilingual support; no session or data-service reads
 │  │  ├─ creator/                   CreatorShell — approved creators (+ admins)
 │  │  │  └─ page.tsx · themes/page.tsx · themes/new/page.tsx · themes/[id]/page.tsx · profile/page.tsx
 │  │  └─ admin/                     AdminShell — admins only
@@ -262,6 +263,8 @@ The view-statistics store validates `vibeset:view-statistics:v1` (`{ v: 1, enabl
 Until a choice is ready and enabled, `TrackView` does not access its `vibeset:viewed:{themeId}` sessionStorage markers or send a view event. Enabled views use validated markers plus a tab-memory guard to count each theme at most once per browser session, best effort. Disabling or unmounting attempts to abort an active optional request; an already processed event cannot be undone. Disabling does not read/delete old markers or subtract totals. Storage events reload the latest actual preference, rather than trusting queued payloads. No banner, SDK, new cookie, backend permission or rate-limit change is introduced; actual download/export/remix/setup and favourite behavior is unchanged.
 
 Legal routes validate `locale` and `doc` before selecting typed locale TSX from `content/legal/`; unsupported documents use the localized not-found boundary. Static shells include all six pages, localized metadata and sitemap entries. `lib/legal.ts` holds the approved public identity and fixed document version date. Sign-in links to Terms/Privacy; creator submission explains the licence and retention with a Terms link. These notices do not add a stored acceptance-revision record. Final legal review and operational provider/retention arrangements remain release gates.
+
+`/support` and `/ar/support` are public static support pages, separate from the session-bearing site shell. They use the approved public contact from `lib/legal.ts`, localized metadata, footer navigation and sitemap entries. Native help covers manual wallpaper saving, small/medium calendar widget setup, system-controlled refresh, local choices and explicit reporting/hide controls; browser setup guides remain linked separately. Publishing these routes at a stable HTTPS origin is still an operational release requirement; source availability does not establish a live Support URL or native distribution.
 
 ### 5.1 Studio editor
 

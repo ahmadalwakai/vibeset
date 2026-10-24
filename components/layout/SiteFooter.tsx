@@ -56,6 +56,16 @@ export async function SiteFooter(): Promise<ReactElement> {
                   <Link href={href}>{legal(key)}</Link>
                 </ChakraLink>
               ))}
+              <ChakraLink
+                asChild
+                minH="11"
+                textStyle="body.sm"
+                color="fg.muted"
+                rounded="button"
+                focusRing="outside"
+              >
+                <Link href="/support">{legal('support.title')}</Link>
+              </ChakraLink>
             </HStack>
             <LocaleSwitcher />
           </Stack>

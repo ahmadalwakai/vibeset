@@ -14,6 +14,7 @@ export const SITEMAP_STATIC_PATHS = [
   '/legal/terms',
   '/legal/privacy',
   '/legal/copyright',
+  '/support',
 ] as const;
 export interface SitemapEntity {
   path: string;
