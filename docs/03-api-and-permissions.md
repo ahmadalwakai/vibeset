@@ -13,7 +13,8 @@ Every mutation, endpoint and DTO is listed here. When you add or change one, upd
 | Remix in Studio (local) + share remix link | ✓ | ✓ | ✓ | ✓ |
 | Favourites | local only | ✓ synced | ✓ | ✓ |
 | Personal collections (private / unlisted) | – | ✓ | ✓ | ✓ |
-| Save remix to account (generated wallpapers only) | – | ✓ | ✓ | ✓ |
+| Save generated remix to account | – | ✓ | ✓ | ✓ |
+| Save photo remix using own ready uploads | – | – | ✓ | ✓ |
 | Report a theme | ✓ (rate-limited) | ✓ | ✓ | ✓ |
 | Export / delete own account | – | ✓ | ✓ | ✓ |
 | Apply to become creator (18+) | – | ✓ | – | – |
@@ -165,7 +166,7 @@ Columns: **Auth** (`public`/`user`/`creator`/`admin`), **RL** = rate limit, **Ta
 | `submitReport` | `{ themeId, reason, details? ≤ 1000 }` | `{ id }` | public | 5/h per user-or-ip | — |
 | `updateAccount` | `{ name 1–60, locale }` | `{ ok }` | user | — | — |
 
-Notes: `saveRemix` rejects `kind: 'image'` wallpapers for non-creators (`FORBIDDEN`); user collections are never in shared caches.
+Notes: `saveRemix` and `updateRemix` reject `kind: 'image'` in either home or lock wallpapers for non-creators (`FORBIDDEN`). Approved creators/admins may use only their own ready wallpaper uploads in these self-service mutations. Studio always saves a private `source = 'remix'`, `status = 'draft'`; an approved creator may later submit it through the separate review/publish workflow. User collections and saved remixes are never in shared caches.
 
 ### Creator — `server/actions/creator.ts`
 

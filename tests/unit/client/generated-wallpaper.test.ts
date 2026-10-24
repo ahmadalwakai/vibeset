@@ -8,6 +8,7 @@ import { loadGlyphs } from '../../../lib/client/glyphs';
 import { rasterizeInBrowser } from '../../../lib/client/rasterize';
 import { prepareWallpaperFile } from '../../../lib/client/wallpaper';
 import type { WallpaperDownloadDTO } from '../../../lib/dto';
+import { DEVICE_PRESETS } from '../../../lib/render/devices';
 import type { WallpaperOption } from '../../../lib/wallpaper-export';
 import { fixtureGlyphs, wallpaperFixture } from '../render/wallpaper-fixture';
 
@@ -82,7 +83,62 @@ describe('wallpaper option composition and preparation', () => {
     expect(
       createWallpaperOptions({ spec, wallpapers: [asset], screen: { w: 100, h: 100 } }),
     ).toEqual([{ kind: 'cdn', asset }]);
+    expect(createWallpaperOptions({ spec, screen: { w: 100, h: 100 } })).toEqual(
+      (['phone', 'tablet', 'desktop'] as const).map((size) => ({
+        kind: 'render',
+        size,
+        ...DEVICE_PRESETS[size],
+      })),
+    );
   });
+  it.each(['phone', 'tablet', 'desktop'] as const)(
+    'prepares edited photo %s presets through the actual renderer and passes focal/dim to rasterization',
+    async (size) => {
+      const spec = wallpaperFixture();
+      spec.wallpaper = {
+        kind: 'image',
+        assetKey: 'uploads/wallpapers/00000000-0000-4000-8000-000000000001/full.jpg',
+        focalX: 0.1,
+        focalY: 0.8,
+        dim: 0.3,
+      };
+      const file = await prepareWallpaper({
+        slug: 'edited-photo',
+        spec,
+        option: { kind: 'render', size, ...DEVICE_PRESETS[size] },
+      });
+      expect(file.name).toBe(
+        `vibeset-edited-photo-${size}-${DEVICE_PRESETS[size].w}x${DEVICE_PRESETS[size].h}.jpg`,
+      );
+      expect(rasterizeInBrowser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          background: {
+            kind: 'image',
+            assetKey: spec.wallpaper.assetKey,
+            focalX: 0.1,
+            focalY: 0.8,
+            dim: 0.3,
+          },
+        }),
+        expect.objectContaining({ ...DEVICE_PRESETS[size], type: 'image/jpeg' }),
+      );
+      expect(loadGlyphs).not.toHaveBeenCalled();
+      await expect(
+        prepareWallpaper({
+          slug: 'edited-photo',
+          spec,
+          option: { kind: 'render', size, w: 120, h: 240 },
+        }),
+      ).rejects.toThrow('preset');
+      await expect(
+        prepareWallpaper({
+          slug: 'edited-photo',
+          spec,
+          option: { kind: 'render', size: 'screen', ...DEVICE_PRESETS[size] },
+        }),
+      ).rejects.toThrow('generated');
+    },
+  );
   it('renders the actual requested wallpaper at JPEG q0.92 and names its actual dimensions', async () => {
     const spec = wallpaperFixture();
     const before = structuredClone(spec);

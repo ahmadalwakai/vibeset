@@ -136,6 +136,12 @@ Theme pages now open a device-rendered icon picker with the 125-app catalogue, A
 
 Local browser checks cover a real 24-file ZIP (all PNGs 512×512 with transparent corners), an Arabic custom icon plus four correctly sized decor images, cancellation/retry, 3840×2160 and 1920×1200 JPEG downloads, Arabic 360px layouts and wizard completion after reload. Fixtures and catalogue additions were removed from the isolated test database afterward. Typecheck, lint, 1,413 unit tests, 58 isolated database tests and the production build (128 static shells/paths) pass. Real-device iOS share timing, a physical Shortcuts installation, Android ZIP opening and repeated-export memory profiling remain release checks.
 
+## P10 Studio
+
+Studio now supports an English/Arabic editor with five panels, bounded undo/redo, debounced local drafts, shareable generated designs, private account saves and exports of the edited specification. Mobile controls open in a tabbed sheet while retaining part of the phone preview. Published-source remixes are tracked once per editor after a successful save/export; local exports do not increment the original theme's download or icon counters. Photo designs use matching crop/dim rendering and require approved creator/admin ownership of ready uploads when saved; share URLs reject photos.
+
+Local browser checks cover palette editing and undo/redo, wallpaper/lock controls, draft restoration, a fresh-tab share with identical previews, visitor sign-in prompts, English/Arabic layouts at 360px, font changes and clean console output. Real downloads include a 1320×2868 JPEG and a 512×512 custom icon whose red background matches the edited spec. Isolated fixtures were removed afterward. Typecheck, lint, all 1,586 tests (one unrelated skipped test) and the production build (131 static shells/paths) pass. Physical-device sharing, real provider sign-in, photo CDN/CORS and device performance remain release checks.
+
 ## Codemagic build
 
 The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the public `ahmadalwakai/vibeset` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.

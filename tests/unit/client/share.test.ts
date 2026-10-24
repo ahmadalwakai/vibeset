@@ -8,6 +8,7 @@ import {
   shareFiles,
   shareUrl,
 } from '../../../lib/client/share';
+import { MAX_STUDIO_URL_LENGTH } from '../../../lib/studio';
 
 const anchor = { href: '', download: '', rel: '', click: vi.fn(), remove: vi.fn() };
 const share = vi.fn();
@@ -122,6 +123,15 @@ describe('file sharing', () => {
 
 describe('URL sharing', () => {
   const input = { title: 'Night theme', url: 'https://vibeset.test/en/t/night' };
+  it('accepts complete Studio URLs up to 6000 characters and rejects longer links before sharing', async () => {
+    const prefix = 'https://vibeset.test/studio?s=';
+    const url = prefix + 'a'.repeat(MAX_STUDIO_URL_LENGTH - prefix.length);
+    await expect(shareUrl({ ...input, url })).resolves.toBe('shared');
+    expect(share).toHaveBeenCalledWith({ ...input, url });
+    share.mockClear();
+    await expect(shareUrl({ ...input, url: `${url}a` })).rejects.toThrow();
+    expect(share).not.toHaveBeenCalled();
+  });
   it('calls native share before yielding and copies only when unsupported', async () => {
     const pending = shareUrl(input);
     expect(share).toHaveBeenCalledExactlyOnceWith(input);

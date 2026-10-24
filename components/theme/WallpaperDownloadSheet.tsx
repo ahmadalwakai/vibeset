@@ -20,12 +20,13 @@ import {
 import { chooseSaveStrategy, downloadFile, shareFiles } from '@/lib/client/share';
 import { track } from '@/lib/client/track';
 import { chooseWallpaperSize } from '@/lib/client/wallpaper';
-import type { ThemeDetailDTO } from '@/lib/dto';
+import type { ThemeExportSource } from '@/lib/theme-export';
 import { formatNumber } from '@/lib/utils/format';
 import type { WallpaperDimensions, WallpaperSize } from '@/lib/wallpaper-export';
 
 export interface WallpaperDownloadSheetProps {
-  theme: ThemeDetailDTO;
+  theme: ThemeExportSource;
+  onSaved?: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -48,9 +49,11 @@ function currentScreen(): WallpaperDimensions | undefined {
 function WallpaperDownloadBody({
   theme,
   platform,
+  onSaved,
 }: {
-  theme: ThemeDetailDTO;
+  theme: ThemeExportSource;
   platform: PlatformInfo;
+  onSaved?: () => void;
 }): ReactElement {
   const t = useTranslations('theme.download');
   const locale = useLocale();
@@ -66,7 +69,15 @@ function WallpaperDownloadBody({
     [theme.spec, theme.wallpapers, screenSize],
   );
   const [size, setSize] = useState<WallpaperSize>(
-    () => chooseWallpaperSize(theme.wallpapers, platform)?.size ?? 'desktop4k',
+    () =>
+      chooseWallpaperSize(theme.wallpapers ?? [], platform)?.size ??
+      (theme.wallpapers
+        ? 'desktop4k'
+        : platform.platform === 'desktop'
+          ? 'desktop'
+          : platform.isIPad
+            ? 'tablet'
+            : 'phone'),
   );
   const [attempt, setAttempt] = useState(0);
   const [prepared, setPrepared] = useState<Preparation | null>(null);
@@ -159,7 +170,8 @@ function WallpaperDownloadBody({
       }
       if (result === 'saved' && !completed.current) {
         completed.current = true;
-        track(theme.id, 'download');
+        if (theme.id) track(theme.id, 'download');
+        onSaved?.();
       }
       if (!mounted.current) return;
       if (result === 'saved') setSaved(true);
@@ -314,6 +326,7 @@ export function WallpaperDownloadSheet({
   theme,
   open,
   onOpenChange,
+  onSaved,
 }: WallpaperDownloadSheetProps): ReactElement {
   const t = useTranslations('theme.download');
   const platform = usePlatform();
@@ -329,6 +342,7 @@ export function WallpaperDownloadSheet({
           key={JSON.stringify([theme.id, theme.spec, theme.wallpapers])}
           theme={theme}
           platform={platform}
+          onSaved={onSaved}
         />
       ) : null}
     </ResponsiveSheet>

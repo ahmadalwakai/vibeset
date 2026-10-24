@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { MAX_ICON_EXPORT_FILES } from '../icon-export';
+import { MAX_STUDIO_URL_LENGTH } from '../studio';
 import { canShareFiles, isIOS } from './platform';
 import type { Platform } from './platform';
 
@@ -74,7 +75,7 @@ const urlShareSchema = z.object({
   title: z.string().trim().min(1).max(300),
   url: z
     .url()
-    .max(4096)
+    .max(MAX_STUDIO_URL_LENGTH)
     .refine((value) => {
       const url = new URL(value);
       return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password;

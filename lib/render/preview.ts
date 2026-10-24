@@ -1,16 +1,15 @@
 import { z } from 'zod';
 import clockData from '../../content/clock-outlines.json';
 import type { CatalogApp, ClockOutline, ClockText } from '../catalog';
-import { themeSpecSchema, type ThemeSpec, type WallpaperSpec } from './spec';
+import { themeSpecSchema, type ThemeSpec } from './spec';
 import type { FontId, GlyphSource, RenderDimensions, RenderLayer, RenderResult } from './types';
 import { composeLayers } from './composition';
-import { contrast, mixOklab } from './color';
+import { mixOklab } from './color';
+import { previewForeground } from './preview-colors';
 import { placeGlyph, resolveGlyph } from './glyphs';
 import { renderIcon } from './icon';
-import { deriveWallpaperColors } from './palette';
 import { fmt, idFactory, svgDocument, svgInner } from './svg';
 import { renderWallpaper } from './wallpaper';
-import { colorAt } from './wallpaper/context';
 import { renderWidget } from './widgets';
 
 const clocks: Record<FontId, Record<ClockText, ClockOutline>> = clockData;
@@ -41,30 +40,6 @@ function clock(
   const outline = clocks[font][time];
   const height = (width * outline.height) / outline.width;
   return `<svg x="${fmt(x)}" y="${fmt(y)}" width="${fmt(width)}" height="${fmt(height)}" viewBox="0 0 ${fmt(outline.width)} ${fmt(outline.height)}" color="${color}">${svgInner(outline.svg)}</svg>`;
-}
-
-function previewForeground(spec: ThemeSpec, wallpaper: WallpaperSpec): string {
-  if (wallpaper.kind === 'pattern')
-    return ['#000000', '#ffffff', spec.palette.ink].reduce((best, candidate) =>
-      contrast(candidate, spec.palette.bg) > contrast(best, spec.palette.bg) ? candidate : best,
-    );
-  if (wallpaper.kind !== 'sky') {
-    const estimate = mixOklab(spec.palette.bg, spec.palette.primary, 0.25);
-    return contrast('#ffffff', estimate) > contrast(spec.palette.ink, estimate)
-      ? '#ffffff'
-      : spec.palette.ink;
-  }
-  const colors = wallpaper.colors ?? deriveWallpaperColors(spec.palette, wallpaper.kind);
-  // Match renderSky's top gradient stop, including wrapped explicit color arrays.
-  const top =
-    wallpaper.mode === 'night'
-      ? mixOklab(colorAt(colors, 0), '#081128', 0.88)
-      : wallpaper.mode === 'sunset'
-        ? colorAt(colors, 2)
-        : mixOklab(colorAt(colors, 1), colorAt(colors, 3), 0.15);
-  return ['#000000', '#ffffff', spec.palette.ink].reduce((best, candidate) =>
-    contrast(candidate, top) > contrast(best, top) ? candidate : best,
-  );
 }
 
 function frame(

@@ -32,7 +32,7 @@ canShareFiles(files: File[])  // !!navigator.canShare?.({ files })
 
 ### 3.1 Wallpaper
 
-1. Theme page → **Download** → size sheet (Phone preselected on phones; Tablet on iPad; 4K and "My screen" render on device for generated wallpapers).
+1. Theme page → **Download** → size sheet (Phone preselected on phones; Tablet on iPad; 4K and "My screen" render on device for generated wallpapers). Studio uses the current edited spec for every export: phone/tablet/desktop render locally, including photo focal point/dimming; 4K/My screen remain generated-only. Export sources carry optional published IDs, so local Studio exports do not increment another theme's download/icon totals. Successful saves/downloads from a source theme claim one `remix` event per editor session.
 2. Opening the sheet prefetches the selected file as a blob.
 3. **Save to Photos** → share sheet → "Save Image".
 4. Inline guide: Photos → open the image → Share → **Use as Wallpaper** → adjust → Add → choose "Set as Wallpaper Pair" or "Customize Home Screen".

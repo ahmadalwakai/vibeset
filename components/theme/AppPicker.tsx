@@ -19,7 +19,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import type { FormEvent, ReactElement } from 'react';
 import { matchesSearch } from '@/lib/client/icon-export-utils';
-import type { AppDTO, ThemeDetailDTO } from '@/lib/dto';
+import type { AppDTO } from '@/lib/dto';
+import type { ThemeExportSource } from '@/lib/theme-export';
 import { MAX_CUSTOM_ICONS, MAX_SELECTED_APPS } from '@/lib/icon-export';
 import type { IconSelection } from '@/lib/icon-export';
 import { customIconSchema } from '@/lib/validation/icon-export';
@@ -58,7 +59,7 @@ export interface AppPickerProps {
   apps: readonly AppDTO[];
   selection: IconSelection;
   onSelectionChange: (selection: IconSelection) => void;
-  theme: ThemeDetailDTO;
+  theme: ThemeExportSource;
   platform: 'ios' | 'shaped';
   disabled?: boolean;
 }

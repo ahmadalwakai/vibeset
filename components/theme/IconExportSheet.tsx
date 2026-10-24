@@ -37,7 +37,8 @@ import { canShareFiles } from '@/lib/client/platform';
 import type { PlatformInfo } from '@/lib/client/platform';
 import { chunk, downloadFile, IOS_SHARE_BATCH, shareFiles } from '@/lib/client/share';
 import { track } from '@/lib/client/track';
-import type { AppDTO, ThemeDetailDTO } from '@/lib/dto';
+import type { AppDTO } from '@/lib/dto';
+import type { ThemeExportSource } from '@/lib/theme-export';
 import type { IconSelection } from '@/lib/icon-export';
 import { iconSelectionSchema } from '@/lib/validation/icon-export';
 import { formatNumber } from '@/lib/utils/format';
@@ -50,9 +51,10 @@ import {
 import type { IconExportState } from './icon-export-state';
 
 export interface IconExportSheetProps {
-  theme: ThemeDetailDTO;
+  theme: ThemeExportSource;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSaved?: () => void;
 }
 
 function GeneratedPreview({ file, index }: { file: File; index: number }): ReactElement {
@@ -94,7 +96,7 @@ function SaveIcons({
   onEdit,
 }: {
   state: IconExportState;
-  theme: ThemeDetailDTO;
+  theme: ThemeExportSource;
   platform: PlatformInfo;
   onSaved: (batch: number) => void;
   onEdit: () => void;
@@ -268,7 +270,9 @@ function SaveIcons({
           <Link
             href={
               platform.platform === 'ios'
-                ? { pathname: '/setup/ios', query: { theme: theme.slug } }
+                ? theme.id
+                  ? { pathname: '/setup/ios', query: { theme: theme.slug } }
+                  : '/setup/ios'
                 : platform.platform === 'android'
                   ? '/setup/android'
                   : '/setup/desktop'
@@ -299,10 +303,12 @@ function ExportFlow({
   theme,
   apps,
   platform,
+  onSaved,
 }: {
-  theme: ThemeDetailDTO;
+  theme: ThemeExportSource;
   apps: readonly AppDTO[];
   platform: PlatformInfo;
+  onSaved?: () => void;
 }): ReactElement {
   const t = useTranslations('theme.icons');
   const locale = useLocale();
@@ -400,7 +406,8 @@ function ExportFlow({
   function saved(batch: number): void {
     if (!tracked.current) {
       tracked.current = true;
-      track(theme.id, 'icon_export');
+      if (theme.id) track(theme.id, 'icon_export');
+      onSaved?.();
     }
     dispatch({ type: 'saved', run: state.run, batch });
   }
@@ -552,9 +559,11 @@ function ExportFlow({
 function CatalogContent({
   theme,
   platform,
+  onSaved,
 }: {
-  theme: ThemeDetailDTO;
+  theme: ThemeExportSource;
   platform: PlatformInfo;
+  onSaved?: () => void;
 }): ReactElement {
   const t = useTranslations('theme.icons');
   const common = useTranslations('common');
@@ -581,10 +590,15 @@ function CatalogContent({
         </Button>
       </Stack>
     );
-  return <ExportFlow theme={theme} apps={apps} platform={platform} />;
+  return <ExportFlow theme={theme} apps={apps} platform={platform} onSaved={onSaved} />;
 }
 
-export function IconExportSheet({ theme, open, onOpenChange }: IconExportSheetProps): ReactElement {
+export function IconExportSheet({
+  theme,
+  open,
+  onOpenChange,
+  onSaved,
+}: IconExportSheetProps): ReactElement {
   const t = useTranslations('theme.icons');
   const platform = usePlatform();
   return (
@@ -595,7 +609,12 @@ export function IconExportSheet({ theme, open, onOpenChange }: IconExportSheetPr
       description={t('description')}
     >
       {open && platform ? (
-        <CatalogContent key={theme.id} theme={theme} platform={platform} />
+        <CatalogContent
+          key={theme.id ?? theme.slug}
+          theme={theme}
+          platform={platform}
+          onSaved={onSaved}
+        />
       ) : null}
     </ResponsiveSheet>
   );

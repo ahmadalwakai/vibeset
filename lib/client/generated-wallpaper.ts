@@ -52,11 +52,11 @@ export function createWallpaperOptions({
   const options: WallpaperOption[] = wallpapers
     ? wallpapers.map((asset) => ({ kind: 'cdn', asset }))
     : [];
-  if (!generated) return options;
   if (!wallpapers) {
     for (const size of ['phone', 'tablet', 'desktop'] as const)
       options.push({ kind: 'render', size, ...DEVICE_PRESETS[size] });
   }
+  if (!generated) return options;
   options.push({ kind: 'render', size: 'desktop4k', ...DEVICE_PRESETS.desktop4k });
   if (screen) options.push(renderOptionSchema.parse({ kind: 'render', size: 'screen', ...screen }));
   return options;
@@ -79,8 +79,13 @@ export async function prepareWallpaper({
   if (option.kind === 'cdn')
     return prepareWallpaperFile(validSlug, option.asset, signal ?? new AbortController().signal);
   const selected = renderOptionSchema.parse(option);
-  if (spec.wallpaper.kind === 'image')
-    throw new TypeError('Custom sizes require a generated wallpaper');
+  if (spec.wallpaper.kind === 'image') {
+    if (selected.size === 'desktop4k' || selected.size === 'screen')
+      throw new TypeError('Custom sizes require a generated wallpaper');
+    const preset = DEVICE_PRESETS[selected.size];
+    if (selected.w !== preset.w || selected.h !== preset.h)
+      throw new TypeError('Photo wallpapers require standard preset dimensions');
+  }
   const [{ renderWallpaper }, { rasterizeInBrowser }, sources] = await Promise.all([
     import('../render/wallpaper'),
     import('./rasterize'),

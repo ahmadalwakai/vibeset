@@ -46,7 +46,7 @@ The feature ThemePack doesn't have: open any theme, change colours, wallpaper, i
    - **Save** (signed in): `saveRemix` / `updateRemix`; visitors get a sign-in prompt and their draft is kept. Photo wallpapers can't be saved by non-creators (`FORBIDDEN` → explain).
    - `track('remix')` once when opened with `?from` and the user downloads or saves.
 
-7. **Server** — `lib/validation/remixes.ts`, `server/services/remixes.ts` (`saveRemix`, `updateRemix`, `deleteRemix`: owner checks, status `draft`, source `remix`, `remix_of_id` from slug, name uniqueness not required, slug `remix-{random}`), `server/actions/studio.ts` (`createAction`, auth `user`, rate limit 30/h). Remixes never appear publicly.
+7. **Server** — `lib/validation/remixes.ts`, `server/services/remixes.ts` (`saveRemix`, `updateRemix`, `deleteRemix`: owner checks, status `draft`, source `remix`, `remix_of_id` from published slug, name uniqueness not required, slug `remix-{random}`), `server/actions/studio.ts` (`createAction`, auth `user`, save/update share a rate limit of 30/h). Studio saves private drafts; an approved creator may later submit one through the separate review/publish workflow. Both home and lock photo wallpapers require an approved creator/admin and their own ready uploads.
 
 8. **Messages**: `studio.*` (EN + AR).
 

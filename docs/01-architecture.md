@@ -248,10 +248,16 @@ iOS canvas limits: keep any canvas ≤ 16.7M pixels and release canvases after u
 | Icon export | dynamic import renderer + glyph weight JSON → chunked canvas render (progress, cancel) → iOS Web Share batches / ZIP |
 | Track | credential-free `fetch('/api/track', { keepalive: true, credentials: 'omit' })` → rate-limited upsert into `theme_stats_daily` |
 | Favourite | optimistic UI → server action → `favorites` row; visitors: localStorage, merged on sign-in |
-| Remix save | Studio → `saveRemix` action → `themes` row (source `remix`, status `draft`, never public) |
+| Remix save | Studio → `saveRemix` action → private `themes` row (source `remix`, status `draft`); approved creators may later submit through the separate review/publish workflow |
 | Creator submit | upload (presign → PUT to R2 → finalize) → create draft → submit → `pending_review` |
 | Admin publish | review → `approved` → `POST /api/admin/themes/{id}/publish` → render → R2 → row update (optimistic version check) → revalidate tags |
 | Generator | admin action (≤ 24/call) or CLI → specs + QA + duplicate hash → `draft` rows |
+
+---
+
+### 5.1 Studio editor
+
+Studio resolves explicit shared designs before source themes, then a validated local draft, then a freshly generated spec. Invalid explicit entries show a notice and retain a usable generated fallback. The editor validates every change, keeps 50 history entries and coalesces the same control within 400ms; drafts debounce for 500ms and flush before sign-in/navigation. Lock `variant` materializes a calmer copy once, with subsequent home/lock edits independent. Share links use canonical bounded LZ decoding (32KiB expanded JSON, 6,000-character URL) and reject either photo slot. The icon preview cache also includes wallpaper changes when icon fill samples the wallpaper. Mobile panels use a tabbed bottom sheet; desktop panels occupy the end column.
 
 ---
 
