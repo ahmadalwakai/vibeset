@@ -19,6 +19,11 @@ const publishInputSchema = z.object({
   themeId: themeIdSchema,
   actor: actorSchema,
   force: z.boolean().default(false),
+  preparedAttemptId: z
+    .uuid()
+    .length(36)
+    .transform((value) => value.toLowerCase())
+    .optional(),
 });
 const retentionSchema = z.object({
   themeId: themeIdSchema,
@@ -33,6 +38,8 @@ export interface PublishThemeInput {
   actor: Actor;
   force?: boolean;
   storage?: ObjectStorage;
+  /** System-only replay of an already deployed, immutable publication manifest. */
+  preparedAttemptId?: string;
 }
 
 export interface PublishThemeResult {
@@ -141,8 +148,11 @@ export async function publishTheme(input: PublishThemeInput): Promise<PublishThe
   const parsed = publishInputSchema.safeParse(input);
   if (!parsed.success)
     throw new AppError('VALIDATION', 'A valid theme, actor, and force flag are required');
-  const { themeId, actor, force } = parsed.data;
+  const { themeId, actor, force, preparedAttemptId } = parsed.data;
   if (actor.kind === 'user' && actor.role !== 'admin') throw new AppError('FORBIDDEN');
+  if (preparedAttemptId && actor.kind !== 'system') throw new AppError('FORBIDDEN');
+  if (preparedAttemptId && !input.storage)
+    throw new AppError('VALIDATION', 'A prepared publication requires explicit verified storage');
   const storage = input.storage ?? defaultStorage;
   const [loaded] = await db.select().from(themes).where(eq(themes.id, themeId));
   if (!loaded) throw new AppError('NOT_FOUND');
@@ -166,7 +176,7 @@ export async function publishTheme(input: PublishThemeInput): Promise<PublishThe
     specHash: loaded.specHash,
   };
   const next = captured.assetVersion + 1;
-  const attemptId = randomUUID();
+  const attemptId = preparedAttemptId ?? randomUUID();
   const prefix = themeAttemptPrefix(themeId, next, attemptId);
   let phase: 'render' | 'upload' = 'render';
   let rendered: Awaited<ReturnType<typeof renderPublishAssets>>;

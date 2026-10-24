@@ -1,0 +1,201 @@
+[
+  {
+    "slug": "bubblegum-y2k-g70l",
+    "nameEn": "Bubblegum Y2K",
+    "nameAr": "واي تو كي: علكة",
+    "descriptionEn": "Glossy color and playful symbols bring an early digital mood to your screen. Butterflies, stars and open grids keep the matching icons lively.",
+    "descriptionAr": "ألوان لامعة ورموز مرحة تستحضر بدايات العالم الرقمي على شاشتك. تتناثر الفراشات والنجوم بين الشبكات المفتوحة لتكملها أيقونات نابضة بالحيوية.",
+    "spec": {
+      "v": 1,
+      "type": {
+        "body": "readex-pro",
+        "display": "space-grotesk"
+      },
+      "decor": ["star", "heart", "butterfly"],
+      "icons": {
+        "bg": "#ff8fcf",
+        "bg2": "#7fd3ff",
+        "fill": "gradient",
+        "shape": "rounded",
+        "border": null,
+        "shadow": false,
+        "sticker": {
+          "color": "#7fd3ff",
+          "glyph": "star",
+          "corner": "tr"
+        },
+        "glyphColor": "#4a1238",
+        "glyphScale": 0.5416724130418151,
+        "glyphWeight": "fill"
+      },
+      "palette": {
+        "bg": "#ffe3f4",
+        "ink": "#4a1238",
+        "mode": "light",
+        "accent": "#7fd3ff",
+        "primary": "#ff8fcf",
+        "surface": "#fff5fb",
+        "inkMuted": "#8d5d7a"
+      },
+      "widgets": {
+        "ink": "#4a1238",
+        "style": "glass",
+        "accent": "#7fd3ff",
+        "radius": 0.3786564996349625,
+        "surface": "#fff5fb"
+      },
+      "wallpaper": {
+        "kind": "mesh",
+        "seed": 1555726603,
+        "grain": 0.05732574686408043,
+        "colors": null,
+        "points": 5,
+        "softness": 0.803490841947496
+      },
+      "lockWallpaper": {
+        "kind": "mesh",
+        "seed": 1555726604,
+        "grain": 0.05732574686408043,
+        "colors": null,
+        "points": 5,
+        "softness": 0.803490841947496
+      }
+    },
+    "specHash": "b33ba74020a888a3b54a7a9f875ee0c9bc51983d4df23efe2743c44ebcb63a9c",
+    "previewHash": "c000020403114935",
+    "tagSlugs": ["bold", "gradient", "playful", "y2k"]
+  },
+  {
+    "slug": "emo-pink-y2k-bzgq",
+    "nameEn": "Emo Pink Y2K",
+    "nameAr": "واي تو كي: إيمو وردي",
+    "descriptionEn": "Glossy color and playful symbols bring an early digital mood to your screen. Butterflies, stars and open grids keep the matching icons lively.",
+    "descriptionAr": "ألوان لامعة ورموز مرحة تستحضر بدايات العالم الرقمي على شاشتك. تتناثر الفراشات والنجوم بين الشبكات المفتوحة لتكملها أيقونات نابضة بالحيوية.",
+    "spec": {
+      "v": 1,
+      "type": {
+        "body": "readex-pro",
+        "display": "space-grotesk"
+      },
+      "decor": ["sparkle", "heart", "butterfly"],
+      "icons": {
+        "bg": "#722c4e",
+        "bg2": null,
+        "fill": "glass",
+        "shape": "squircle",
+        "border": null,
+        "shadow": false,
+        "sticker": null,
+        "glyphColor": "#ffe6f2",
+        "glyphScale": 0.6030240950919687,
+        "glyphWeight": "fill"
+      },
+      "palette": {
+        "bg": "#120a10",
+        "ink": "#ffe6f2",
+        "mode": "dark",
+        "accent": "#b5b5b5",
+        "primary": "#ff4fa3",
+        "surface": "#22131d",
+        "inkMuted": "#9b8993"
+      },
+      "widgets": {
+        "ink": "#ffe6f2",
+        "style": "solid",
+        "accent": "#b5b5b5",
+        "radius": 0.3066700615221635,
+        "surface": "#22131d"
+      },
+      "wallpaper": {
+        "kind": "pattern",
+        "scale": 1.3370042756199836,
+        "colors": null,
+        "pattern": "y2k-grid",
+        "rotation": 0
+      },
+      "lockWallpaper": {
+        "kind": "pattern",
+        "scale": 1.6044051307439802,
+        "colors": null,
+        "pattern": "y2k-grid",
+        "rotation": 0
+      }
+    },
+    "specHash": "f4c3003ee39f1a8c8ed9014570d61f0ce30afb317cd89b43e32a96677387420e",
+    "previewHash": "000000000c142848",
+    "tagSlugs": ["bold", "glass", "pattern", "playful", "y2k"]
+  },
+  {
+    "slug": "lilac-dream-y2k-ii-8gr5",
+    "nameEn": "Lilac Dream Y2K II",
+    "nameAr": "واي تو كي: حلم الليلك 2",
+    "descriptionEn": "Glossy color and playful symbols bring an early digital mood to your screen. Butterflies, stars and open grids keep the matching icons lively.",
+    "descriptionAr": "ألوان لامعة ورموز مرحة تستحضر بدايات العالم الرقمي على شاشتك. تتناثر الفراشات والنجوم بين الشبكات المفتوحة لتكملها أيقونات نابضة بالحيوية.",
+    "spec": {
+      "v": 1,
+      "type": {
+        "body": "readex-pro",
+        "display": "space-grotesk"
+      },
+      "decor": ["star", "heart", "butterfly"],
+      "icons": {
+        "bg": "#e9deff",
+        "bg2": null,
+        "fill": "glass",
+        "shape": "squircle",
+        "border": {
+          "color": "#cdb4ff",
+          "width": 0.03
+        },
+        "shadow": false,
+        "sticker": null,
+        "glyphColor": "#3a2759",
+        "glyphScale": 0.5583057779446244,
+        "glyphWeight": "fill"
+      },
+      "palette": {
+        "bg": "#f3e8ff",
+        "ink": "#3a2759",
+        "mode": "light",
+        "accent": "#a0e7e5",
+        "primary": "#cdb4ff",
+        "surface": "#fdf9ff",
+        "inkMuted": "#7a6b96"
+      },
+      "widgets": {
+        "ink": "#3a2759",
+        "style": "glass",
+        "accent": "#a0e7e5",
+        "radius": 0.28207175493007525,
+        "surface": "#fdf9ff"
+      },
+      "wallpaper": {
+        "kind": "scatter",
+        "seed": 875954307,
+        "grain": 0.05404024618677795,
+        "colors": null,
+        "glyphs": ["butterfly", "sparkle", "star", "heart"],
+        "rotate": true,
+        "weight": "bold",
+        "density": 0.49659510147524993,
+        "sizeMax": 0.10759770695352927,
+        "sizeMin": 0.04489957975223661
+      },
+      "lockWallpaper": {
+        "kind": "scatter",
+        "seed": 875954308,
+        "grain": 0.05404024618677795,
+        "colors": null,
+        "glyphs": ["butterfly", "sparkle", "star", "heart"],
+        "rotate": true,
+        "weight": "bold",
+        "density": 0.34761657103267496,
+        "sizeMax": 0.10759770695352927,
+        "sizeMin": 0.04489957975223661
+      }
+    },
+    "specHash": "175e0af9849413fa4b6ef62bea5569eb1b430568224ee929e1a9066fefd78edb",
+    "previewHash": "0002109034120922",
+    "tagSlugs": ["bold", "glass", "illustrated", "pastel", "playful", "y2k"]
+  }
+]

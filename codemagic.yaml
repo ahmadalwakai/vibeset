@@ -62,8 +62,10 @@ workflows:
       node: 24
       xcode: '27.1'
       cocoapods: default
+      groups:
+        - vibeset_native
       vars:
-        VIBESET_NATIVE_GENERATE: compile
+        VIBESET_NATIVE_GENERATE: '1'
         VIBESET_IOS_BUNDLE_ID: com.ahmadalwakai.vibeset
         VIBESET_IOS_WIDGET_BUNDLE_ID: com.ahmadalwakai.vibeset.calendar
         VIBESET_IOS_APP_GROUP: group.com.ahmadalwakai.vibeset
@@ -77,16 +79,16 @@ workflows:
         script: npm ci --prefix .. --include=dev --include=optional
       - name: Install native app dependencies
         script: npm ci --include=dev --include=optional
-      - name: Check explicit compile-only native configuration
-        script: npm run check:native:compile
+      - name: Check native identifiers and real public origins
+        script: npm run check:native
       - name: Check native dependency compatibility
         script: npm run check:expo
       - name: Native TypeScript and lint
         script: npm run typecheck && npm run lint
       - name: Native contract tests
         script: npm test
-      - name: Generate compile-only iOS application and widget extension
-        script: npm run prebuild:ios:compile
+      - name: Generate configured iOS application and widget extension
+        script: npm run prebuild:ios
       - name: Install iOS pods
         script: |
           set -euo pipefail
@@ -113,7 +115,7 @@ workflows:
         script: |
           set -euo pipefail
           node --input-type=module <<'NODE'
-          import { execFileSync } from 'node:child_process';
+          import { execFileSync, spawnSync } from 'node:child_process';
           import { mkdirSync, writeFileSync } from 'node:fs';
           import { setTimeout as delay } from 'node:timers/promises';
 
@@ -131,6 +133,7 @@ workflows:
             uiReadinessVerified: false,
             widgetPlacementVerified: false,
             testFlightUpload: false,
+            screenshots: [],
             stages: [],
           };
           const persist = () => writeFileSync(`${output}/capture.json`, JSON.stringify(report, null, 2));
@@ -160,17 +163,35 @@ workflows:
               console.log(`[simulator] ${name}: ${entry.status} (${entry.elapsedMs}ms)`);
             }
           };
+          const screenshot = (name, device, file, timeout) => {
+            stage(name, ['io', device, 'screenshot', '--type=jpeg', file], timeout);
+            const metadata = execFileSync('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight', '-g', 'format', '-g', 'hasAlpha', file], {
+              encoding: 'utf8', timeout: 30_000, maxBuffer: 4096,
+            });
+            if (!/^\s*pixelWidth:\s*1320\s*$/m.test(metadata) || !/^\s*pixelHeight:\s*2868\s*$/m.test(metadata) ||
+                !/^\s*format:\s*jpeg\s*$/m.test(metadata) || !/^\s*hasAlpha:\s*no\s*$/m.test(metadata)) {
+              throw new Error('The actual screenshot must be an opaque 1320 by 2868 JPEG; no resizing is performed.');
+            }
+            report.screenshots.push({ file, width: 1320, height: 2868, format: 'jpeg', hasAlpha: false });
+            persist();
+          };
           let udid;
           let failure;
           try {
+            // Apple documents current simctl flags through the installed tool's help.
+            const help = spawnSync('xcrun', ['simctl', 'help', 'io'], { encoding: 'utf8', timeout: 30_000, maxBuffer: 64 * 1024 });
+            const usage = `${help.stdout ?? ''}\n${help.stderr ?? ''}`;
+            if (help.error || help.status !== 0 || !/screenshot/.test(usage) || !/--type/.test(usage) || !/jpeg/.test(usage)) {
+              throw new Error('The installed simctl must document JPEG screenshot support.');
+            }
             const inventory = JSON.parse(stage('inventory', ['list', '--json'], 30_000));
             const runtime = inventory.runtimes.find(
               (item) => item.identifier === 'com.apple.CoreSimulator.SimRuntime.iOS-27-0' && item.isAvailable,
             );
             const device = inventory.devicetypes.find(
-              (item) => item.identifier === 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro',
+              (item) => item.identifier === 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max',
             );
-            if (!runtime || !device) throw new Error('The pinned iPhone 17 Pro / iOS 27.0 simulator is unavailable.');
+            if (!runtime || !device) throw new Error('The pinned iPhone 17 Pro Max / iOS 27.0 simulator is unavailable.');
             report.device = device.name;
             report.runtime = runtime.version;
             udid = stage('create', ['create', 'Vibeset diagnostic iPhone', device.identifier, runtime.identifier], 60_000).trim();
@@ -184,17 +205,17 @@ workflows:
             stage('appearance', ['ui', udid, 'appearance', 'light'], 30_000);
             stage('status-bar', ['status_bar', udid, 'override', '--time', '9:41', '--batteryState', 'charged', '--batteryLevel', '100'], 30_000);
             // This is a boot baseline, not evidence of Vibeset installation or launch.
-            stage('boot-screenshot', ['io', udid, 'screenshot', `${output}/booted-home.png`], 60_000);
+            screenshot('boot-screenshot', udid, `${output}/booted-home.jpg`, 60_000);
             // Build 4 reached installation; give cold MobileInstallation a bounded five minutes.
             stage('install', ['install', udid, app], 300_000);
             report.appInstallationVerified = true;
             const launch = stage('launch', ['launch', udid, bundleId, '-AppleLanguages', '(en)', '-AppleLocale', 'en_GB'], 120_000);
             report.launchAccepted = /^.+: \d+\s*$/.test(launch);
             if (!report.launchAccepted) throw new Error('Simulator did not confirm an application process.');
-            stage('launch-screenshot', ['io', udid, 'screenshot', `${output}/launch.png`], 60_000);
+            screenshot('launch-screenshot', udid, `${output}/launch.jpg`, 60_000);
             // A bounded diagnostic sample after the API's 20-second timeout; this is not a UI-ready assertion.
             await delay(25_000);
-            stage('settled-screenshot', ['io', udid, 'screenshot', `${output}/launch-after-25s.png`], 60_000);
+            screenshot('settled-screenshot', udid, `${output}/launch-after-25s.jpg`, 60_000);
           } catch (error) {
             failure = error;
             report.failedStage = report.stages.find((entry) => entry.status === 'failed')?.name ?? 'validation';
@@ -207,7 +228,7 @@ workflows:
                 } : { state: 'not-found' }, null, 2));
               } catch { /* The original stage failure remains authoritative. */ }
               try {
-                stage('failure-screenshot', ['io', udid, 'screenshot', `${output}/failure.png`], 30_000);
+                screenshot('failure-screenshot', udid, `${output}/failure.jpg`, 30_000);
               } catch { /* A failed simulator may be unable to capture its display. */ }
             }
           } finally {

@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "origin": "https://vibeset-iota.vercel.app",
+  "publications": [
+    {
+      "themeId": "0a0ebdd3-6b8c-4ed8-9a80-c04791a85cdc",
+      "slug": "bubblegum-y2k-g70l",
+      "specHash": "b33ba74020a888a3b54a7a9f875ee0c9bc51983d4df23efe2743c44ebcb63a9c",
+      "assetVersion": 1,
+      "attemptId": "67db0bc0-a1f2-469b-afad-d26dc831a1c2"
+    },
+    {
+      "themeId": "6e9d505f-470e-4556-a667-b7a96545298c",
+      "slug": "emo-pink-y2k-bzgq",
+      "specHash": "f4c3003ee39f1a8c8ed9014570d61f0ce30afb317cd89b43e32a96677387420e",
+      "assetVersion": 1,
+      "attemptId": "c85db822-a97c-4da3-a3a8-a7ea0d706986"
+    },
+    {
+      "themeId": "33febec1-5ddf-4625-8ef9-cb32fed75b98",
+      "slug": "lilac-dream-y2k-ii-8gr5",
+      "specHash": "175e0af9849413fa4b6ef62bea5569eb1b430568224ee929e1a9066fefd78edb",
+      "assetVersion": 1,
+      "attemptId": "8b3d5e09-50b4-4820-b958-25dbce182ba3"
+    }
+  ]
+}

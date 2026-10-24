@@ -19,6 +19,15 @@ const captureSchema = z.object({
   uiReadinessVerified: z.literal(false),
   widgetPlacementVerified: z.literal(false),
   testFlightUpload: z.literal(false),
+  screenshots: z.array(
+    z.object({
+      file: z.string(),
+      width: z.literal(1320),
+      height: z.literal(2868),
+      format: z.literal('jpeg'),
+      hasAlpha: z.literal(false),
+    }),
+  ),
   failedStage: z.string().optional(),
   stages: z.array(
     z.object({
@@ -31,7 +40,9 @@ const captureSchema = z.object({
   ),
 });
 
-async function exercise(mode: 'success' | 'install-timeout' | 'unconfirmed-launch') {
+async function exercise(
+  mode: 'success' | 'install-timeout' | 'unconfirmed-launch' | 'wrong-size' | 'unsupported-format',
+) {
   const calls: { operation: string; args: readonly string[]; timeout: number }[] = [];
   const files = new Map<string, string>();
   const messages: string[] = [];
@@ -41,7 +52,35 @@ async function exercise(mode: 'success' | 'install-timeout' | 'unconfirmed-launc
     mkdirSync: () => undefined,
     writeFileSync: (path: string, value: string) => files.set(path, value),
     delay: async (milliseconds: number) => expect(milliseconds).toBe(25_000),
+    spawnSync: (command: string, args: readonly string[], options: { timeout: number }) => {
+      expect(command).toBe('xcrun');
+      expect(args).toEqual(['simctl', 'help', 'io']);
+      expect(options.timeout).toBe(30_000);
+      return {
+        status: 0,
+        stdout: '',
+        stderr:
+          mode === 'unsupported-format'
+            ? 'screenshot [--type=png]'
+            : 'screenshot [--type=<type>] Can be png, jpeg.',
+      };
+    },
     execFileSync: (command: string, args: readonly string[], options: { timeout: number }) => {
+      if (command === 'sips') {
+        expect(options.timeout).toBe(30_000);
+        expect(args).toEqual([
+          '-g',
+          'pixelWidth',
+          '-g',
+          'pixelHeight',
+          '-g',
+          'format',
+          '-g',
+          'hasAlpha',
+          expect.stringMatching(/\.jpg$/),
+        ]);
+        return `capture.jpg\n  pixelWidth: ${mode === 'wrong-size' ? 1206 : 1320}\n  pixelHeight: 2868\n  format: jpeg\n  hasAlpha: no\n`;
+      }
       expect(command).toBe('xcrun');
       const operation = args[1] ?? '';
       calls.push({ operation, args, timeout: options.timeout });
@@ -56,8 +95,8 @@ async function exercise(mode: 'success' | 'install-timeout' | 'unconfirmed-launc
           ],
           devicetypes: [
             {
-              identifier: 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro',
-              name: 'iPhone 17 Pro',
+              identifier: 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max',
+              name: 'iPhone 17 Pro Max',
             },
           ],
         });
@@ -105,10 +144,17 @@ describe('actual Codemagic simulator capture orchestration', () => {
     expect(calls.find(({ operation }) => operation === 'launch')?.timeout).toBe(120_000);
     const install = calls.findIndex(({ operation }) => operation === 'install');
     expect(
-      calls.slice(0, install).some(({ args }) => args.at(-1)?.endsWith('booted-home.png')),
+      calls.slice(0, install).some(({ args }) => args.at(-1)?.endsWith('booted-home.jpg')),
     ).toBe(true);
     expect(report.appInstallationVerified).toBe(true);
     expect(report.launchAccepted).toBe(true);
+    expect(report.screenshots).toHaveLength(3);
+    expect(calls.filter(({ operation }) => operation === 'io')).toHaveLength(3);
+    expect(
+      calls
+        .filter(({ operation }) => operation === 'io')
+        .every(({ args }) => args.includes('--type=jpeg')),
+    ).toBe(true);
     expect(report.stages.every(({ status }) => status === 'succeeded')).toBe(true);
     expect(calls.slice(-2).map(({ operation }) => operation)).toEqual(['shutdown', 'delete']);
   });
@@ -134,7 +180,23 @@ describe('actual Codemagic simulator capture orchestration', () => {
     expect(String(error)).toContain('failed at validation');
     expect(report.appInstallationVerified).toBe(true);
     expect(report.launchAccepted).toBe(false);
-    expect(calls.some(({ args }) => args.at(-1)?.endsWith('/launch.png'))).toBe(false);
+    expect(calls.some(({ args }) => args.at(-1)?.endsWith('/launch.jpg'))).toBe(false);
+    expect(calls.at(-1)?.operation).toBe('delete');
+  });
+
+  it('fails closed on unsupported installed screenshot syntax before creating a simulator', async () => {
+    const { calls, report, error } = await exercise('unsupported-format');
+    expect(String(error)).toContain('failed at validation');
+    expect(calls).toHaveLength(0);
+    expect(report.screenshots).toEqual([]);
+  });
+
+  it('rejects an actual wrong-sized capture without resizing or claiming UI readiness', async () => {
+    const { calls, report, error } = await exercise('wrong-size');
+    expect(String(error)).toContain('failed at validation');
+    expect(report.screenshots).toEqual([]);
+    expect(report.uiReadinessVerified).toBe(false);
+    expect(calls.some(({ operation }) => operation === 'install')).toBe(false);
     expect(calls.at(-1)?.operation).toBe('delete');
   });
 });

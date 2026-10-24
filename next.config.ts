@@ -66,6 +66,11 @@ const nextConfig: NextConfig = {
         source: '/glyphs/:path*',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
+      {
+        source:
+          '/themes/:themeId/v:version([1-9]\\d*)/:attemptId/:file((?:thumb|preview-home|preview-lock)\\.webp|(?:og|wallpaper-(?:phone|tablet|desktop))\\.jpg)',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
     ];
   },
 };
