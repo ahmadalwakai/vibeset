@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Alert, Linking, ScrollView, View } from 'react-native';
 import { getNativeApiOrigin } from '../lib/api';
 import type { NativePreferences, PreferencesPatch } from '../lib/preferences';
 import { Button, Copy, Panel, styles, useUi } from './Ui';
+import { FontNotices } from './FontNotices';
 
 export function Settings({
   preferences,
@@ -14,6 +16,7 @@ export function Settings({
   onUnblock: (handle: string) => void;
 }): ReactElement {
   const { t, colors, locale, row } = useUi();
+  const [showFontNotices, setShowFontNotices] = useState(false);
   const open = async (document: 'privacy' | 'terms' | 'copyright' | 'support'): Promise<void> => {
     try {
       const url =
@@ -91,6 +94,7 @@ export function Settings({
         </View>
       </Panel>
       <Panel>
+        <Button secondary label={t('fontLicences')} onPress={() => setShowFontNotices(true)} />
         {(['privacy', 'terms', 'copyright', 'support'] as const).map((value) => (
           <Button key={value} label={t(value)} secondary onPress={() => void open(value)} />
         ))}
@@ -102,6 +106,7 @@ export function Settings({
       <Copy style={{ color: colors.secondary, textAlign: 'center', fontSize: 12 }}>
         {t('version')}
       </Copy>
+      {showFontNotices ? <FontNotices onClose={() => setShowFontNotices(false)} /> : null}
     </ScrollView>
   );
 }

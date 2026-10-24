@@ -158,6 +158,39 @@ export function assertReleaseExportOptions(input: unknown): void {
     throw new Error('An exact app and calendar extension profile mapping is required.');
 }
 
+/** Both processes read the widget's same-App-Group UserDefaults suite. */
+export function assertAppGroupPrivacyManifest(input: unknown): void {
+  const manifest = z
+    .object({
+      NSPrivacyAccessedAPITypes: z.array(
+        z.object({
+          NSPrivacyAccessedAPIType: z.string(),
+          NSPrivacyAccessedAPITypeReasons: z.array(z.string()),
+        }),
+      ),
+    })
+    .parse(input);
+  if (
+    !manifest.NSPrivacyAccessedAPITypes.some(
+      (entry) =>
+        entry.NSPrivacyAccessedAPIType === 'NSPrivacyAccessedAPICategoryUserDefaults' &&
+        entry.NSPrivacyAccessedAPITypeReasons.includes('1C8F.1'),
+    )
+  )
+    throw new Error(
+      'Both app and widget privacy manifests must declare App Group UserDefaults reason 1C8F.1.',
+    );
+}
+
+function verifyAppPrivacyManifests(app: string): void {
+  for (const target of [app, resolve(app, 'PlugIns/ExpoWidgetsTarget.appex')]) {
+    const manifestPath = resolve(target, 'PrivacyInfo.xcprivacy');
+    if (!lstatSync(manifestPath).isFile())
+      throw new Error('Each compiled target requires its own ordinary privacy manifest resource.');
+    assertAppGroupPrivacyManifest(plist(readFileSync(manifestPath)));
+  }
+}
+
 async function checkLiveServices(): Promise<void> {
   assertReleaseOrigins(process.env);
   if (
@@ -249,6 +282,8 @@ function verifyArchive(): void {
   const expectedVersion = z
     .object({ version: z.string() })
     .parse(JSON.parse(readFileSync('package.json', 'utf8'))).version;
+  verifyAppPrivacyManifests(app);
+  verifyAppPrivacyManifests(exportedApp);
   for (const [path, bundleId] of targets) {
     execFileSync('codesign', ['--verify', '--deep', '--strict', path], {
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -288,12 +323,18 @@ function verifyArchive(): void {
       throw new Error('The release archive and IPA must contain bundled JavaScript.');
   assertReleaseExportOptions(plist(readFileSync('build/ios-release/export-options.plist')));
   console.log(
-    'App and extension signatures, App Store profiles, App Group, versions and bundled JavaScript verified.',
+    'App and extension signatures, App Store profiles, App Group, privacy resources, versions and bundled JavaScript verified.',
   );
 }
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+  if (args[0] === 'privacy') {
+    if (args.length !== 2) throw new Error('Provide exactly one compiled app directory.');
+    verifyAppPrivacyManifests(resolve(z.string().min(1).parse(args[1])));
+    console.log('Compiled app and widget App Group privacy manifest resources verified.');
+    return;
+  }
   if (args[0] === 'run-build') {
     const command = z.enum(['npm', 'pod', 'agvtool', 'xcode-project']).parse(args[1]);
     const result = spawnSync(command, args.slice(2), {

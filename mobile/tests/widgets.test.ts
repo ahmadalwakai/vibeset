@@ -357,6 +357,10 @@ describe('native automatic-calendar provider installation', () => {
     );
     await mkdir(path.join(root, 'widgets/native'), { recursive: true });
     await writeFile(path.join(root, 'widgets/native/CalendarProvider.swift'), provider);
+    await writeFile(
+      path.join(root, 'widgets/native/PrivacyInfo.xcprivacy'),
+      await readFile(path.join(mobileRoot, 'widgets/native/PrivacyInfo.xcprivacy'), 'utf8'),
+    );
     const upstream = withDangerousMod({ name: 'Vibeset', slug: 'vibeset' }, [
       'ios',
       async (mod) => {

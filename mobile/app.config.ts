@@ -51,6 +51,15 @@ export default function appConfig(): ExpoConfig {
     ios: {
       ...(ids ? { bundleIdentifier: ids.bundleId } : {}),
       supportsTablet: false,
+      privacyManifests: {
+        NSPrivacyAccessedAPITypes: [
+          {
+            NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryUserDefaults',
+            // App-local preferences and the calendar's shared App Group storage.
+            NSPrivacyAccessedAPITypeReasons: ['CA92.1', '1C8F.1'],
+          },
+        ],
+      },
     },
     plugins: [
       'expo-font',

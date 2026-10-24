@@ -11,6 +11,7 @@ import {
   RELEASE_IDS,
   nativeBuildEnvironment,
   promoteVerifiedIpa,
+  assertAppGroupPrivacyManifest,
 } from '../scripts/check-ios-release';
 
 const environment = {
@@ -43,6 +44,35 @@ const exportOptions = {
 };
 
 describe('signed native release gates', () => {
+  it('requires App Group UserDefaults in each parsed target manifest without rejecting additional SDK reasons', () => {
+    const shared = {
+      NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryUserDefaults',
+      NSPrivacyAccessedAPITypeReasons: ['CA92.1', '1C8F.1'],
+    };
+    expect(() =>
+      assertAppGroupPrivacyManifest({
+        NSPrivacyAccessedAPITypes: [
+          shared,
+          {
+            NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryFileTimestamp',
+            NSPrivacyAccessedAPITypeReasons: ['C617.1'],
+          },
+        ],
+      }),
+    ).not.toThrow();
+    for (const manifest of [
+      {},
+      { NSPrivacyAccessedAPITypes: [] },
+      { NSPrivacyAccessedAPITypes: [{ ...shared, NSPrivacyAccessedAPITypeReasons: ['CA92.1'] }] },
+      {
+        NSPrivacyAccessedAPITypes: [
+          { ...shared, NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryFileTimestamp' },
+        ],
+      },
+      { NSPrivacyAccessedAPITypes: [{ ...shared, NSPrivacyAccessedAPITypeReasons: '1C8F.1' }] },
+    ])
+      expect(() => assertAppGroupPrivacyManifest(manifest)).toThrow();
+  });
   it('strips signing integration credentials from build descendants without mutating publisher credentials', () => {
     const parent = {
       NODE_ENV: 'test' as const,

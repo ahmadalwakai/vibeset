@@ -122,5 +122,10 @@
   "contentHidden": "This content is hidden on this device. Manage your choices in Settings.",
   "hiddenPage": "Items on this page are hidden by your preferences. Load more if available, or manage hidden content in Settings.",
   "hiddenLimit": "Your hidden-content preferences have reached their storage limit. Restore some content in Settings and try again.",
-  "errorHide": "We could not hide this content or clear its selected widget. Please try again."
+  "errorHide": "We could not hide this content or clear its selected widget. Please try again.",
+  "fontLicences": "Offline font licences",
+  "fontLicencesTitle": "Font licences",
+  "fontLicencesDescription": "These fonts are bundled under the SIL Open Font License 1.1. Their complete supplied licences and the copyright notices embedded in the font files are included below in their original language. No internet connection is needed.",
+  "fontEmbeddedCopyright": "Copyright in the font file",
+  "fontCompleteLicence": "Complete supplied licence"
 }

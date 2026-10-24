@@ -105,6 +105,7 @@ workflows:
             2>&1 | tee build/simulator-xcodebuild.log
           test -s build/simulator/Build/Products/Release-iphonesimulator/Vibeset.app/main.jsbundle
           test -d build/simulator/Build/Products/Release-iphonesimulator/Vibeset.app/PlugIns/ExpoWidgetsTarget.appex
+          node --import tsx scripts/check-ios-release.ts privacy build/simulator/Build/Products/Release-iphonesimulator/Vibeset.app
           ditto -c -k --sequesterRsrc --keepParent \
             build/simulator/Build/Products/Release-iphonesimulator/Vibeset.app \
             build/vibeset-simulator-ios-app.zip
@@ -120,44 +121,105 @@ workflows:
           const app = 'build/simulator/Build/Products/Release-iphonesimulator/Vibeset.app';
           const bundleId = process.env.VIBESET_IOS_BUNDLE_ID;
           if (!bundleId) throw new Error('The validated native app identifier is required.');
-          const simctl = (args, timeout = 60_000) =>
-            execFileSync('xcrun', ['simctl', ...args], { encoding: 'utf8', timeout });
-          const inventory = JSON.parse(simctl(['list', '--json']));
-          const runtime = inventory.runtimes.find(
-            (item) => item.identifier === 'com.apple.CoreSimulator.SimRuntime.iOS-27-0' && item.isAvailable,
-          );
-          const device = inventory.devicetypes.find(
-            (item) => item.identifier === 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro',
-          );
-          if (!runtime || !device) throw new Error('The pinned iPhone 17 Pro / iOS 27.0 simulator is unavailable.');
           mkdirSync(output, { recursive: true });
-          const udid = simctl(['create', 'Vibeset diagnostic iPhone', device.identifier, runtime.identifier]).trim();
+          const report = {
+            purpose: 'diagnostic-only',
+            appearance: 'light',
+            appInstallationVerified: false,
+            launchAccepted: false,
+            apiReachabilityVerified: false,
+            uiReadinessVerified: false,
+            widgetPlacementVerified: false,
+            testFlightUpload: false,
+            stages: [],
+          };
+          const persist = () => writeFileSync(`${output}/capture.json`, JSON.stringify(report, null, 2));
+          const simctl = (args, timeout) => execFileSync('xcrun', ['simctl', ...args], {
+            encoding: 'utf8', timeout, maxBuffer: 2 * 1024 * 1024,
+          });
+          const stage = (name, args, timeout) => {
+            const entry = { name, timeoutMs: timeout, status: 'running', startedAt: new Date().toISOString() };
+            const started = Date.now();
+            report.stages.push(entry);
+            persist();
+            console.log(`[simulator] ${name}: start (limit ${timeout / 1000}s)`);
+            try {
+              const result = simctl(args, timeout);
+              entry.status = 'succeeded';
+              return result;
+            } catch (error) {
+              entry.status = 'failed';
+              // Keep only process metadata; never serialize environment/complete child errors.
+              entry.code = typeof error.code === 'string' ? error.code : 'COMMAND_FAILED';
+              entry.exitStatus = typeof error.status === 'number' ? error.status : null;
+              entry.signal = typeof error.signal === 'string' ? error.signal : null;
+              throw error;
+            } finally {
+              entry.elapsedMs = Date.now() - started;
+              persist();
+              console.log(`[simulator] ${name}: ${entry.status} (${entry.elapsedMs}ms)`);
+            }
+          };
+          let udid;
+          let failure;
           try {
-            simctl(['boot', udid]);
+            const inventory = JSON.parse(stage('inventory', ['list', '--json'], 30_000));
+            const runtime = inventory.runtimes.find(
+              (item) => item.identifier === 'com.apple.CoreSimulator.SimRuntime.iOS-27-0' && item.isAvailable,
+            );
+            const device = inventory.devicetypes.find(
+              (item) => item.identifier === 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro',
+            );
+            if (!runtime || !device) throw new Error('The pinned iPhone 17 Pro / iOS 27.0 simulator is unavailable.');
+            report.device = device.name;
+            report.runtime = runtime.version;
+            udid = stage('create', ['create', 'Vibeset diagnostic iPhone', device.identifier, runtime.identifier], 60_000).trim();
+            if (!/^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$/.test(udid)) {
+              udid = undefined;
+              throw new Error('Simulator creation did not return a valid owned device identifier.');
+            }
+            stage('boot', ['boot', udid], 60_000);
             // First iOS 27 boot performs DataMigration; allow a bounded ten-minute cold boot.
-            simctl(['bootstatus', udid, '-b'], 600_000);
-            simctl(['ui', udid, 'appearance', 'light']);
-            simctl(['status_bar', udid, 'override', '--time', '9:41', '--batteryState', 'charged', '--batteryLevel', '100']);
-            simctl(['install', udid, app]);
-            const launch = simctl(['launch', udid, bundleId, '-AppleLanguages', '(en)', '-AppleLocale', 'en_GB']);
-            simctl(['io', udid, 'screenshot', `${output}/launch.png`]);
+            stage('boot-ready', ['bootstatus', udid, '-b'], 600_000);
+            stage('appearance', ['ui', udid, 'appearance', 'light'], 30_000);
+            stage('status-bar', ['status_bar', udid, 'override', '--time', '9:41', '--batteryState', 'charged', '--batteryLevel', '100'], 30_000);
+            // This is a boot baseline, not evidence of Vibeset installation or launch.
+            stage('boot-screenshot', ['io', udid, 'screenshot', `${output}/booted-home.png`], 60_000);
+            // Build 4 reached installation; give cold MobileInstallation a bounded five minutes.
+            stage('install', ['install', udid, app], 300_000);
+            report.appInstallationVerified = true;
+            const launch = stage('launch', ['launch', udid, bundleId, '-AppleLanguages', '(en)', '-AppleLocale', 'en_GB'], 120_000);
+            report.launchAccepted = /^.+: \d+\s*$/.test(launch);
+            if (!report.launchAccepted) throw new Error('Simulator did not confirm an application process.');
+            stage('launch-screenshot', ['io', udid, 'screenshot', `${output}/launch.png`], 60_000);
             // A bounded diagnostic sample after the API's 20-second timeout; this is not a UI-ready assertion.
             await delay(25_000);
-            simctl(['io', udid, 'screenshot', `${output}/launch-after-25s.png`]);
-            writeFileSync(`${output}/capture.json`, JSON.stringify({
-              purpose: 'diagnostic-only',
-              device: device.name,
-              runtime: runtime.version,
-              appearance: 'light',
-              launchAccepted: /^.+: \d+\s*$/.test(launch),
-              apiReachabilityVerified: false,
-              uiReadinessVerified: false,
-              widgetPlacementVerified: false,
-              testFlightUpload: false,
-            }, null, 2));
+            stage('settled-screenshot', ['io', udid, 'screenshot', `${output}/launch-after-25s.png`], 60_000);
+          } catch (error) {
+            failure = error;
+            report.failedStage = report.stages.find((entry) => entry.status === 'failed')?.name ?? 'validation';
+            if (udid) {
+              try {
+                const devices = JSON.parse(stage('failure-device-state', ['list', 'devices', '--json'], 20_000));
+                const owned = Object.values(devices.devices).flat().find((item) => item.udid === udid);
+                writeFileSync(`${output}/failure-device.json`, JSON.stringify(owned ? {
+                  state: owned.state, isAvailable: owned.isAvailable,
+                } : { state: 'not-found' }, null, 2));
+              } catch { /* The original stage failure remains authoritative. */ }
+              try {
+                stage('failure-screenshot', ['io', udid, 'screenshot', `${output}/failure.png`], 30_000);
+              } catch { /* A failed simulator may be unable to capture its display. */ }
+            }
           } finally {
-            try { simctl(['shutdown', udid]); } finally { simctl(['delete', udid]); }
+            if (udid) {
+              for (const [name, args] of [['shutdown', ['shutdown', udid]], ['delete', ['delete', udid]]]) {
+                try { stage(name, args, 30_000); }
+                catch (error) { failure ??= error; }
+              }
+            }
+            persist();
           }
+          if (failure) throw new Error(`Simulator diagnostics failed at ${report.failedStage ?? 'cleanup'}; inspect capture.json and available PNGs.`);
           NODE
     artifacts:
       - $CM_BUILD_DIR/mobile/build/vibeset-simulator-ios-app.zip
