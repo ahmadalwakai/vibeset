@@ -1,3 +1,5 @@
+import { pageMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
 import { Button, Flex, SimpleGrid, Skeleton, Stack, Text } from '@chakra-ui/react';
 import { connection } from 'next/server';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -194,4 +196,15 @@ export default function CreatorDashboardPage({
       <DashboardContent searchParams={searchParams} />
     </Suspense>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('creator.dashboard')]);
+  return pageMetadata({
+    locale,
+    path: '/creator',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import { Box, Button, SimpleGrid, Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
@@ -7,23 +8,8 @@ import { CatalogError } from '@/components/common/CatalogError';
 import { EmptyState } from '@/components/common/EmptyState';
 import { PageHeader } from '@/components/common/PageHeader';
 import { CollectionCard } from '@/components/theme/CollectionCard';
-import { getPathname, Link } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import type { CollectionCardDTO } from '@/lib/dto';
-
-export async function generateMetadata(): Promise<Metadata> {
-  const [t, locale] = await Promise.all([
-    getTranslations('explore.collections.metadata'),
-    getLocale(),
-  ]);
-  return {
-    title: t('title'),
-    description: t('description'),
-    alternates: {
-      canonical: getPathname({ locale, href: '/collections' }),
-      languages: { en: '/collections', ar: '/ar/collections', 'x-default': '/collections' },
-    },
-  };
-}
 
 async function CollectionsContent(): Promise<ReactElement> {
   await connection();
@@ -79,4 +65,18 @@ export default async function CollectionsPage(): Promise<ReactElement> {
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([
+    getLocale(),
+    getTranslations('explore.collections.metadata'),
+  ]);
+  return pageMetadata({
+    locale,
+    path: '/collections',
+    title: t('title'),
+    description: t('description'),
+    noindex: false,
+  });
 }

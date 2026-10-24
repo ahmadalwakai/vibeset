@@ -115,6 +115,7 @@ export const themes = pgTable(
   },
   (t) => [
     index('themes_pub_new_idx').on(t.publishedAt.desc(), t.id.desc()).where(sql`${t.status} = 'published'`),
+    index('themes_pub_effective_new_idx').on(sql`COALESCE(${t.publishedAt}, ${t.createdAt}) DESC NULLS LAST`, t.id.desc().nullsLast()).where(sql`${t.status} = 'published'`),
     index('themes_pub_popular_idx').on(t.popularity.desc(), t.id.desc()).where(sql`${t.status} = 'published'`),
     index('themes_pub_downloads_idx').on(t.downloadCount.desc(), t.id.desc()).where(sql`${t.status} = 'published'`),
     index('themes_status_idx').on(t.status, t.updatedAt.desc()),

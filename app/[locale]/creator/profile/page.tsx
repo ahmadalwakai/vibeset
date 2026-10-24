@@ -1,6 +1,8 @@
+import { pageMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
 import { Button, Skeleton, Stack } from '@chakra-ui/react';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -49,4 +51,15 @@ export default async function CreatorProfilePage(): Promise<ReactElement> {
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('creator.profile')]);
+  return pageMetadata({
+    locale,
+    path: '/creator/profile',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

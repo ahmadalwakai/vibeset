@@ -1,8 +1,9 @@
+import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { AdminThemeEditor } from '@/components/admin/AdminThemeEditor';
@@ -35,10 +36,7 @@ async function EditorContent({
     />
   );
 }
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('admin.editor');
-  return { title: t('title'), description: t('description') };
-}
+
 export default async function AdminThemeEditorPage(
   props: PageProps<'/[locale]/admin/themes/[id]'>,
 ): Promise<ReactElement> {
@@ -51,4 +49,22 @@ export default async function AdminThemeEditorPage(
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  await connection();
+  const id = themeIdSchema.safeParse((await params).id);
+  if (!id.success) notFound();
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('admin.editor')]);
+  return pageMetadata({
+    locale,
+    path: '/admin/themes/' + id.data,
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

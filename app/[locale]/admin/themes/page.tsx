@@ -1,7 +1,8 @@
+import { pageMetadata } from '@/lib/seo';
 import { Button, Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { AdminThemeFilters } from '@/components/admin/AdminThemeFilters';
@@ -48,10 +49,7 @@ async function ThemesContent({
     </Stack>
   );
 }
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('admin.themes');
-  return { title: t('title'), description: t('description') };
-}
+
 export default async function AdminThemesPage({
   searchParams,
 }: {
@@ -73,4 +71,15 @@ export default async function AdminThemesPage({
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('admin.themes')]);
+  return pageMetadata({
+    locale,
+    path: '/admin/themes',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

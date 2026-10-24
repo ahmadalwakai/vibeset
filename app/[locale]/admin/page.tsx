@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import { Button, SimpleGrid, Skeleton, Stack, Text } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
@@ -133,10 +134,7 @@ async function RecentAudit(): Promise<ReactElement> {
     </Stack>
   );
 }
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('admin.dashboard');
-  return { title: t('title'), description: t('description') };
-}
+
 export default async function AdminDashboardPage(): Promise<ReactElement> {
   const t = await getTranslations('admin.dashboard');
   return (
@@ -158,4 +156,15 @@ export default async function AdminDashboardPage(): Promise<ReactElement> {
       </SimpleGrid>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('admin.dashboard')]);
+  return pageMetadata({
+    locale,
+    path: '/admin',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

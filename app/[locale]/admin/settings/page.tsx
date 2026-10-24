@@ -1,8 +1,9 @@
+import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { unstable_rethrow } from 'next/navigation';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { AdminSettings } from '@/components/admin/AdminSettings';
@@ -12,7 +13,6 @@ import type { AdminHeroOption } from '@/lib/admin-operations';
 import type { Settings } from '@/lib/settings';
 
 export const instant = false;
-export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 async function SettingsContent(): Promise<ReactElement> {
   await connection();
@@ -52,4 +52,15 @@ export default async function AdminSettingsPage(): Promise<ReactElement> {
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('admin.settings')]);
+  return pageMetadata({
+    locale,
+    path: '/admin/settings',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

@@ -144,7 +144,7 @@ export interface ThemeListQuery {
 
 ### 3.4 Cursor
 
-`lib/utils/cursor.ts`: base64url JSON `{ s: number | string, id: string }`. Query: `WHERE (sort_col, id) < (s, id) ORDER BY sort_col DESC, id DESC LIMIT limit + 1`. Search mode (`q` set) ranks by `ts_rank_cd` + trigram similarity and uses an offset cursor `{ o: number }`, capped at 200 results. Invalid cursor → `VALIDATION`.
+`lib/utils/cursor.ts`: base64url JSON `{ s: number | string, id: string }`. Query: `WHERE (sort_col, id) < (s, id) ORDER BY sort_col DESC NULLS LAST, id DESC NULLS LAST LIMIT limit + 1`. The New sort uses `COALESCE(published_at, created_at)`, preserving legacy rows with no publication timestamp and their microsecond cursor precision. Search mode (`q` set) selects full-text matches or either name's indexed pg_trgm `%` match (standard similarity threshold 0.3), ranks by `ts_rank_cd` + trigram similarity and uses an offset cursor `{ o: number }`, capped at 200 results. Invalid cursor → `VALIDATION`.
 
 ---
 
@@ -255,6 +255,8 @@ Admin reads are uncached and guarded independently of layouts. Theme lists use 5
 Error body for every handler: `{ "error": { "code": ErrorCode, "message": string } }` with `HTTP_STATUS[code]`. Validation of query/body with Zod; unknown query params ignored.
 
 The `/api/v1` contract is consumed by the Phase 2 native app — **never make breaking changes**; add fields or create `/api/v2`.
+
+The daily cron requires the exact `Authorization: Bearer ${CRON_SECRET}` value; a signed-in session does not replace it. It recomputes published-theme popularity, reconciles canonical favourite/all-time download counts without overwriting concurrent tracking, purges limiter records older than two days (including hashed Better Auth `rate_limit` entries) and rejects stale pending uploads. Its JSON result and errors are private/no-store. An authenticated attempt revalidates the themes tag even if its deadline interrupts partially committed work; unauthorized requests perform no maintenance or invalidation. It does not delete R2 objects or require storage credentials.
 
 ---
 

@@ -1,7 +1,8 @@
+import { pageMetadata } from '@/lib/seo';
 import { Button, Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { AdminCreators } from '@/components/admin/AdminCreators';
@@ -30,10 +31,7 @@ async function Content({ searchParams }: { searchParams: SearchParams }): Promis
   const data = await listAdminCreators(parsed.data);
   return <AdminCreators key={JSON.stringify(parsed.data)} data={data} query={parsed.data} />;
 }
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('admin.creators');
-  return { title: t('title'), description: t('description') };
-}
+
 export default async function Page({
   searchParams,
 }: {
@@ -55,4 +53,15 @@ export default async function Page({
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('admin.creators')]);
+  return pageMetadata({
+    locale,
+    path: '/admin/creators',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

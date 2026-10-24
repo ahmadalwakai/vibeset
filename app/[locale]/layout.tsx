@@ -9,6 +9,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { fontVariables } from '@/design/fonts';
 import { routing } from '@/i18n/routing';
 import { env } from '@/lib/env.client';
+import { pageMetadata } from '@/lib/seo';
 
 export function generateStaticParams(): { locale: (typeof routing.locales)[number] }[] {
   return routing.locales.map((locale) => ({ locale }));
@@ -16,19 +17,18 @@ export function generateStaticParams(): { locale: (typeof routing.locales)[numbe
 
 export const viewport: Viewport = {
   viewportFit: 'cover',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#faf8fc' },
-    { media: '(prefers-color-scheme: dark)', color: '#16121d' },
-  ],
+  themeColor: '#b44bd0',
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('home.metadata');
+  const [t, locale] = await Promise.all([getTranslations('home.metadata'), getLocale()]);
   return {
+    ...pageMetadata({ locale, path: '/', title: t('title'), description: t('description') }),
     metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
+    applicationName: 'Vibeset',
+    appleWebApp: { capable: true, title: 'Vibeset', statusBarStyle: 'default' },
     title: { default: t('title'), template: '%s · Vibeset' },
     description: t('description'),
-    alternates: { languages: { en: '/', ar: '/ar', 'x-default': '/' } },
   };
 }
 

@@ -1,7 +1,8 @@
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { pageMetadata } from '@/lib/seo';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { z } from 'zod';
@@ -50,8 +51,13 @@ async function ExploreResults({
   );
 }
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('explore.metadata');
-  return { title: t('title'), description: t('description') };
+  const [t, locale] = await Promise.all([getTranslations('explore.metadata'), getLocale()]);
+  return pageMetadata({
+    locale,
+    path: '/explore',
+    title: t('title'),
+    description: t('description'),
+  });
 }
 export default async function ExplorePage({
   searchParams,

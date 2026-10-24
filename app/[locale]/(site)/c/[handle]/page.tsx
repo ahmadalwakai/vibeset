@@ -19,15 +19,30 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ThemeGrid } from '@/components/theme/ThemeGrid';
 import { ThemeGridSkeleton } from '@/components/theme/ThemeGridSkeleton';
+import { pageMetadata } from '@/lib/seo';
 import { Link, redirect } from '@/i18n/navigation';
 import type { CreatorPublicDTO } from '@/lib/dto';
 import { creatorHandleSchema, themeListQuerySchema } from '@/lib/validation/themes';
 
 type Props = PageProps<'/[locale]/c/[handle]'>;
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('creator.public');
-  return { title: t('metadataTitle'), description: t('metadataDescription') };
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  await connection();
+  const [{ handle }, locale, t] = await Promise.all([
+    params,
+    getLocale(),
+    getTranslations('creator.public'),
+  ]);
+  if (!creatorHandleSchema.safeParse(handle).success) notFound();
+  const { getCreatorMetadata } = await import('@/server/queries/seo');
+  const creator = await getCreatorMetadata(handle);
+  if (!creator) notFound();
+  return pageMetadata({
+    locale,
+    path: `/c/${handle}`,
+    title: creator.displayName,
+    description: creator.bio || t('metadataDescription'),
+  });
 }
 
 async function CreatorContent({ params, searchParams }: Props): Promise<ReactElement> {

@@ -14,7 +14,7 @@ export function ThemeGrid({ themes, priority = false }: ThemeGridProps): ReactEl
     <SimpleGrid asChild columns={{ base: 2, sm: 3, md: 4, xl: 5 }} gap={{ base: '3', md: '5' }}>
       <StaggerGrid>
         {themes.map((theme, index) => (
-          <ThemeCard key={theme.id} theme={theme} priority={priority && index < 5} />
+          <ThemeCard key={theme.id} theme={theme} priority={priority && index < 2} />
         ))}
       </StaggerGrid>
     </SimpleGrid>

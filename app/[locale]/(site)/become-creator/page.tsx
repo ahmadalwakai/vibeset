@@ -1,14 +1,14 @@
+import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { CreatorApplication } from '@/components/creator/CreatorApplication';
 import { requireUserPage } from '@/server/guards';
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
 async function ApplicationContent(): Promise<ReactElement> {
   await connection();
   const session = await requireUserPage('/become-creator');
@@ -42,4 +42,15 @@ export default async function BecomeCreatorPage(): Promise<ReactElement> {
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('creator.application')]);
+  return pageMetadata({
+    locale,
+    path: '/become-creator',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

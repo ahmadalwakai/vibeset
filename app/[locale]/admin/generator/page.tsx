@@ -1,8 +1,9 @@
+import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { unstable_rethrow } from 'next/navigation';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { AdminGenerator } from '@/components/admin/AdminGenerator';
@@ -16,7 +17,6 @@ import type { AdminPage } from '@/lib/admin';
 
 export const instant = false;
 export const maxDuration = 60;
-export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 async function GeneratorContent({
   searchParams,
@@ -66,4 +66,15 @@ export default async function AdminGeneratorPage(
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('admin.generator')]);
+  return pageMetadata({
+    locale,
+    path: '/admin/generator',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

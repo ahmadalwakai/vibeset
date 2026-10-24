@@ -1,7 +1,8 @@
+import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { AdminCollections } from '@/components/admin/AdminCollections';
@@ -27,10 +28,7 @@ async function Content({ searchParams }: Props): Promise<ReactElement> {
     />
   );
 }
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('admin.collections');
-  return { title: t('title'), description: t('description') };
-}
+
 export default async function Page(props: Props): Promise<ReactElement> {
   const t = await getTranslations('admin.collections');
   return (
@@ -41,4 +39,15 @@ export default async function Page(props: Props): Promise<ReactElement> {
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('admin.collections')]);
+  return pageMetadata({
+    locale,
+    path: '/admin/collections',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

@@ -1,8 +1,9 @@
+import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { unstable_rethrow } from 'next/navigation';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { AdminAuditLog } from '@/components/admin/AdminAuditLog';
@@ -13,7 +14,6 @@ import type { AdminAuditEntry, AdminPage } from '@/lib/admin';
 import { adminAuditQuerySchema } from '@/lib/validation/admin-operations';
 
 export const instant = false;
-export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 async function AuditContent({
   searchParams,
@@ -51,4 +51,15 @@ export default async function AdminAuditPage(
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('admin.audit')]);
+  return pageMetadata({
+    locale,
+    path: '/admin/audit',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

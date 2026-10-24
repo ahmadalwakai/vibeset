@@ -1,0 +1,1 @@
+CREATE INDEX "themes_pub_effective_new_idx" ON "themes" USING btree (COALESCE("published_at", "created_at") DESC NULLS LAST,"id" DESC NULLS LAST) WHERE "themes"."status" = 'published';

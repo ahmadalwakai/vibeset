@@ -1,13 +1,13 @@
+import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense, type ReactElement } from 'react';
 import { AccountSettings } from '@/components/account/AccountSettings';
 import { PageHeader } from '@/components/common/PageHeader';
 import { requireUserPage } from '@/server/guards';
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
 async function AccountContent(): Promise<ReactElement> {
   await connection();
   await requireUserPage('/account');
@@ -31,4 +31,15 @@ export default async function AccountPage(): Promise<ReactElement> {
       </Suspense>
     </>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('account')]);
+  return pageMetadata({
+    locale,
+    path: '/account',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

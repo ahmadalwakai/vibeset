@@ -9,6 +9,10 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ThemeGrid } from '@/components/theme/ThemeGrid';
 import { ThemeGridSkeleton } from '@/components/theme/ThemeGridSkeleton';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { env } from '@/lib/env.client';
+import { pageMetadata } from '@/lib/seo';
+import { breadcrumbJsonLd, collectionJsonLd } from '@/lib/structured-data';
 import { Link, redirect } from '@/i18n/navigation';
 import type { CollectionDetailDTO } from '@/lib/dto';
 import { localized } from '@/lib/utils/localized';
@@ -16,9 +20,23 @@ import { collectionCursorSchema, collectionSlugSchema } from '@/lib/validation/t
 
 type Props = PageProps<'/[locale]/collections/[slug]'>;
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('explore.collections');
-  return { title: t('detailTitle'), description: t('detailDescription') };
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  await connection();
+  const [{ slug }, locale, t] = await Promise.all([
+    params,
+    getLocale(),
+    getTranslations('explore.collections'),
+  ]);
+  if (!collectionSlugSchema.safeParse(slug).success) notFound();
+  const { getCollectionMetadata } = await import('@/server/queries/seo');
+  const collection = await getCollectionMetadata(slug);
+  if (!collection) notFound();
+  return pageMetadata({
+    locale,
+    path: `/collections/${slug}`,
+    title: localized(collection, locale, 'title'),
+    description: localized(collection, locale, 'description') || t('detailDescription'),
+  });
 }
 
 async function CollectionContent({ params, searchParams }: Props): Promise<ReactElement> {
@@ -42,8 +60,30 @@ async function CollectionContent({ params, searchParams }: Props): Promise<React
     return <CatalogError />;
   }
   if (!collection) notFound();
+  const nav = await getTranslations('nav');
   return (
     <Stack gap="8">
+      <JsonLd
+        data={collectionJsonLd({
+          origin: env.NEXT_PUBLIC_SITE_URL,
+          locale,
+          path: href,
+          name: localized(collection, locale, 'title'),
+          description: localized(collection, locale, 'description'),
+          themes: collection.items.items,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbJsonLd({
+          origin: env.NEXT_PUBLIC_SITE_URL,
+          locale,
+          items: [
+            { name: nav('home'), path: '/' },
+            { name: t('detailTitle'), path: '/collections' },
+            { name: localized(collection, locale, 'title'), path: href },
+          ],
+        })}
+      />
       <PageHeader
         eyebrow={t('detailTitle')}
         title={localized(collection, locale, 'title')}

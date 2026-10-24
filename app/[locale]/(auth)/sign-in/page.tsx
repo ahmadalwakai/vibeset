@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -8,11 +9,6 @@ import { SignInSkeleton } from '@/components/auth/SignInSkeleton';
 import { redirect } from '@/i18n/navigation';
 import { localizeNextPath, unlocalizeNextPath } from '@/lib/utils/next-path';
 import { getSession } from '@/server/guards';
-
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('auth');
-  return { title: t('signInTitle') };
-}
 
 async function SignInContent({
   searchParams,
@@ -44,4 +40,15 @@ export default function SignInPage({ searchParams }: PageProps<'/[locale]/sign-i
       <SignInContent searchParams={searchParams} />
     </Suspense>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('auth')]);
+  return pageMetadata({
+    locale,
+    path: '/sign-in',
+    title: t('signInTitle'),
+    description: t('signInDescription'),
+    noindex: true,
+  });
 }

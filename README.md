@@ -182,6 +182,16 @@ Typecheck, lint, all 2,013 passing tests (two skipped, 155 files) and the produc
 
 P14 browser checks are pending because the Chrome extension connection stopped responding. Live provider sign-in, R2 publication and physical-device checks also remain pending while credentials are configured. No P14 browser result or live publication is claimed; the isolated transaction tests exercise the data and authorization paths.
 
+## P15 SEO, installation and maintenance
+
+Public pages now have route-specific English/Arabic canonicals, language alternates and social metadata; private pages have relevant titles and noindex. Home, aesthetic, collection and theme pages provide escaped structured data. Runtime sitemap indexes/shards enumerate only eligible public entities without reading the database during builds. Each shard includes at most 40,000 URL entries across both languages. The manifest, opaque installation/Apple icons and localized social cards reuse the existing brand; regenerate them with `npm run brand:build`.
+
+The authenticated daily job scores published content, reconciles counters with concurrent tracking, removes expired limiter records and rejects stale pending uploads. It uses a shared deadline, cancels reads, destroys timed-out transaction connections and refreshes caches after potentially partial commits. The cron schedule is configured in `vercel.json`; it has not been deployed or observed running remotely. The additive New-sort index was reviewed and migrated to the isolated test and local development databases. Actual-SQL EXPLAIN checks on 1,200 rollback-only fixtures verify the three ordered partial indexes and selective bilingual GIN searches; broad queries retain measured sub-4 ms scan/hash plans.
+
+Typecheck, lint, all 2,086 passing tests (two conditional database skips, 164 files) and the production build (212 static shells/paths) pass. A real local standalone server passed HTTP checks for 11 metadata pages, sitemap/shard validation, robots, manifest, seven brand assets and two unauthorized cron requests. It was stopped afterward. Use `HOSTNAME=localhost` locally or `0.0.0.0` in a container: a `127.0.0.1` bind triggers the framework's loopback rewrite-origin mismatch.
+
+The final English/Arabic Home shells each reference 416,897 bytes gzip of modern external scripts, exceeding the unchanged 180 KB budget. `npm run audit:bundles` reports that artifact measurement; it does not measure browser transfers or runtime streams. No Lighthouse/Web Vitals, physical installation, Rich Results validation or performance pass is claimed. The Chrome extension remains disconnected, and live provider/R2 checks remain pending. These are open release checks; no public launch or TestFlight upload is claimed.
+
 ## Codemagic build
 
 The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the public `ahmadalwakai/vibeset` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.
@@ -196,7 +206,7 @@ Codemagic must clone a committed remote revision; local changes cannot be built 
 
 [Build #4](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc00e04a72334e32e49513) successfully built P07 commit `456e734` on Mac mini M2 in 2m 48s. Typecheck, lint, unit tests, the credential-free production build and standalone packaging passed; the artifact bundle is 23.06 MB. It has not been downloaded or started on a compatible host. This result covers P06/P07, while later work remains under local verification.
 
-[Build #5](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc34a04a72334e32e49d6b) successfully built P13 commit `11e1bcc` on Mac mini M2 in 2m 17s, covering P08–P13. Typecheck, lint, unit tests, production build and standalone packaging passed. The artifact bundle is 30.66 MB; it has not been downloaded or started on a compatible host. P14 work is undergoing local verification.
+[Build #5](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc34a04a72334e32e49d6b) successfully built P13 commit `11e1bcc` on Mac mini M2 in 2m 17s, covering P08–P13. Typecheck, lint, unit tests, production build and standalone packaging passed. The artifact bundle is 30.66 MB; it has not been downloaded or started on a compatible host. P14/P15 have subsequent local verification; they are not covered by this cloud build.
 
 ## Checks
 

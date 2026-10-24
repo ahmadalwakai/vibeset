@@ -17,3 +17,14 @@ node --input-type=module -e "import sharp from 'sharp'; await sharp('public/bran
 
 These are native-preparation assets. They are not wired into an Xcode/Expo project and do not
 indicate a signed iOS build or TestFlight upload.
+
+P15 also exports the same full-bleed master to `public/icons/icon-192.png`,
+`public/icons/icon-512.png`, `public/icons/maskable-512.png`, `app/icon.png` (512px) and
+`app/apple-icon.png` (180px). The sparkle fits the maskable icon's central safe circle;
+all PNGs are opaque and carry an sRGB profile. The manifest uses these assets for web
+installation, while iOS applies its own icon mask.
+
+`npm run brand:build` deterministically regenerates those five icons plus the English and
+Arabic 1200 × 630 social cards in `public/og/`. It uses the existing SVG master, licensed
+local fonts, translated copy, resvg and Sharp. Arabic marks explicitly retain RTL punctuation
+when rendered to paths. No external image service or system fonts are involved.

@@ -1,6 +1,8 @@
+import { pageMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
 import { Button, Flex, SimpleGrid, Skeleton, Stack, Text } from '@chakra-ui/react';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -125,4 +127,15 @@ export default function CreatorThemesPage({
       <ThemesContent searchParams={searchParams} />
     </Suspense>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('creator.themes')]);
+  return pageMetadata({
+    locale,
+    path: '/creator/themes',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

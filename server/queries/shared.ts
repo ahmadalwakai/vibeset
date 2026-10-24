@@ -130,7 +130,9 @@ export async function readThemePage(
     if (offset >= 200) return { items: [], nextCursor: null };
     const textQuery = sql`websearch_to_tsquery('simple', ${query.q})`;
     const similarity = sql`greatest(similarity(${themes.nameEn}, ${query.q}), similarity(coalesce(${themes.nameAr}, ''), ${query.q}))`;
-    predicates.push(sql`(${themes.searchVector} @@ ${textQuery} OR ${similarity} > 0.25)`);
+    predicates.push(
+      sql`(${themes.searchVector} @@ ${textQuery} OR ${themes.nameEn} % ${query.q} OR ${themes.nameAr} % ${query.q})`,
+    );
     const rank = sql`ts_rank_cd(${themes.searchVector}, ${textQuery}) + ${similarity}`;
     const limit = Math.min(query.limit, 200 - offset);
     const rows = await db
@@ -166,7 +168,7 @@ export async function readThemePage(
     .select({ ...themeCardColumns, sortTimestamp: newSortText, sortPopularity: themes.popularity })
     .from(themes)
     .where(and(...predicates))
-    .orderBy(desc(column), desc(themes.id))
+    .orderBy(sql`${column} desc nulls last`, sql`${themes.id} desc nulls last`)
     .limit(query.limit + 1);
   const selected = rows.slice(0, query.limit);
   const last = selected.at(-1);

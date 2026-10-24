@@ -3,7 +3,8 @@ import { Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { pageMetadata } from '@/lib/seo';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -81,15 +82,16 @@ export async function generateMetadata({
 }: {
   searchParams: SearchParams;
 }): Promise<Metadata> {
-  const t = await getTranslations('studio');
+  const [t, locale] = await Promise.all([getTranslations('studio'), getLocale()]);
   const raw = await searchParams;
-  return {
+  return pageMetadata({
+    locale,
+    path: '/studio',
     title: t('title'),
     description: t('description'),
-    ...(raw.s !== undefined || raw.remix !== undefined
-      ? { robots: { index: false, follow: true } }
-      : {}),
-  };
+    noindex: raw.s !== undefined || raw.remix !== undefined,
+    follow: true,
+  });
 }
 export default async function StudioPage({
   searchParams,

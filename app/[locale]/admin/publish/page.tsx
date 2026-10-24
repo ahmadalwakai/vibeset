@@ -1,7 +1,8 @@
+import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { PublishQueue } from '@/components/admin/PublishQueue';
@@ -10,7 +11,6 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { adminPublishQuerySchema } from '@/lib/validation/admin-queries';
 
 export const instant = false;
-export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 async function PublishContent({
   searchParams,
@@ -48,4 +48,15 @@ export default async function AdminPublishPage(
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('admin.publish')]);
+  return pageMetadata({
+    locale,
+    path: '/admin/publish',
+    title: t('title'),
+    description: t('description'),
+    noindex: true,
+  });
 }

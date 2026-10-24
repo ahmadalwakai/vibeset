@@ -19,6 +19,8 @@
     "admin:revoke": "dotenv -e .env.local -- tsx --conditions=react-server scripts/admin-user.ts --revoke",
     "admin:list": "dotenv -e .env.local -- tsx --conditions=react-server scripts/admin-user.ts --list",
     "glyphs:build": "tsx scripts/generate-glyphs.ts",
+    "brand:build": "tsx scripts/generate-brand-assets.ts",
+    "audit:bundles": "tsx scripts/audit-client-bundles.ts",
     "fonts:fetch": "tsx scripts/fetch-fonts.ts",
     "render:sample": "tsx --conditions=react-server scripts/render-sample.ts",
     "themes:publish": "dotenv -e .env.local -- tsx --conditions=react-server scripts/publish-themes.ts",

@@ -37,6 +37,10 @@
       "next": "الصفحة التالية",
       "previous": "الصفحة السابقة",
       "first": "عد إلى الصفحة الأولى"
+    },
+    "metadata": {
+      "renderTitle": "تجربة محرّك الرسم",
+      "renderDescription": "عاين أدوات الرسم الحتمية في Vibeset."
     }
   },
   "nav": {

@@ -37,6 +37,10 @@
       "next": "Next page",
       "previous": "Previous page",
       "first": "Back to first page"
+    },
+    "metadata": {
+      "renderTitle": "Renderer playground",
+      "renderDescription": "Preview Vibeset’s deterministic rendering tools."
     }
   },
   "nav": {

@@ -16,7 +16,7 @@ Every public page is discoverable in both languages, the app installs cleanly, b
 1. **Metadata audit** — every page has translated `title`/`description`, canonical, `alternates.languages` (`en`, `ar`, `x-default`), OG + Twitter images (theme pages use `og.jpg`; others a static brand OG in `public/og/`). `robots: { index: false }` for `/saved`, `/account`, `/creator/**`, `/admin/**`, `/collections/u/**`, `/sign-in`, Studio with `?s`, `/dev/**`.
 
 2. **Sitemap & robots**
-   - `app/sitemap.ts` — static pages, aesthetic pages, editorial/seasonal collections, published themes (`lastModified` = `updated_at`), approved creators; each entry with `alternates.languages` for en/ar. Use `generateSitemaps` to split at 40,000 URLs. Data via a cached query (tag `themes`).
+   - Runtime `/sitemap.xml` index and `/sitemap/[id].xml` shards — static pages, active aesthetic pages, public editorial/seasonal collections, published themes (`lastModified` = `updated_at`), approved creators; each entry has en/ar/x-default alternates. Each shard holds at most 40,000 URL entries (20,000 entities × two languages). Use bounded cached queries tagged `themes`, `taxonomy` and `collections`, loaded only after the request boundary. Installed Next.js 16.4 calls `generateSitemaps` at build time, so runtime handlers preserve the required credential-free builds without a fixed capacity ceiling.
    - `app/robots.ts` — allow `/`, disallow `/admin`, `/creator`, `/account`, `/saved`, `/api`, `/dev`; sitemap URL.
 
 3. **Structured data** — `components/seo/JsonLd.tsx` (safe serialiser, escapes `<`): `Organization` + `WebSite` with `SearchAction` (`/explore?q={search_term_string}`) on Home; `CreativeWork` on theme pages (P08 — verify); `CollectionPage` + `ItemList` on aesthetic and collection pages; `BreadcrumbList` on theme/aesthetic/collection pages.
@@ -26,16 +26,16 @@ Every public page is discoverable in both languages, the app installs cleanly, b
 5. **Performance pass** (production build, mid-range Android + iPhone):
    - Confirm heavy modules are only in the chunks that need them (renderer, `fflate`, `lz-string`, `culori`, Recharts): inspect `next build` output / browser coverage, fix leaks with `next/dynamic` or `import()`.
    - Images: correct `width`/`height`, first-row priority only, lazy elsewhere, thumbnails ≤ 80 KB.
-   - Fonts: only body + display preloaded; preview fonts `preload: false`.
+   - Fonts: only body + English/Arabic display preloaded; preview-only fonts `preload: false`.
    - Client components: move static parts back to Server Components where possible.
    - Grid: `contentVisibility: 'auto'` + `containIntrinsicSize` on cards.
-   - Database: run `EXPLAIN ANALYZE` for each `listThemes` variant with ≥ 1,000 themes (seed more drafts and publish if needed) — every list query must use an index (partial published indexes, GIN search, trigram). Record results in `docs/01` §6 notes.
+   - Database: run `EXPLAIN ANALYZE` for each `listThemes` variant with ≥ 1,000 isolated published fixtures. Verify ordered partial-index use for the three paged sorts and index-supported selective filters/search (GIN/trigram). Record actual planner choices and timings in `docs/01` §6; broad searches on small tables may rationally use a sequential scan. Do not force index use or publish unreviewed designs to the main database for this check.
    - Optional enhancement: React 19.2 `<ViewTransition>` for card → theme page thumbnail morph behind `experimental.viewTransition`; must degrade gracefully and respect reduced motion.
 
 6. **Daily job** — `app/api/cron/daily/route.ts` (`Authorization: Bearer ${CRON_SECRET}`, `maxDuration = 60`) calling `server/services/maintenance.ts`:
-   - `recomputePopularity()` — one SQL statement over published themes: `score = Σ_{last 30 days} (downloads×3 + icon_exports×3 + remixes×4 + setup_completions×5 + views×0.2) × 0.9^(age_days) + 10 × 0.8^(days_since_publish)`; themes without stats get only the freshness term.
-   - `reconcileCounters()` — `favorite_count` from `favorites`, `download_count` from all-time `theme_stats_daily.downloads`.
-   - `cleanup()` — delete `app_rate_limits` rows older than 2 days; mark `uploads` pending > 24 h as `rejected` (R2 lifecycle removes incoming objects).
+   - `recomputePopularity()` — one SQL statement over published themes: `score = Σ_{last 30 days} (downloads×3 + icon_exports×3 + remixes×4 + setup_completions×5 + views×0.2) × 0.9^(age_days) + 10 × 0.8^(days_since_publish)`; themes without stats get only the freshness term. Ages use UTC calendar days; include today through today−29 and exclude future statistics. Publication age uses `published_at`, falling back to `created_at` for legacy nulls, and clamps future publication ages to zero.
+   - `reconcileCounters()` — `favorite_count` from `favorites`, `download_count` from all-time `theme_stats_daily.downloads`. Lock themes in UUID order in a preceding READ COMMITTED transaction command, then aggregate with a fresh statement snapshot so concurrent tracking cannot be overwritten. Maintenance preserves content `updated_at`.
+   - `cleanup()` — delete `app_rate_limits` and hashed Better Auth `rate_limit` rows older than 2 days (`last_request` is epoch milliseconds); mark `uploads` pending > 24 h as `rejected` (R2 lifecycle removes incoming objects).
    - Then `revalidateTag('themes', 'max')`. Log a one-line summary.
    - `vercel.json`: `{ "crons": [{ "path": "/api/cron/daily", "schedule": "17 3 * * *" }] }`.
    - Tests: popularity SQL on a fixture (integration), auth header required.

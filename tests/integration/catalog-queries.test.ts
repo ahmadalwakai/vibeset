@@ -343,6 +343,35 @@ describe.skipIf(!TEST_DATABASE_URL)(
       ).toEqual([ids[0]]);
     });
 
+    it('uses standard trigram candidates and keeps English FTS when Arabic is null', async () => {
+      const id = ids[0] as string;
+      try {
+        await database
+          .update(themes)
+          .set({ nameEn: 'Lavender dream 100', nameAr: null })
+          .where(eq(themes.id, id));
+        const boundary = await database.execute<{ score: number }>(
+          sql`SELECT similarity('Lavender dream 100', 'lavnder') AS score`,
+        );
+        expect(boundary.rows[0]?.score).toBeGreaterThan(0.25);
+        expect(boundary.rows[0]?.score).toBeLessThan(0.3);
+        expect(
+          (await tq.listThemes({ q: 'lavnder', tags: [aesthetic], limit: 24, sort: 'trending' }))
+            .items,
+        ).toEqual([]);
+        expect(
+          (
+            await tq.listThemes({ q: 'lavender', tags: [aesthetic], limit: 24, sort: 'trending' })
+          ).items.map(({ id }) => id),
+        ).toEqual([id]);
+      } finally {
+        await database
+          .update(themes)
+          .set({ nameEn: 'Lavender', nameAr: 'ثيم 0' })
+          .where(eq(themes.id, id));
+      }
+    });
+
     it('limits ranked search to 200 results even with additional matches', async () => {
       const extraIds: string[] = Array.from({ length: 201 }, () => randomUUID());
       try {

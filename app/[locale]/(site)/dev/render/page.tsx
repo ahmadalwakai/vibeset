@@ -1,6 +1,8 @@
+import { pageMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { RenderPlayground } from '@/components/dev/RenderPlayground';
@@ -20,4 +22,15 @@ export default async function RenderPlaygroundPage(): Promise<ReactElement> {
       <RenderPlayground />
     </Suspense>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('common.metadata')]);
+  return pageMetadata({
+    locale,
+    path: '/dev/render',
+    title: t('renderTitle'),
+    description: t('renderDescription'),
+    noindex: true,
+  });
 }

@@ -1,8 +1,9 @@
+import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { AdminCollectionEditor } from '@/components/admin/AdminCollectionEditor';
@@ -24,10 +25,7 @@ async function Content({ params }: Props): Promise<ReactElement> {
     <AdminCollectionEditor key={`${session.user.id}:${collection.id}`} collection={collection} />
   );
 }
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('admin.collections');
-  return { title: t('edit'), description: t('description') };
-}
+
 export default async function Page(props: Props): Promise<ReactElement> {
   const t = await getTranslations('admin.collections');
   return (
@@ -38,4 +36,22 @@ export default async function Page(props: Props): Promise<ReactElement> {
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  await connection();
+  const id = themeIdSchema.safeParse((await params).id);
+  if (!id.success) notFound();
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('admin.collections')]);
+  return pageMetadata({
+    locale,
+    path: '/admin/collections/' + id.data,
+    title: t('edit'),
+    description: t('description'),
+    noindex: true,
+  });
 }

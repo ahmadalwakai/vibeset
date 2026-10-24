@@ -1,8 +1,9 @@
+import { pageMetadata } from '@/lib/seo';
 import { randomInt } from 'node:crypto';
 import { Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -37,12 +38,7 @@ async function NewThemeContent(): Promise<ReactElement> {
     />
   );
 }
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: (await getTranslations('creator.editor'))('titleNew'),
-    robots: { index: false, follow: false },
-  };
-}
+
 export default async function NewCreatorThemePage(): Promise<ReactElement> {
   const t = await getTranslations('creator.editor');
   return (
@@ -53,4 +49,15 @@ export default async function NewCreatorThemePage(): Promise<ReactElement> {
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('creator.editor')]);
+  return pageMetadata({
+    locale,
+    path: '/creator/themes/new',
+    title: t('titleNew'),
+    description: t('description'),
+    noindex: true,
+  });
 }

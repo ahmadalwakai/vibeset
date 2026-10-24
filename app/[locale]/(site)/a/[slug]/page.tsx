@@ -9,8 +9,12 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ThemeGrid } from '@/components/theme/ThemeGrid';
 import { ThemeGridSkeleton } from '@/components/theme/ThemeGridSkeleton';
-import { AESTHETICS, getRecipe } from '@/content/aesthetics';
-import { getPathname, Link, redirect } from '@/i18n/navigation';
+import { AESTHETICS } from '@/content/aesthetics';
+import { Link, redirect } from '@/i18n/navigation';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { env } from '@/lib/env.client';
+import { pageMetadata } from '@/lib/seo';
+import { breadcrumbJsonLd, collectionJsonLd } from '@/lib/structured-data';
 import type { AestheticTagDTO, Paginated, ThemeCardDTO } from '@/lib/dto';
 import { localized } from '@/lib/utils/localized';
 import { aestheticSlugSchema, themeListQuerySchema } from '@/lib/validation/themes';
@@ -22,25 +26,22 @@ export function generateStaticParams(): { slug: string }[] {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  await connection();
   const [{ slug }, locale, t] = await Promise.all([
     params,
     getLocale(),
     getTranslations('explore.aesthetic'),
   ]);
-  const recipe = getRecipe(slug);
-  const href = `/a/${encodeURIComponent(slug)}`;
-  return {
-    title: recipe ? localized(recipe, locale) : t('fallbackTitle'),
-    description: recipe ? localized(recipe, locale, 'description') : undefined,
-    alternates: {
-      canonical: getPathname({ locale, href }),
-      languages: {
-        en: getPathname({ locale: 'en', href }),
-        ar: getPathname({ locale: 'ar', href }),
-        'x-default': getPathname({ locale: 'en', href }),
-      },
-    },
-  };
+  if (!aestheticSlugSchema.safeParse(slug).success) notFound();
+  const { getAestheticTag } = await import('@/server/queries/taxonomy');
+  const tag = await getAestheticTag(slug);
+  if (!tag) notFound();
+  return pageMetadata({
+    locale,
+    path: `/a/${slug}`,
+    title: localized(tag, locale),
+    description: localized(tag, locale, 'description') || t('emptyDescription'),
+  });
 }
 
 async function AestheticContent({ params, searchParams }: Props): Promise<ReactElement> {
@@ -73,8 +74,29 @@ async function AestheticContent({ params, searchParams }: Props): Promise<ReactE
     return <CatalogError />;
   }
   if (!result.tag) notFound();
+  const nav = await getTranslations('nav');
   return (
     <Stack gap="8">
+      <JsonLd
+        data={collectionJsonLd({
+          origin: env.NEXT_PUBLIC_SITE_URL,
+          locale,
+          path: href,
+          name: localized(result.tag, locale),
+          description: localized(result.tag, locale, 'description'),
+          themes: result.themes.items,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbJsonLd({
+          origin: env.NEXT_PUBLIC_SITE_URL,
+          locale,
+          items: [
+            { name: nav('home'), path: '/' },
+            { name: localized(result.tag, locale), path: href },
+          ],
+        })}
+      />
       <PageHeader
         eyebrow={t('eyebrow')}
         title={localized(result.tag, locale)}

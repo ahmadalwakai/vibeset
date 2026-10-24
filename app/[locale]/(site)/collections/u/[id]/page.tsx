@@ -1,22 +1,15 @@
+import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { UserCollectionEditor } from '@/components/collections/UserCollectionEditor';
 import { themeIdSchema } from '@/lib/theme-status';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('saved.collections');
-  return {
-    title: t('metadataTitle'),
-    description: t('metadataDescription'),
-    robots: { index: false, follow: false },
-  };
-}
 async function CollectionContent({
   params,
 }: {
@@ -58,4 +51,22 @@ export default function UserCollectionPage({
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  await connection();
+  const id = themeIdSchema.safeParse((await params).id);
+  if (!id.success) notFound();
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('saved.collections')]);
+  return pageMetadata({
+    locale,
+    path: '/collections/u/' + id.data,
+    title: t('metadataTitle'),
+    description: t('metadataDescription'),
+    noindex: true,
+  });
 }

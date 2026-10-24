@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import { Box, Stack, Steps, Text } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import type { Locale } from 'next-intl';
@@ -5,20 +6,8 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense, type ReactElement } from 'react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { IosSetupWizard, SetupWizardSkeleton } from '@/components/setup/IosSetupWizard';
-import { getPathname } from '@/i18n/navigation';
 import { cacheLife } from '@/server/cache';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const [locale, t] = await Promise.all([getLocale(), getTranslations('setup.ios')]);
-  return {
-    title: { absolute: t('metadataTitle') },
-    description: t('metadataDescription'),
-    alternates: {
-      canonical: getPathname({ locale, href: '/setup/ios' }),
-      languages: { en: '/setup/ios', ar: '/ar/setup/ios', 'x-default': '/setup/ios' },
-    },
-  };
-}
 async function SetupIntro({ locale }: { locale: Locale }): Promise<ReactElement> {
   'use cache';
   cacheLife('days');
@@ -80,4 +69,16 @@ export default async function IosSetupPage(): Promise<ReactElement> {
       </Stack>
     </Stack>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('setup.ios')]);
+  return pageMetadata({
+    locale,
+    path: '/setup/ios',
+    title: t('metadataTitle'),
+    description: t('metadataDescription'),
+    noindex: false,
+    absoluteTitle: true,
+  });
 }

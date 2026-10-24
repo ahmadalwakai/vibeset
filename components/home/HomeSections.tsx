@@ -177,7 +177,7 @@ export async function HomeThemeRail({
       ) : page.items.length ? (
         <HorizontalRail label={title}>
           {page.items.map((theme, index) => (
-            <ThemeCard key={theme.id} theme={theme} priority={index < 2} />
+            <ThemeCard key={theme.id} theme={theme} priority={sort === 'trending' && index < 2} />
           ))}
         </HorizontalRail>
       ) : (

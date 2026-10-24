@@ -32,6 +32,8 @@ import { SaveToCollectionButton } from '@/components/theme/SaveToCollectionButto
 import { Link } from '@/i18n/navigation';
 import type { ThemeCardDTO, ThemeDetailDTO } from '@/lib/dto';
 import { env } from '@/lib/env.client';
+import { pageMetadata } from '@/lib/seo';
+import { breadcrumbJsonLd } from '@/lib/structured-data';
 import { formatCompact } from '@/lib/utils/format';
 import { localized } from '@/lib/utils/localized';
 import { publicSlugSchema } from '@/server/public-api';
@@ -54,38 +56,15 @@ export async function generateMetadata({
   const description = (
     localized(theme, locale, 'description') || t('metadataDescription', { name })
   ).slice(0, 200);
-  const path = `${locale === 'ar' ? '/ar' : ''}/t/${theme.slug}`;
-  return {
-    title: { absolute: title },
+  return pageMetadata({
+    locale,
+    path: `/t/${theme.slug}`,
+    title,
     description,
-    alternates: {
-      canonical: path,
-      languages: {
-        en: `/t/${theme.slug}`,
-        ar: `/ar/t/${theme.slug}`,
-        'x-default': `/t/${theme.slug}`,
-      },
-    },
-    openGraph: {
-      title,
-      description,
-      url: path,
-      type: 'website',
-      siteName: 'Vibeset',
-      locale: locale === 'ar' ? 'ar_SA' : 'en_GB',
-      alternateLocale: [locale === 'ar' ? 'en_GB' : 'ar_SA'],
-      ...(theme.ogUrl
-        ? { images: [{ url: theme.ogUrl, width: 1200, height: 630, alt: name }] }
-        : {}),
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      ...(theme.ogUrl ? { images: [theme.ogUrl] } : {}),
-    },
-    robots: { index: true, follow: true },
-  };
+    image: theme.ogUrl,
+    imageAlt: name,
+    absoluteTitle: true,
+  });
 }
 
 function ThemeDetailSkeleton(): ReactElement {
@@ -184,6 +163,7 @@ async function ThemeContent({
   if (failed) return <CatalogError />;
   if (!theme) notFound();
   const t = await getTranslations('theme.detail');
+  const nav = await getTranslations('nav');
   const name = localized(theme, locale);
   const remixOf = theme.remixOf;
   const path = `${locale === 'ar' ? '/ar' : ''}/t/${theme.slug}`;
@@ -219,6 +199,16 @@ async function ThemeContent({
       pb={{ base: '40', md: '12' }}
     >
       <JsonLd data={structuredData} />
+      <JsonLd
+        data={breadcrumbJsonLd({
+          origin: env.NEXT_PUBLIC_SITE_URL,
+          locale,
+          items: [
+            { name: nav('home'), path: '/' },
+            { name, path: `/t/${theme.slug}` },
+          ],
+        })}
+      />
       <TrackView themeId={theme.id} />
       <InAppBrowserBanner />
       <Grid

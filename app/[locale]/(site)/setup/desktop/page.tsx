@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import { Button, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import type { Locale } from 'next-intl';
@@ -5,20 +6,9 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import type { ReactElement } from 'react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StepCard } from '@/components/setup/StepCard';
-import { getPathname, Link } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import { cacheLife } from '@/server/cache';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const [locale, t] = await Promise.all([getLocale(), getTranslations('setup.desktop')]);
-  return {
-    title: { absolute: t('metadataTitle') },
-    description: t('metadataDescription'),
-    alternates: {
-      canonical: getPathname({ locale, href: '/setup/desktop' }),
-      languages: { en: '/setup/desktop', ar: '/ar/setup/desktop', 'x-default': '/setup/desktop' },
-    },
-  };
-}
 async function Guide({ locale }: { locale: Locale }): Promise<ReactElement> {
   'use cache';
   cacheLife('days');
@@ -41,4 +31,16 @@ async function Guide({ locale }: { locale: Locale }): Promise<ReactElement> {
 }
 export default async function DesktopSetupPage(): Promise<ReactElement> {
   return <Guide locale={await getLocale()} />;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('setup.desktop')]);
+  return pageMetadata({
+    locale,
+    path: '/setup/desktop',
+    title: t('metadataTitle'),
+    description: t('metadataDescription'),
+    noindex: false,
+    absoluteTitle: true,
+  });
 }

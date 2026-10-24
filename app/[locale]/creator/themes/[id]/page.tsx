@@ -1,8 +1,9 @@
+import { pageMetadata } from '@/lib/seo';
 import { Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -37,12 +38,7 @@ async function EditThemeContent({
     />
   );
 }
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: (await getTranslations('creator.editor'))('titleEdit'),
-    robots: { index: false, follow: false },
-  };
-}
+
 export default async function EditCreatorThemePage(
   props: PageProps<'/[locale]/creator/themes/[id]'>,
 ): Promise<ReactElement> {
@@ -55,4 +51,22 @@ export default async function EditCreatorThemePage(
       </Suspense>
     </Stack>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  await connection();
+  const id = themeIdSchema.safeParse((await params).id);
+  if (!id.success) notFound();
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('creator.editor')]);
+  return pageMetadata({
+    locale,
+    path: '/creator/themes/' + id.data,
+    title: t('titleEdit'),
+    description: t('description'),
+    noindex: true,
+  });
 }
