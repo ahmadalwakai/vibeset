@@ -319,6 +319,14 @@ export function PrivacyEn({
           </li>
         </ul>
         <p>
+          Operational logs held by Vercel can include requested paths, the request’s user-agent
+          information and an approximate country inferred from the IP address. These records help
+          deliver content, investigate technical problems and prevent abuse. They are separate from
+          the website’s optional view counters and from report information stored in our database.
+          Depending on their configuration, provider request logs may also retain query parameters,
+          which can contain the search terms you send for requested results.
+        </p>
+        <p>
           Using an installed open-source package is different from sending information to a hosted
           provider. Fonts and icon glyph assets used by Vibeset are served with the site. Google’s
           sign-in service also has its own privacy terms; it is not described here as a processor
@@ -340,6 +348,11 @@ export function PrivacyEn({
           provider log is deleted at the same time. Security rate-limit records are eligible for
           scheduled cleanup when older than 48 hours; delayed or retried maintenance can take
           longer.
+        </p>
+        <p>
+          Provider request logs follow the service’s configured retention and security requirements.
+          Their retention is separate from moderation reports and rate-limit records; a provider log
+          window is not a promise that those database records are erased at the same time.
         </p>
         <p>
           Deleting your account removes your profile, sessions, provider-account links, favourites,
