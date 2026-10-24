@@ -267,6 +267,8 @@ Saved is a public shell with device favourites for guests. After sign-in, a boun
 
 Account export uses explicit projections inside a repeatable-read transaction, omitting authentication credentials and sessions. The JSON attachment is private/no-store and limited to five requests per day. The report service serializes a reporter/theme pair so concurrent submissions return the same existing open report; visitors are represented only by a salted IP hash.
 
+The creator shell masks and unmounts private children while the client session is pending or belongs to a different account, including routes retained by React Activity. Its five private pages each export `instant = false`: Next.js 16.4's instant-navigation validator cannot traverse children intentionally omitted by this owner guard. This is the [documented opt-out for authentication-gated segments](https://nextjs.org/docs/messages/instant-unrendered-segment); it is scoped to each creator page, since a parent export does not exempt child segments. These pages retain server authorization, dynamic reads behind Suspense, loading skeletons and Cache Components. The trade-off is that instant-navigation validation does not inspect these five pages; it stays enabled for the rest of the app, and prefetch behavior is unchanged.
+
 ---
 
 ## 6. Caching & invalidation (Cache Components)
@@ -315,7 +317,7 @@ The authentication before-hook also forces authoritative session reads for core 
 
 Better Auth's default session and database rate-limit storage would retain raw IPs. `databaseHooks.session.create.before` hashes the session IP with `sha256(ip + IP_HASH_SALT)`. Its database-backed custom limiter hashes the complete per-IP/path key with the same salt before writing `rate_limit`. The conditional upsert makes the admission decision atomically, preserving Better Auth's rolling inactivity window; a denial-only read computes Retry-After without read-modify-write. IP tracking remains enabled for abuse protection. These callbacks import server-only modules lazily so the auth CLI can load its configuration.
 
-The authenticated Better Auth deletion hook calls `cleanupUserContent(userId)` before deleting the auth user: non-published owned themes are deleted, published themes survive with `owner_id = NULL`, and dependent private records cascade. The before-hook returns a cleanup plan containing unused upload keys, deleted theme prefixes and affected public tags. A request-local weak association passes that plan to the after-delete hook only after the auth user is removed. The after-hook immediately expires theme/collection/creator caches to remove stale attribution; it then schedules best-effort R2 removal with `after()` (an awaited fallback is used outside Next). Storage failures are logged without blocking account deletion. Original photos referenced by surviving published themes remain available with those anonymous published designs. Google is omitted until both OAuth credentials are configured; a partial credential pair fails configuration. Magic-link delivery fails explicitly until Resend credentials are provided.
+After Better Auth validates a deletion request, its before-delete hook calls `deleteAccountAndContent(userId)`. One transaction locks the auth user `FOR UPDATE`, waits for creator/upload operations holding `FOR SHARE`, captures unused upload keys and deleted theme prefixes, removes non-published owned themes and deletes the user. Published themes survive with `owner_id = NULL`; dependent private records cascade. The confirmed cleanup plan immediately expires theme/collection/creator caches and schedules best-effort R2 removal with `after()` (an awaited fallback is used outside Next), before Better Auth idempotently completes its adapter deletion and clears the cookie. No row-lock gap remains for new uploads or finalization, and uncertain commits never trigger storage deletion. Storage failures are logged without blocking account deletion. Original photos referenced by surviving published themes remain available with those anonymous published designs. Google is omitted until both OAuth credentials are configured; a partial credential pair fails configuration. Magic-link delivery fails explicitly until Resend credentials are provided.
 
 ---
 
@@ -324,6 +326,7 @@ The authenticated Better Auth deletion hook calls `cleanupUserContent(userId)` b
 | Prefix | Content | Cache |
 |---|---|---|
 | `themes/{themeId}/v{n}/{attemptId}/` | thumb.webp, preview-home.webp, preview-lock.webp, og.jpg, wallpaper-{phone,tablet,desktop}.jpg | immutable |
+| `uploads/incoming/{userId}/avatars/{uploadId}` | raw avatar upload, separate purpose | lifecycle rule: delete after 1 day |
 | `uploads/incoming/{userId}/{uploadId}` | raw creator upload (presigned PUT) | lifecycle rule: delete after 1 day |
 | `uploads/wallpapers/{uploadId}/` | full.jpg (≤ 2868 px tall), preview.webp | immutable |
 | `avatars/{userId}/{hash}.webp` | creator avatar | immutable |
@@ -413,3 +416,5 @@ Caching (§6) is what keeps Neon cheap: public pages hit the DB only on cache fi
 | D9 | Generic glyphs | Brand logos | No trademark exposure |
 | D10 | No TanStack Query | TanStack Query | Few client fetches; explicit hooks with AbortController suffice |
 | D11 | Language-neutral server previews | Per-locale previews | Half the storage and render time |
+
+Creator dashboards show current favourites as an all-time current count. The existing daily table supplies views, downloads, icon exports, remixes and setup completions for 7/30-day charts; it does not contain historical favourites. Creator editing reuses the Studio workspace with a sixth Details panel and creator-only photo tools. Creator editing does not overwrite the ordinary Studio local draft.

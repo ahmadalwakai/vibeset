@@ -197,15 +197,13 @@ describe.skipIf(!TEST_DATABASE_URL)('Better Auth database integration', () => {
         titleEn: 'Integration private collection',
       });
       await db.insert(favorites).values({ userId: signedUp.user.id, themeId: publishedId });
-      await db
-        .insert(creatorProfiles)
-        .values({
-          userId: signedUp.user.id,
-          handle: creatorHandle,
-          displayName: 'Disposable auth creator',
-          isAdult: true,
-          status: 'approved',
-        });
+      await db.insert(creatorProfiles).values({
+        userId: signedUp.user.id,
+        handle: creatorHandle,
+        displayName: 'Disposable auth creator',
+        isAdult: true,
+        status: 'approved',
+      });
       const handedOff: {
         plan: AccountCleanupPlan;
         remainingAccounts: number;
@@ -236,6 +234,8 @@ describe.skipIf(!TEST_DATABASE_URL)('Better Auth database integration', () => {
       );
 
       expect(deleteResponse.status).toBe(200);
+      expect(deleteResponse.headers.get('set-cookie')).toMatch(/better-auth\.session_token=;/);
+      expect(deleteResponse.headers.get('set-cookie')).toContain('Max-Age=0');
       expect(
         z
           .object({ success: z.literal(true), message: z.literal('User deleted') })

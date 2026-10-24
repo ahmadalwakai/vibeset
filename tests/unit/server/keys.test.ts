@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   avatarKey,
   incomingUploadKey,
+  incomingAvatarUploadKey,
   themeAssetKey,
   themeAttemptPrefix,
   themePrefix,
@@ -44,6 +45,9 @@ describe('storage key builders', () => {
   it('accepts opaque auth IDs without requiring UUIDs', () => {
     const userId = 'Abcd1234efgh5678IJKL9012mnop3456';
     expect(incomingUploadKey(userId, id)).toBe(`uploads/incoming/${userId}/${id}`);
+    expect(incomingAvatarUploadKey(userId, id.toUpperCase())).toBe(
+      `uploads/incoming/${userId}/avatars/${id}`,
+    );
     expect(avatarKey(userId, 'A'.repeat(64))).toBe(`avatars/${userId}/${'a'.repeat(64)}.webp`);
     expect(wallpaperUploadKeys(id)).toEqual({
       full: `uploads/wallpapers/${id}/full.jpg`,

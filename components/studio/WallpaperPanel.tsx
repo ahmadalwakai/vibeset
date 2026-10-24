@@ -7,7 +7,7 @@ import type { ReactElement } from 'react';
 import { GLYPH_WEIGHTS, PATTERNS } from '@/lib/render/spec';
 import type {
   GeneratedWallpaperKind,
-  StudioPanelProps,
+  WallpaperPanelProps,
   WallpaperPatch,
   WallpaperTarget,
 } from '@/lib/studio';
@@ -32,7 +32,7 @@ const KINDS: readonly GeneratedWallpaperKind[] = [
   'shapes',
 ];
 
-export function WallpaperPanel({ spec, onChange }: StudioPanelProps): ReactElement {
+export function WallpaperPanel({ spec, onChange, photoTools }: WallpaperPanelProps): ReactElement {
   const t = useTranslations('studio');
   const [target, setTarget] = useState<WallpaperTarget>('home');
   const wallpaper = target === 'home' ? spec.wallpaper : (spec.lockWallpaper ?? spec.wallpaper);
@@ -50,6 +50,7 @@ export function WallpaperPanel({ spec, onChange }: StudioPanelProps): ReactEleme
         }))}
         onChange={setTarget}
       />
+      {photoTools?.(target)}
       <ChoiceField
         label={t('fields.lockMode')}
         value={spec.lockWallpaper ? 'variant' : 'same'}

@@ -3,9 +3,15 @@
 import { Box, Skeleton, Stack, Tabs } from '@chakra-ui/react';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { STUDIO_PANELS } from '@/lib/studio';
-import type { StudioPanel, StudioPanelProps } from '@/lib/studio';
+import type {
+  CreatorStudioOptions,
+  StudioPanel,
+  StudioPanelProps,
+  StudioWorkspacePanel,
+  WallpaperPanelProps,
+} from '@/lib/studio';
 
 function PanelSkeleton(): ReactElement {
   return (
@@ -20,7 +26,7 @@ const ColorsPanel = dynamic<StudioPanelProps>(
   () => import('./ColorsPanel').then((m) => m.ColorsPanel),
   { loading: PanelSkeleton },
 );
-const WallpaperPanel = dynamic<StudioPanelProps>(
+const WallpaperPanel = dynamic<WallpaperPanelProps>(
   () => import('./WallpaperPanel').then((m) => m.WallpaperPanel),
   { loading: PanelSkeleton },
 );
@@ -41,35 +47,46 @@ export function StudioPanels({
   onChange,
   panel,
   onPanelChange,
+  details,
+  wallpaperTools,
 }: StudioPanelProps & {
-  panel: StudioPanel;
-  onPanelChange: (panel: StudioPanel) => void;
+  panel: StudioWorkspacePanel;
+  onPanelChange: (panel: StudioWorkspacePanel) => void;
+  details?: ReactNode;
+  wallpaperTools?: CreatorStudioOptions['wallpaperTools'];
 }): ReactElement {
   const t = useTranslations('studio.panels');
+  const creator = useTranslations('creator.editor');
   return (
     <Tabs.Root
       value={panel}
       onValueChange={({ value }) => {
-        if (STUDIO_PANELS.includes(value as StudioPanel)) onPanelChange(value as StudioPanel);
+        if (STUDIO_PANELS.includes(value as StudioPanel) || (value === 'details' && details))
+          onPanelChange(value as StudioWorkspacePanel);
       }}
       lazyMount
       unmountOnExit
       variant="line"
       colorPalette="brand"
     >
-      <Tabs.List overflowX="auto" px="2">
+      <Tabs.List overflowX="auto" overflowY="hidden" px="2">
         {STUDIO_PANELS.map((value) => (
           <Tabs.Trigger key={value} value={value} minH="11" flexShrink="0" px="3">
             {t(value)}
           </Tabs.Trigger>
         ))}
+        {details ? (
+          <Tabs.Trigger value="details" minH="11" flexShrink="0" px="3">
+            {creator('detailsPanel')}
+          </Tabs.Trigger>
+        ) : null}
       </Tabs.List>
       <Box maxH={{ base: '36dvh', lg: 'calc(100dvh - 12rem)' }} overflowY="auto" p="4">
         <Tabs.Content value="colors">
           <ColorsPanel spec={spec} onChange={onChange} />
         </Tabs.Content>
         <Tabs.Content value="wallpaper">
-          <WallpaperPanel spec={spec} onChange={onChange} />
+          <WallpaperPanel spec={spec} onChange={onChange} photoTools={wallpaperTools} />
         </Tabs.Content>
         <Tabs.Content value="icons">
           <IconsPanel spec={spec} onChange={onChange} />
@@ -80,6 +97,7 @@ export function StudioPanels({
         <Tabs.Content value="type">
           <TypePanel spec={spec} onChange={onChange} />
         </Tabs.Content>
+        {details ? <Tabs.Content value="details">{details}</Tabs.Content> : null}
       </Box>
     </Tabs.Root>
   );

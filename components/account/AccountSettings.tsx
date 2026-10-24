@@ -8,7 +8,7 @@ import type { FormEvent, ReactElement, RefObject } from 'react';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { ErrorState } from '@/components/common/ErrorState';
 import { toaster } from '@/components/ui/toaster';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import type { AccountProfile } from '@/lib/account';
 import { authClient } from '@/lib/auth-client';
 import type { ErrorMessageCode } from '@/lib/result';
@@ -225,6 +225,25 @@ function AccountForm({
             </Button>
           </Stack>
         </form>
+      </Stack>
+      <Stack
+        as="section"
+        gap="3"
+        p={{ base: '5', md: '6' }}
+        bg="bg.panel"
+        rounded="card"
+        borderWidth="hairline"
+        borderColor="border"
+      >
+        <Text as="h2" textStyle="heading.md">
+          {t('creatorTitle')}
+        </Text>
+        <Text textStyle="body.sm" color="fg.muted">
+          {t('creatorDescription')}
+        </Text>
+        <Button asChild colorPalette="brand" size="lg" minH="11" alignSelf="start">
+          <Link href="/become-creator">{t('creatorAction')}</Link>
+        </Button>
       </Stack>
       <Stack
         as="section"

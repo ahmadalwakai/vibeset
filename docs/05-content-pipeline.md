@@ -288,10 +288,20 @@ Admin UI equivalents: Generator page (≤ 24 per click), Review deck, Publish qu
 ## 12. Creator photo themes
 
 1. Client: pick image → decode (`createImageBitmap`) → longest edge ≤ 3000 px → JPEG q0.92 (strips EXIF/GPS, converts HEIC) → `createWallpaperUpload` → `PUT` to presigned URL → `finalizeWallpaperUpload`.
-2. Server: size ≤ 15 MB (HeadObject), `sharp().rotate()`, min 1080 × 1920, aspect (w/h) 0.4–0.7, writes `full.jpg` (≤ 2868 px tall, q90) + `preview.webp`, deletes incoming, extracts palette (k-means k = 6 in OKLab on a 64 × 64 thumbnail, sorted by population).
-3. Palette roles suggested: bg = most populous, primary = most saturated, accent = second most saturated, ink = darkest or lightest (whichever contrasts better with bg), surface = mix(bg, white/black, 0.85).
+2. Server: size ≤ 15,000,000 bytes (HeadObject and actual downloaded bytes), `sharp().rotate()`, min 1080 × 1920, aspect (w/h) 0.4–0.7, writes `full.jpg` (≤ 2868 px tall, q90) + `preview.webp`, deletes incoming, extracts palette (k-means k = 6 in OKLab on a 64 × 64 thumbnail, sorted by population).
+3. Palette roles suggested: bg = most populous, primary = most saturated, accent = second most saturated, ink = darkest or lightest (whichever contrasts better with bg), surface = 85% bg + 15% white (light mode) or black (dark mode), mixed in OKLab. Ink and muted text are adjusted toward black/white until they reach 4.5:1 against bg.
 4. Studio offers 3 icon-style suggestions from a built-in "photo" recipe; creator adjusts focal point (tap) and dim, then submits.
 5. Publish renders phone and tablet crops at the focal point. No desktop size for photo themes.
+
+### 12.1 Upload processing boundaries
+
+Wallpaper and avatar reservations share a 20/hour/account allowance and a 15,000,000-byte maximum. Signed PUT URLs last 300 seconds; a pending upload expires after 24 hours. Both server finalizers validate the actual downloaded size, decode at most 64 million pixels, reject animated or non-JPEG/PNG/WebP raster content, rotate orientation and strip metadata. Wallpaper output is at most 2868px tall (JPEG q90); its preview is at most 780px tall (WebP q80). Stored bytes/dimensions describe the processed full asset.
+
+Fixed normalized keys require serialization before storage writes: finalization holds the upload row lock in one transaction, with fresh account/creator checks. A ready retry returns the persisted result. Invalid content commits a rejected state before returning an error; transport failures leave pending work retryable. Incoming objects are deleted only after the database commit. Uncertain commits preserve final objects, and retries first reload the row. This upload-specific transaction spans bounded image/storage work; publication rendering still runs outside its short commit transaction.
+
+Wallpaper incoming keys retain `uploads/incoming/{userId}/{uploadId}`. Avatar reservations use `uploads/incoming/{userId}/avatars/{uploadId}`, proving purpose without changing the upload schema. Avatar finalization requires at least 256×256 pixels, crops to a centered 256×256 WebP q85 and stores `avatars/{userId}/{sha256}.webp`. Profile updates accept only an owned ready avatar upload whose incoming and final key namespaces match. Wallpaper specs accept only owned ready canonical wallpaper keys.
+
+Palette extraction uses a 64×64 OKLab sample, a content-hash-derived seed, up to six unique clusters and at most 32 iterations; ties are stable and output is ordered by population. Solid or low-colour images return one to six unique colours. Role derivation handles those shorter palettes deterministically.
 
 ## 13. App catalogue (`content/apps.ts` → `apps` table)
 

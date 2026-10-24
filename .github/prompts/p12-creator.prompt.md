@@ -16,11 +16,11 @@ Approved creators (18+) can upload their own wallpaper, build a full theme aroun
 1. **Application** — `app/[locale]/(site)/become-creator/page.tsx` (`requireUserPage`):
    - Explainer (what creators get, rules: own your images, no brands/celebrities/characters, 18+).
    - Form: handle (lowercase `^[a-z0-9_]{3,24}$`, live availability via a `checkHandle` action, debounced 400 ms), display name, bio ≤ 280, up to 3 links (https only), 18+ checkbox (required). Feature flag `creatorApplicationsOpen` → closed state.
-   - Status views: pending, rejected (reason + edit & re-apply), approved (link to `/creator`).
+   - Status views: pending, rejected (reason + edit & re-apply), approved (link to `/creator`), suspended (reason, no self re-application).
    - `server/services/creators.ts`: `apply`, `checkHandle`, `updateProfile`, `review` (used by admin in P14), `getCreatorContext(userId)`; `server/actions/creator.ts` for user/creator actions.
 
 2. **Creator area** — `app/[locale]/creator/layout.tsx`: `requireCreatorPage()` inside Suspense; `components/layout/CreatorShell.tsx` (sidebar lg+, drawer mobile): Dashboard, My themes, New theme, Profile, "View public page".
-   - `creator/page.tsx` dashboard: status counts, 7d/30d views/downloads/favourites/setup completions (sum of `theme_stats_daily` for own themes — `server/admin-queries/creator.ts`), top 5 themes, latest rejection reasons.
+   - `creator/page.tsx` dashboard: status counts, 7d/30d views/downloads/icon exports/remixes/setup completions (sum of `theme_stats_daily` for own themes — `server/admin-queries/creator.ts`), current favourites (separate current-count metric, no historical favourites column), top 5 themes, latest rejection reasons.
    - `creator/themes/page.tsx`: tabs by status, cards with actions (edit, submit, withdraw, delete with confirm), rejection reason inline.
 
 3. **Uploads**
@@ -34,7 +34,7 @@ Approved creators (18+) can upload their own wallpaper, build a full theme aroun
    - Save draft (`createCreatorTheme` / `updateCreatorTheme`), **Submit for review** (`submitTheme` → `pending_review` via `transitionThemeStatus`), Withdraw, Delete. Editing a rejected theme moves it to draft automatically (state machine).
    - Ownership + status checks in services; only `draft`/`rejected` editable.
 
-5. **Profile** — `creator/profile/page.tsx`: display name, bio, links, avatar (reuse the upload flow with a 256×256 WebP avatar variant; `avatars/{userId}/{hash}.webp`); `updateTag(CacheTags.creator(handle))` on save.
+5. **Profile** — `creator/profile/page.tsx`: display name, bio, links, avatar (use separate avatar reservation/finalization with minimum 256×256 input and a centered 256×256 WebP avatar variant; `avatars/{userId}/{hash}.webp`); `themes` and `creator(handle)` cache tags are updated on save. Upload boundaries and serialization follow docs/05 §12.1.
 
 6. **Messages**: `creator.*` (EN + AR).
 

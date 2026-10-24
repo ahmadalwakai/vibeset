@@ -15,33 +15,43 @@ export function isEditorTypingTarget(target: EventTarget | null): boolean {
 }
 
 /** The entry gate resolves URL/draft precedence and remounts this hook for a new source. */
-export function useThemeEditor(initialSpec: ThemeSpec, sourceSlug: string | null): ThemeEditor {
+export function useThemeEditor(
+  initialSpec: ThemeSpec,
+  sourceSlug: string | null,
+  persistDraft = true,
+  disabled = false,
+): ThemeEditor {
   const [state, reduce] = useReducer(themeEditorReducer, initialSpec, initialThemeEditorState);
   const latest = useRef({ spec: state.spec, sourceSlug });
   useEffect(() => {
     latest.current = { spec: state.spec, sourceSlug };
   }, [state.spec, sourceSlug]);
 
-  const dispatch = useCallback((action: EditorAction): void => {
-    let seeded = action;
-    if (action.type === 'shuffleSeed' && action.seed === undefined) {
-      const random = crypto.getRandomValues(new Uint32Array(1))[0] ?? 0;
-      seeded = { ...action, seed: random & 0x7fffffff };
-    }
-    reduce({ ...seeded, at: Date.now() });
-  }, []);
+  const dispatch = useCallback(
+    (action: EditorAction): void => {
+      if (disabled) return;
+      let seeded = action;
+      if (action.type === 'shuffleSeed' && action.seed === undefined) {
+        const random = crypto.getRandomValues(new Uint32Array(1))[0] ?? 0;
+        seeded = { ...action, seed: random & 0x7fffffff };
+      }
+      reduce({ ...seeded, at: Date.now() });
+    },
+    [disabled],
+  );
   const clearError = useCallback((): void => reduce({ type: 'clearError' }), []);
   const flushDraft = useCallback((): void => {
-    writeStudioDraft({ v: 1, ...latest.current });
-  }, []);
+    if (persistDraft) writeStudioDraft({ v: 1, ...latest.current });
+  }, [persistDraft]);
 
   useEffect(() => {
+    if (!persistDraft) return;
     const timer = setTimeout(
       () => writeStudioDraft({ v: 1, spec: state.spec, sourceSlug }),
       STUDIO_AUTOSAVE_MS,
     );
     return () => clearTimeout(timer);
-  }, [state.spec, sourceSlug]);
+  }, [state.spec, sourceSlug, persistDraft]);
 
   useEffect(() => {
     const keydown = (event: KeyboardEvent): void => {

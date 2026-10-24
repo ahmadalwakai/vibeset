@@ -114,12 +114,15 @@ function editedSpec(spec: ThemeSpec, action: EditorAction): unknown {
         : null;
     }
     case 'setWallpaper':
+    case 'setPhotoWallpaper':
     case 'patchWallpaper':
     case 'shuffleSeed': {
       const target = action.target === 'lock' ? 'lockWallpaper' : 'wallpaper';
       const current = spec[target] ?? spec.wallpaper;
       let wallpaper: unknown;
       if (action.type === 'setWallpaper') wallpaper = defaultWallpaper(action.kind, spec);
+      else if (action.type === 'setPhotoWallpaper')
+        wallpaper = { kind: 'image', assetKey: action.assetKey, focalX: 0.5, focalY: 0.5, dim: 0 };
       else if (action.type === 'patchWallpaper')
         wallpaper = knownKeys(action.patch, current) ? { ...current, ...action.patch } : null;
       else
@@ -127,7 +130,14 @@ function editedSpec(spec: ThemeSpec, action: EditorAction): unknown {
           'seed' in current
             ? { ...current, seed: action.seed ?? (current.seed + 1) % 2_147_483_648 }
             : current;
-      return { ...spec, [target]: wallpaper };
+      return {
+        ...spec,
+        [target]: wallpaper,
+        ...(action.type === 'setPhotoWallpaper' && action.palette
+          ? { palette: action.palette }
+          : {}),
+        ...(action.type === 'setPhotoWallpaper' && action.icons ? { icons: action.icons } : {}),
+      };
     }
     case 'setLockMode':
       return {

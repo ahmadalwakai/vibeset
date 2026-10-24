@@ -171,20 +171,23 @@ Columns: **Auth** (`public`/`user`/`creator`/`admin`), **RL** = rate limit, **Ta
 
 Notes: `saveRemix` and `updateRemix` reject `kind: 'image'` in either home or lock wallpapers for non-creators (`FORBIDDEN`). Approved creators/admins may use only their own ready wallpaper uploads in these self-service mutations. Studio always saves a private `source = 'remix'`, `status = 'draft'`; an approved creator may later submit it through the separate review/publish workflow. User collections and saved remixes are never in shared caches. Personal collections are limited to 100 per account and 500 items each. Reordering supplies exactly the visible published IDs; hidden memberships are appended in their existing relative order.
 
-### Creator — `server/actions/creator.ts`
+### Creator — `server/actions/creator.ts`, `server/actions/uploads.ts`
 
 | Action | Input | Output | Auth | RL | Tags |
 |---|---|---|---|---|---|
 | `applyForCreator` | `{ handle, displayName, bio?, links ≤ 3, isAdult: true }` | `{ status }` | user | 3/day | — |
-| `updateCreatorProfile` | `{ displayName, bio?, links, avatarUploadId? }` | `{ ok }` | creator | — | `creator:{handle}` (`updateTag`) |
-| `createWallpaperUpload` | `{ contentType: 'image/jpeg'\|'image/png'\|'image/webp', bytes ≤ 15 MB }` | `{ uploadId, url, headers }` | creator | 20/h | — |
+| `checkHandle` | `{ handle }` | `{ available }` (owned handle remains available) | user | 120/min/user | — |
+| `updateCreatorProfile` | `{ displayName, bio?, links, avatarUploadId? }` | `{ ok }` | creator | — | `themes`, `creator:{handle}` (`updateTag`) |
+| `createWallpaperUpload` | `{ contentType: 'image/jpeg'\|'image/png'\|'image/webp', bytes ≤ 15,000,000 }` | `{ uploadId, url, headers }` | creator | 20/h | — |
 | `finalizeWallpaperUpload` | `{ uploadId }` | `{ uploadId, assetKey, previewUrl, width, height, palette[] }` | creator (owner) | — | — |
+| `createAvatarUpload` | `{ contentType, bytes ≤ 15,000,000 }` | `{ uploadId, url, headers }` | creator | shared upload 20/h | — |
+| `finalizeAvatarUpload` | `{ uploadId }` | `{ uploadId, assetKey, previewUrl, width:256, height:256 }` | creator (owner) | — | — |
 | `createCreatorTheme` | `{ spec, nameEn, nameAr?, descriptionEn?, descriptionAr?, tagSlugs[] }` | `{ id }` | creator | 30/day | — |
 | `updateCreatorTheme` | `{ id, …same }` | `{ id }` | creator (owner; draft/rejected) | — | — |
 | `submitTheme` / `withdrawTheme` | `{ id }` | `{ status }` | creator (owner) | 30/day | — |
 | `deleteCreatorTheme` | `{ id }` | `{ id }` | creator (owner; draft/rejected) | — | — |
 
-`tagSlugs`: exactly one `aesthetic` tag + up to 5 others.
+`tagSlugs`: exactly one active `aesthetic` tag + up to 5 other active tags. Admins may author drafts/upload without a creator profile; submission requires an approved creator profile, including for admin self-authored creator themes. Suspended creators cannot reapply themselves. Creator review transitions are pending → approved/rejected, approved → suspended, and suspended → approved; rejection/suspension require a reason. Rejected users may reapply to pending. Profile edits and every creator-status change invalidate `themes` and the creator handle because public cards embed creator details.
 
 ### Admin — `server/actions/admin/*.ts`
 
@@ -276,7 +279,7 @@ export const CacheTags = {
 | Editorial/seasonal collection changed | `collections`, `collection:{slug}` |
 | App catalogue changed | `apps` |
 | Site setting changed | `settings` |
-| Creator profile changed / status changed | `creator:{handle}` (+ `themes` if themes archived) |
+| Creator profile changed / status changed | `creator:{handle}`, `themes` |
 | Daily cron finished | `themes` |
 
 Rules: slugs are **immutable after first publish** (admin can rename display names only). Cached read functions declare tags with the same helpers.
@@ -302,4 +305,4 @@ Seed events include changed row identifiers and counts, and occur atomically onl
 5. **New mutation checklist**: Zod input in `lib/validation/*`, service with tags, action/handler, audit entry, rate limit decision, cache tags in §7, permission row in §1, i18n error keys, tests.
 6. Optimistic UI must reconcile with the server result and roll back on `ok: false`.
 
-Account deletion expires affected public theme/collection/creator tags with `revalidateTag(tag, { expire: 0 })` after successful auth deletion, so cached creator attribution cannot survive the deletion response. R2 cleanup removes unused upload keys and deleted non-published theme prefixes; photos still referenced by retained anonymous published designs are preserved.
+After Better Auth validates account deletion, its before-delete hook calls `deleteAccountAndContent(userId)`. One transaction locks the user `FOR UPDATE`, captures upload keys, deletes non-published owned themes and deletes the auth user with FK cascades; published designs retain `owner_id = NULL`. Creator/upload operations hold a user `FOR SHARE` lock, so in-flight finalizers complete before capture and later reservations/finalizers cannot cross a cleanup-to-deletion gap. Only a confirmed commit immediately expires affected public theme/collection/creator tags with `revalidateTag(tag, { expire: 0 })` and schedules best-effort R2 cleanup with `after()`. Uncertain commits never trigger storage deletion. Better Auth then idempotently finishes its adapter deletion and clears the session cookie. R2 cleanup removes unused upload keys and deleted non-published theme prefixes; photos still referenced by retained anonymous published designs are preserved.

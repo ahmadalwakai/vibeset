@@ -23,6 +23,43 @@ function edit(state: ThemeEditorState, action: EditorAction, at = 0): ThemeEdito
 }
 const initial = (): ThemeEditorState => initialThemeEditorState(wallpaperFixture());
 
+describe('creator photo editing', () => {
+  const assetKey = 'uploads/wallpapers/123e4567-e89b-42d3-a456-426614174000/full.jpg';
+  it('applies photo, palette and icon suggestion as one undoable edit', () => {
+    const state = initial();
+    const palette = { ...state.spec.palette, bg: '#123456' };
+    const icons = { ...state.spec.icons, fill: 'outline' as const };
+    const next = edit(state, { type: 'setPhotoWallpaper', assetKey, palette, icons });
+    expect(next.spec.wallpaper).toEqual({
+      kind: 'image',
+      assetKey,
+      focalX: 0.5,
+      focalY: 0.5,
+      dim: 0,
+    });
+    expect(next.spec.palette).toEqual(palette);
+    expect(next.spec.icons).toEqual(icons);
+    expect(next.past).toHaveLength(1);
+    const undone = edit(next, { type: 'undo' });
+    expect(undone.spec).toEqual(state.spec);
+    expect(edit(undone, { type: 'redo' }).spec).toEqual(next.spec);
+  });
+  it('sets a separate lock photo and rejects unsafe asset keys atomically', () => {
+    const state = initial();
+    const next = edit(state, { type: 'setPhotoWallpaper', assetKey, target: 'lock' });
+    expect(next.spec.wallpaper).toEqual(state.spec.wallpaper);
+    expect(next.spec.lockWallpaper).toMatchObject({ kind: 'image', assetKey });
+    const invalid = edit(next, {
+      type: 'setPhotoWallpaper',
+      assetKey: '../secret',
+      palette: { ...next.spec.palette, bg: '#000000' },
+    });
+    expect(invalid.error).toBe('VALIDATION');
+    expect(invalid.spec).toEqual(next.spec);
+    expect(invalid.past).toEqual(next.past);
+  });
+});
+
 describe('validated editor changes', () => {
   it('keeps the lightweight default table aligned with first curated recipe range midpoints', () => {
     const choices: readonly WallpaperChoice[] = AESTHETICS.flatMap(

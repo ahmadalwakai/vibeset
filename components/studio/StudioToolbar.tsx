@@ -20,6 +20,9 @@ export function StudioToolbar({
   onIcons,
   onReset,
   sharingReady,
+  savePending = false,
+  saveDisabled = false,
+  saveLabel,
 }: {
   editor: ThemeEditor;
   onShare: () => void;
@@ -29,6 +32,9 @@ export function StudioToolbar({
   onIcons: () => void;
   onReset: () => void;
   sharingReady: boolean;
+  savePending?: boolean;
+  saveDisabled?: boolean;
+  saveLabel?: string;
 }): ReactElement {
   const t = useTranslations('studio.toolbar');
   const share = useTranslations('studio.share');
@@ -109,8 +115,14 @@ export function StudioToolbar({
           </Menu.Positioner>
         </Portal>
       </Menu.Root>
-      <Button variant="outline" minH="11" onClick={onSave}>
-        {t('save')}
+      <Button
+        variant="outline"
+        minH="11"
+        onClick={onSave}
+        loading={savePending}
+        disabled={saveDisabled}
+      >
+        {saveLabel ?? t('save')}
       </Button>
       <Button colorPalette="brand" minH="11" onClick={onDownload}>
         {t('download')}

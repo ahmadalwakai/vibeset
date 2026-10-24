@@ -9,11 +9,6 @@ import type { AuthRateLimitDecision } from '../lib/auth';
 import { disabledAuthPaths } from '../lib/auth';
 import { dbPool } from '../db/pool';
 import * as schema from '../db/schema/index';
-import type { AccountCleanupPlan } from '../lib/account';
-
-// The installed auth adapter passes the same user object to both deletion hooks.
-// Weak keys discard plans automatically when a failed deletion never reaches afterDelete.
-const accountCleanupPlans = new WeakMap<object, AccountCleanupPlan>();
 
 if (Boolean(env.GOOGLE_CLIENT_ID) !== Boolean(env.GOOGLE_CLIENT_SECRET)) {
   throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be configured together');
@@ -86,19 +81,15 @@ export const auth = betterAuth({
     deleteUser: {
       enabled: true,
       beforeDelete: async (user): Promise<void> => {
-        const { cleanupUserContent } = await import('./services/account');
-        accountCleanupPlans.set(user, await cleanupUserContent(user.id));
-      },
-      afterDelete: async (user): Promise<void> => {
-        const plan = accountCleanupPlans.get(user);
-        accountCleanupPlans.delete(user);
-        if (plan) {
-          try {
-            const { scheduleAccountCleanup } = await import('./account-cleanup');
-            await scheduleAccountCleanup(plan);
-          } catch {
-            console.error({ scope: 'account.storage-cleanup-scheduling', failed: true });
-          }
+        const { deleteAccountAndContent } = await import('./services/account');
+        const plan = await deleteAccountAndContent(user.id);
+        // The user is already deleted by the confirmed transaction. Schedule
+        // cleanup before Better Auth's idempotent adapter pass and cookie clear.
+        try {
+          const { scheduleAccountCleanup } = await import('./account-cleanup');
+          await scheduleAccountCleanup(plan);
+        } catch {
+          console.error({ scope: 'account.storage-cleanup-scheduling', failed: true });
         }
       },
     },

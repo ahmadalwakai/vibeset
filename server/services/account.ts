@@ -154,10 +154,23 @@ export async function exportAccountData(userId: string): Promise<Record<string, 
   );
 }
 
-// Called only by Better Auth's authenticated delete-user hook, before its FK cascades.
-export async function cleanupUserContent(userId: string): Promise<AccountCleanupPlan> {
+// Called only after Better Auth validates the deletion request. The account lock
+// spans capture and its actual deletion, so uploads cannot finish in a hook gap.
+export async function deleteAccountAndContent(userId: string): Promise<AccountCleanupPlan> {
   const id = z.string().min(1).parse(userId);
   return dbPool.transaction(async (tx) => {
+    const [principal] = await tx
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.id, id))
+      .for('update');
+    if (!principal)
+      return {
+        userId: id,
+        keys: [],
+        prefixes: [],
+        tags: [CacheTags.themes, CacheTags.collections],
+      };
     // The creator profile disappears in the auth cascade, so capture its public tag first.
     const [creator] = await tx
       .select({ handle: creatorProfiles.handle })
@@ -205,7 +218,7 @@ export async function cleanupUserContent(userId: string): Promise<AccountCleanup
         ),
       ),
     );
-    return {
+    const plan: AccountCleanupPlan = {
       userId: id,
       keys: candidateKeys
         .filter((key) => !referenced.has(key))
@@ -217,5 +230,9 @@ export async function cleanupUserContent(userId: string): Promise<AccountCleanup
         ...(creator ? [CacheTags.creator(creator.handle)] : []),
       ],
     };
+    // FK cascades remove sessions, accounts, uploads and private collections;
+    // published themes keep their anonymous owner and their referenced photos.
+    await tx.delete(user).where(eq(user.id, id));
+    return plan;
   });
 }

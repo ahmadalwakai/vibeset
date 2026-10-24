@@ -33,6 +33,10 @@ export function incomingUploadKey(userId: string, uploadId: string): string {
   return `uploads/incoming/${storageUserIdSchema.parse(userId)}/${storageUuidSchema.parse(uploadId)}`;
 }
 
+export function incomingAvatarUploadKey(userId: string, uploadId: string): string {
+  return `uploads/incoming/${storageUserIdSchema.parse(userId)}/avatars/${storageUuidSchema.parse(uploadId)}`;
+}
+
 export function wallpaperUploadKeys(uploadId: string): { full: string; preview: string } {
   const id = storageUuidSchema.parse(uploadId);
   return {

@@ -25,7 +25,12 @@ import { loadSetupTheme } from '@/lib/client/setup-theme';
 import { track } from '@/lib/client/track';
 import type { ThemeSpec } from '@/lib/render/spec';
 import { STUDIO_PANELS } from '@/lib/studio';
-import type { StudioPanel, StudioShareResult } from '@/lib/studio';
+import type {
+  CreatorStudioOptions,
+  StudioWorkspacePanel,
+  StudioShareResult,
+  ThemeEditor,
+} from '@/lib/studio';
 import type { StudioSavedIdentity, StudioSource } from '@/lib/studio-entry';
 import type { ThemeExportSource } from '@/lib/theme-export';
 import { localized } from '@/lib/utils/localized';
@@ -65,26 +70,42 @@ const StudioSaveSheet = dynamic(() => import('./StudioSaveSheet').then((m) => m.
   loading: ExportLoading,
 });
 
-export function StudioShell({
-  initialSpec,
-  sourceSlug,
-  initialSource,
-  initialRemix,
-  entryError,
-  restored,
-}: {
+interface StudioShellProps {
   initialSpec: ThemeSpec;
   sourceSlug: string | null;
   initialSource: StudioSource | null;
   initialRemix: StudioSavedIdentity | null;
   entryError: 'invalidLink' | 'themeUnavailable' | null;
   restored: boolean;
+}
+
+export function StudioShell(props: StudioShellProps): ReactElement {
+  const editor = useThemeEditor(props.initialSpec, props.sourceSlug);
+  return <StudioWorkspace {...props} editor={editor} />;
+}
+
+export function StudioWorkspace({
+  sourceSlug,
+  initialSource,
+  initialRemix,
+  entryError,
+  restored,
+  editor,
+  creator,
+}: Omit<StudioShellProps, 'initialSpec'> & {
+  editor: ThemeEditor;
+  creator?: CreatorStudioOptions;
 }): ReactElement {
   const t = useTranslations('studio');
   const common = useTranslations('common');
   const locale = useLocale();
-  const editor = useThemeEditor(initialSpec, sourceSlug);
-  const [panel, setPanel] = useState<StudioPanel>('colors');
+  const creatorText = useTranslations('creator.editor');
+  const [panel, setPanel] = useState<StudioWorkspacePanel>(creator ? 'details' : 'colors');
+  const panelValues: readonly StudioWorkspacePanel[] = creator
+    ? [...STUDIO_PANELS, 'details']
+    : STUDIO_PANELS;
+  const panelLabel = (value: StudioWorkspacePanel): string =>
+    value === 'details' ? creatorText('detailsPanel') : t(`panels.${value}`);
   const mobile = useBreakpointValue({ base: true, lg: false }) ?? false;
   const [panelOpen, setPanelOpen] = useState(false);
   const [download, setDownload] = useState(false);
@@ -186,7 +207,12 @@ export function StudioShell({
     }
   }
   return (
-    <Stack gap="5" pb={{ base: '16', lg: '0' }}>
+    <Stack
+      gap="5"
+      pb={{ base: '16', lg: '0' }}
+      inert={creator?.busy ? true : undefined}
+      aria-busy={creator?.busy}
+    >
       <InAppBrowserBanner />
       {source ? (
         <Text textStyle="body.sm" color="fg.muted">
@@ -203,6 +229,10 @@ export function StudioShell({
         onShare={() => void shareDesign()}
         onCopy={() => void shareDesign(true)}
         onSave={() => {
+          if (creator) {
+            creator.onSave();
+            return;
+          }
           editor.flushDraft();
           setOpened((v) => ({ ...v, save: true }));
           setSave(true);
@@ -216,7 +246,11 @@ export function StudioShell({
           setIcons(true);
         }}
         onReset={() => setReset(true)}
+        savePending={creator?.busy}
+        saveDisabled={creator?.saveDisabled}
+        saveLabel={creator ? creatorText('save') : undefined}
       />
+      {creator?.actions}
       {editor.error ? (
         <Flex gap="3" align="center" role="alert">
           <Text textStyle="body.sm" color="red.fg">
@@ -255,6 +289,8 @@ export function StudioShell({
               onChange={editor.dispatch}
               panel={panel}
               onPanelChange={setPanel}
+              details={creator?.details}
+              wallpaperTools={creator?.wallpaperTools}
             />
           </Box>
         ) : null}
@@ -263,7 +299,11 @@ export function StudioShell({
         <>
           <Flex
             position="fixed"
-            bottom="calc(4rem + env(safe-area-inset-bottom, 0px))"
+            bottom={
+              creator
+                ? 'env(safe-area-inset-bottom, 0px)'
+                : 'calc(4rem + env(safe-area-inset-bottom, 0px))'
+            }
             insetStart="0"
             insetEnd="0"
             zIndex="sticky"
@@ -277,7 +317,7 @@ export function StudioShell({
             role="group"
             aria-label={t('title')}
           >
-            {STUDIO_PANELS.map((value) => (
+            {panelValues.map((value) => (
               <Button
                 key={value}
                 minH="11"
@@ -294,21 +334,21 @@ export function StudioShell({
                   setPanelOpen(true);
                 }}
               >
-                {t(`panels.${value}`)}
+                {panelLabel(value)}
               </Button>
             ))}
           </Flex>
-          <ResponsiveSheet
-            open={panelOpen}
-            onOpenChange={setPanelOpen}
-            title={t(`panels.${panel}`)}
-          >
-            <StudioPanels
-              spec={spec}
-              onChange={editor.dispatch}
-              panel={panel}
-              onPanelChange={setPanel}
-            />
+          <ResponsiveSheet open={panelOpen} onOpenChange={setPanelOpen} title={panelLabel(panel)}>
+            <Box inert={creator?.busy ? true : undefined}>
+              <StudioPanels
+                spec={spec}
+                onChange={editor.dispatch}
+                panel={panel}
+                onPanelChange={setPanel}
+                details={creator?.details}
+                wallpaperTools={creator?.wallpaperTools}
+              />
+            </Box>
           </ResponsiveSheet>
         </>
       ) : null}

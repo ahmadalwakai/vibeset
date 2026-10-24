@@ -1,6 +1,7 @@
 import type { ThemeSpec, WallpaperSpec, IconStyle } from './render/spec';
 import type { FontId, Palette } from './render/types';
 import type { GeneratedWallpaperKind } from './generator';
+import type { ReactNode } from 'react';
 
 export type { GeneratedWallpaperKind } from './generator';
 
@@ -12,6 +13,15 @@ export const EDITOR_COALESCE_MS = 400;
 export const STUDIO_AUTOSAVE_MS = 500;
 export const STUDIO_PANELS = ['colors', 'wallpaper', 'icons', 'widgets', 'type'] as const;
 export type StudioPanel = (typeof STUDIO_PANELS)[number];
+export type StudioWorkspacePanel = StudioPanel | 'details';
+export interface CreatorStudioOptions {
+  details: ReactNode;
+  wallpaperTools: (target: WallpaperTarget) => ReactNode;
+  onSave: () => void;
+  busy: boolean;
+  saveDisabled?: boolean;
+  actions?: ReactNode;
+}
 
 export type WallpaperTarget = 'home' | 'lock';
 export type PaletteRole = Exclude<keyof Palette, 'mode'>;
@@ -24,6 +34,13 @@ export type EditorAction =
   | { type: 'setPaletteRole'; role: PaletteRole; value: string }
   | { type: 'applyPalettePreset'; palette: PalettePreset }
   | { type: 'setWallpaper'; kind: GeneratedWallpaperKind; target?: WallpaperTarget }
+  | {
+      type: 'setPhotoWallpaper';
+      assetKey: string;
+      target?: WallpaperTarget;
+      palette?: Palette;
+      icons?: IconStyle;
+    }
   | { type: 'patchWallpaper'; patch: WallpaperPatch; target?: WallpaperTarget; control?: string }
   | { type: 'shuffleSeed'; seed?: number; target?: WallpaperTarget }
   | { type: 'setLockMode'; mode: 'same' | 'variant' }
@@ -40,6 +57,10 @@ export type EditorError = 'VALIDATION' | null;
 export interface StudioPanelProps {
   spec: ThemeSpec;
   onChange: (action: EditorAction) => void;
+}
+
+export interface WallpaperPanelProps extends StudioPanelProps {
+  photoTools?: (target: WallpaperTarget) => ReactNode;
 }
 
 export interface ThemeEditorState {

@@ -196,7 +196,7 @@ describe.skipIf(!url)('account data and cleanup against isolated fixtures', () =
     await expect(query.listMyRemixes({ cursor: 'invalid' })).rejects.toThrow();
   });
   it('removes private themes and captures only unused R2 keys after the DB mutation', async () => {
-    plan = await service.cleanupUserContent(ownerId);
+    plan = await service.deleteAccountAndContent(ownerId);
     expect(plan.prefixes).toEqual([`themes/${remixId}/`]);
     expect(plan.keys).toContain(privatePhotoKey);
     expect(plan.keys).not.toContain(publishedPhotoKey);
@@ -211,13 +211,22 @@ describe.skipIf(!url)('account data and cleanup against isolated fixtures', () =
         .map((row) => row.id)
         .sort(),
     ).toEqual([publishedId, otherThemeId].sort());
+    expect(await database.select({ id: user.id }).from(user).where(eq(user.id, ownerId))).toEqual(
+      [],
+    );
+    expect(
+      await database
+        .select({ ownerId: themes.ownerId })
+        .from(themes)
+        .where(eq(themes.id, publishedId)),
+    ).toEqual([{ ownerId: null }]);
   });
   it('rechecks bans for profile mutation and export', async () => {
-    await database.update(user).set({ banned: true }).where(eq(user.id, ownerId));
+    await database.update(user).set({ banned: true }).where(eq(user.id, otherId));
     await expect(
-      service.updateAccount({ name: 'Blocked', locale: 'en' }, actor),
+      service.updateAccount({ name: 'Blocked', locale: 'en' }, { ...actor, userId: otherId }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
-    await expect(service.exportAccountData(ownerId)).rejects.toMatchObject({ code: 'FORBIDDEN' });
-    await database.update(user).set({ banned: false }).where(eq(user.id, ownerId));
+    await expect(service.exportAccountData(otherId)).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await database.update(user).set({ banned: false }).where(eq(user.id, otherId));
   });
 });
