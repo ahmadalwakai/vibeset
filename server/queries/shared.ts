@@ -34,6 +34,7 @@ export const newSortText = sql<string>`to_char(${newSortValue} AT TIME ZONE 'UTC
 /** Resolve public card dependencies in two bounded queries, avoiding per-card reads. */
 export async function hydrateThemeRows<T extends ThemeCardSource & { ownerId: string | null }>(
   rows: readonly T[],
+  cacheDependencies = true,
 ): Promise<(T & { tags: TagRow[]; creator: CreatorMiniRow | null })[]> {
   if (!rows.length) return [];
   const { db } = await import('../../db/index');
@@ -74,7 +75,7 @@ export async function hydrateThemeRows<T extends ThemeCardSource & { ownerId: st
   }
   const byOwner = new Map(profiles.map((profile) => [profile.userId, profile]));
   const dependencies = profiles.map(({ handle }) => CacheTags.creator(handle));
-  if (dependencies.length) cacheTag(...dependencies);
+  if (cacheDependencies && dependencies.length) cacheTag(...dependencies);
   return rows.map((row) => ({
     ...row,
     tags: byTheme.get(row.id) ?? [],
@@ -84,8 +85,9 @@ export async function hydrateThemeRows<T extends ThemeCardSource & { ownerId: st
 
 export async function hydrateThemeCards(
   rows: readonly (ThemeCardSource & { ownerId: string | null })[],
+  cacheDependencies = true,
 ): Promise<ThemeCardDTO[]> {
-  return (await hydrateThemeRows(rows)).map(toThemeCard);
+  return (await hydrateThemeRows(rows, cacheDependencies)).map(toThemeCard);
 }
 
 export async function readThemePage(

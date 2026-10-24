@@ -142,6 +142,16 @@ Studio now supports an English/Arabic editor with five panels, bounded undo/redo
 
 Local browser checks cover palette editing and undo/redo, wallpaper/lock controls, draft restoration, a fresh-tab share with identical previews, visitor sign-in prompts, English/Arabic layouts at 360px, font changes and clean console output. Real downloads include a 1320×2868 JPEG and a 512×512 custom icon whose red background matches the edited spec. Isolated fixtures were removed afterward. Typecheck, lint, all 1,586 tests (one unrelated skipped test) and the production build (131 static shells/paths) pass. Physical-device sharing, real provider sign-in, photo CDN/CORS and device performance remain release checks.
 
+## P11 user features
+
+Visitors can save validated device favourites; signing in merges them into the account without duplicates. Saved includes private collections and paged draft remixes, with account-scoped Studio resume/update. Personal collections support optimistic membership, keyboard/drag ordering, private access and read-only unlisted links. Theme menus and touch long presses open lazy collection controls. Reports validate published themes, use salted visitor hashes, enforce rate limits and serialize duplicate open submissions.
+
+Account settings update the name and preferred language, switch appearance, export a private JSON attachment and confirm deletion with a typed word. Export projections exclude authentication credentials and sessions. Deletion preserves anonymous published designs, removes private content, expires public creator attribution and schedules unused R2 object cleanup; storage failures do not block deletion. Original photos referenced by surviving published designs remain available.
+
+Browser checks cover guest persistence and account merge, collection creation and membership, persisted Arabic reorder, unlisted read-only access, private not-found/noindex without title leakage, profile/language updates, a real JSON download, existing-remix updates and successful guest/user reports. Arabic 360px views have no horizontal overflow; fresh English catalog and Arabic detail checks have no console warnings. Chakra menu contents unmount on close, so overlay ownership now lives outside that subtree. Disposable accounts and catalog fixtures were cleaned afterward.
+
+Typecheck, lint, all 1,720 tests (one unrelated skipped test) and the production build (143 static shells/paths) pass. Auth deletion is exercised only with isolated disposable integration accounts. Physical touch long presses, cross-device sync and live provider/R2 cleanup remain release checks.
+
 ## Codemagic build
 
 The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the public `ahmadalwakai/vibeset` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.

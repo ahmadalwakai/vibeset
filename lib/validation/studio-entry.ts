@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { MAX_STUDIO_URL_LENGTH } from '../studio';
 import { exportSlugSchema } from './icon-export';
+import { themeIdSchema } from '../theme-status';
 
 export type StudioEntryQuery =
   | { kind: 'share'; value: string }
+  | { kind: 'remix'; id: string }
   | { kind: 'from'; slug: string }
   | { kind: 'draft' }
   | { kind: 'invalid' };
@@ -12,6 +14,10 @@ export function parseStudioEntryQuery(raw: Record<string, unknown>): StudioEntry
   if (raw.s !== undefined) {
     const result = z.string().min(1).max(MAX_STUDIO_URL_LENGTH).safeParse(raw.s);
     return result.success ? { kind: 'share', value: result.data } : { kind: 'invalid' };
+  }
+  if (raw.remix !== undefined) {
+    const result = themeIdSchema.safeParse(raw.remix);
+    return result.success ? { kind: 'remix', id: result.data } : { kind: 'invalid' };
   }
   if (raw.from !== undefined) {
     const result = exportSlugSchema.safeParse(raw.from);

@@ -34,10 +34,12 @@ Hard rules: admins cannot demote/ban themselves; the last admin cannot be demote
 
 | Area | Routes (all under `app/[locale]/`) | Guard |
 |---|---|---|
-| Public | `/`, `/explore`, `/t/[slug]`, `/a/[slug]`, `/collections`, `/collections/[slug]`, `/c/[handle]`, `/studio`, `/setup/ios`, `/setup/android`, `/setup/desktop`, `/legal/[doc]`, `/sign-in` | none |
-| User | `/saved`, `/account`, `/become-creator`, `/collections/u/[id]` (owner, or anyone with the link if unlisted) | `requireUserPage()` (except unlisted view) |
+| Public | `/`, `/explore`, `/t/[slug]`, `/a/[slug]`, `/collections`, `/collections/[slug]`, `/c/[handle]`, `/studio`, `/saved`, `/setup/ios`, `/setup/android`, `/setup/desktop`, `/legal/[doc]`, `/sign-in` | none |
+| User | `/account`, `/become-creator`, `/collections/u/[id]` (owner, or anyone with the link if unlisted) | `requireUserPage()` (except unlisted view) |
 | Creator | `/creator`, `/creator/themes`, `/creator/themes/new`, `/creator/themes/[id]`, `/creator/profile` | `requireCreatorPage()` |
 | Admin | `/admin`, `/admin/themes`, `/admin/themes/[id]`, `/admin/review`, `/admin/publish`, `/admin/generator`, `/admin/collections`, `/admin/collections/[id]`, `/admin/tags`, `/admin/apps`, `/admin/reports`, `/admin/users`, `/admin/creators`, `/admin/settings`, `/admin/audit` | `requireAdminPage()` |
+
+Saved has a public shell: guests resolve device favourites from published IDs, while account collections/remixes require independent user guards.
 
 Page guards redirect (`/sign-in?next=…`) or `notFound()` (for wrong role — don't reveal admin routes). Data functions and actions re-check independently.
 
@@ -156,6 +158,7 @@ Columns: **Auth** (`public`/`user`/`creator`/`admin`), **RL** = rate limit, **Ta
 |---|---|---|---|---|---|
 | `toggleFavorite` | `{ themeId }` | `{ favorited }` | user | 120/min/user | — (counts nightly) |
 | `mergeLocalFavorites` | `{ themeIds: uuid[] ≤ 500 }` | `{ merged }` | user | 10/h | — |
+| `listCollections` | `{ themeId?: uuid }` | `{ collections }` (owned summaries, counts, membership) | user | — | — |
 | `createCollection` | `{ titleEn 1–60, visibility: 'private'\|'unlisted' }` | `{ id }` | user | 30/h | — |
 | `updateCollection` | `{ id, titleEn?, visibility? }` | `{ id }` | user (owner) | — | — |
 | `deleteCollection` | `{ id }` | `{ id }` | user (owner) | — | — |
@@ -166,7 +169,7 @@ Columns: **Auth** (`public`/`user`/`creator`/`admin`), **RL** = rate limit, **Ta
 | `submitReport` | `{ themeId, reason, details? ≤ 1000 }` | `{ id }` | public | 5/h per user-or-ip | — |
 | `updateAccount` | `{ name 1–60, locale }` | `{ ok }` | user | — | — |
 
-Notes: `saveRemix` and `updateRemix` reject `kind: 'image'` in either home or lock wallpapers for non-creators (`FORBIDDEN`). Approved creators/admins may use only their own ready wallpaper uploads in these self-service mutations. Studio always saves a private `source = 'remix'`, `status = 'draft'`; an approved creator may later submit it through the separate review/publish workflow. User collections and saved remixes are never in shared caches.
+Notes: `saveRemix` and `updateRemix` reject `kind: 'image'` in either home or lock wallpapers for non-creators (`FORBIDDEN`). Approved creators/admins may use only their own ready wallpaper uploads in these self-service mutations. Studio always saves a private `source = 'remix'`, `status = 'draft'`; an approved creator may later submit it through the separate review/publish workflow. User collections and saved remixes are never in shared caches. Personal collections are limited to 100 per account and 500 items each. Reordering supplies exactly the visible published IDs; hidden memberships are appended in their existing relative order.
 
 ### Creator — `server/actions/creator.ts`
 
@@ -219,7 +222,8 @@ Admin actions use `updateTag` for immediate consistency and write `audit_log`.
 | `GET /api/v1/apps` | `AppDTO[]` | public | same | — |
 | `GET /api/me/favorites` | `{ themeIds: string[] }` | user (401 otherwise) | `private, no-store` | — |
 | `POST /api/track` | `{ themeId, event: 'view'\|'download'\|'icon_export'\|'remix'\|'setup_complete' }` → 204 | public | no-store | 120/min/ipHash |
-| `GET /api/account/export` | JSON download of the user's data | user | no-store | 5/day |
+| `GET /api/me/remixes?cursor=` | Paged owned private draft remixes (48 per page; specs) | user | private, no-store | — |
+| `GET /api/account/export` | JSON download of the user's data | user | private, no-store | 5/day |
 | `POST /api/admin/themes/[id]/publish` | `{ force?: boolean }` → `{ assetVersion, skipped }` | admin | no-store | — |
 | `POST /api/internal/revalidate` | `{ tags: string[] }` | `Bearer INTERNAL_API_SECRET` | no-store | — |
 | `GET /api/cron/daily` | popularity + counters + cleanup | `Bearer CRON_SECRET` | no-store | — |
@@ -297,3 +301,5 @@ Seed events include changed row identifiers and counts, and occur atomically onl
 4. **DTO change checklist**: `lib/dto.ts` → `server/queries/mappers.ts` → `/api/v1` handlers → client consumers (`rg "ThemeCardDTO"`) → docs. Additive only for `/api/v1`.
 5. **New mutation checklist**: Zod input in `lib/validation/*`, service with tags, action/handler, audit entry, rate limit decision, cache tags in §7, permission row in §1, i18n error keys, tests.
 6. Optimistic UI must reconcile with the server result and roll back on `ok: false`.
+
+Account deletion expires affected public theme/collection/creator tags with `revalidateTag(tag, { expire: 0 })` after successful auth deletion, so cached creator attribution cannot survive the deletion response. R2 cleanup removes unused upload keys and deleted non-published theme prefixes; photos still referenced by retained anonymous published designs are preserved.

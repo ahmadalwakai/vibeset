@@ -14,7 +14,7 @@ Visitors and users can keep what they like (favourites, collections, remixes), m
 ## Tasks
 
 1. **Favourites**
-   - `server/services/favorites.ts`: `toggleFavorite(userId, themeId)` — single round trip: `DELETE … RETURNING` and, if nothing deleted, `INSERT … ON CONFLICT DO NOTHING` (theme must be published); `mergeLocalFavorites(userId, ids)` (filter to published, bulk insert on conflict do nothing); `listFavoriteIds(userId)`.
+   - `server/services/favorites.ts`: `toggleFavorite(userId, themeId)` — serialized transaction: acquire a per-user/theme advisory lock in a preceding statement, then `DELETE … RETURNING` and, if nothing deleted, `INSERT … ON CONFLICT DO NOTHING` at a fresh READ COMMITTED snapshot (theme must be published). A single-statement toggle alone can lose simultaneous toggles when both snapshots see no row; `mergeLocalFavorites(userId, ids)` (filter to published, bulk insert on conflict do nothing); `listFavoriteIds(userId)`.
    - `server/actions/favorites.ts` (`createAction`, auth `user`, rate limits per `docs/03`).
    - `app/api/me/favorites/route.ts` — `{ themeIds }`, `private, no-store`, 401 for visitors.
    - `components/theme/FavoritesProvider.tsx` (client context in the site layout): visitors → ids in `localStorage` (`vibeset:favorites`, Zod-validated on read); users → fetch `/api/me/favorites` once after hydration; on sign-in detection (session changes from null to user) → `mergeLocalFavorites(local)` → clear local → refresh ids. Exposes `isFavorite(id)`, `toggle(id)`, `status`.
@@ -31,8 +31,8 @@ Visitors and users can keep what they like (favourites, collections, remixes), m
 4. **Account** — `app/[locale]/(site)/account/page.tsx` (`requireUserPage`):
    - Profile: name, preferred language (updates Better Auth `locale` via `updateAccount` action; switching also navigates to that locale), colour mode.
    - **Export my data**: `app/api/account/export/route.ts` → JSON attachment (`Content-Disposition`) with profile, favourites, collections (+ items), remixes (specs), creator profile + theme metadata; rate limit 5/day.
-   - **Delete account**: `ConfirmDialog` requiring the typed word (`DELETE` / `حذف`) → `authClient.deleteUser()` → sign out → home + toast.
-   - Extend `cleanupUserContent(userId)` (P01) to also delete the user's R2 objects: uploads (`uploads` rows' keys) and asset prefixes of the deleted non-published themes (use `after()` where available; failures logged, never block deletion).
+   - **Delete account**: `ConfirmDialog` requiring the typed word (`DELETE` / `حذف`) → `authClient.deleteUser()` → signed out by Better Auth’s successful deletion → home + toast. Do not issue a second sign-out that could affect a newly switched account.
+   - Extend `cleanupUserContent(userId)` (P01) to also delete the user's R2 objects: unused uploads (`uploads` rows' keys, preserving original photos referenced by surviving anonymous published designs) and asset prefixes of the deleted non-published themes (use `after()` where available; failures logged, never block deletion).
 
 5. **Reports**
    - `lib/validation/reports.ts`, `server/services/reports.ts` (`submitReport`: theme must be published; stores `reporter_id` or `reporter_ip_hash`; duplicate open report from the same reporter for the same theme → return the existing id), `server/actions/reports.ts` (auth `public`, rate limit 5/h per user-or-ip, feature `reportsEnabled`).

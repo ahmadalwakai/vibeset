@@ -10,12 +10,14 @@ import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import type { ThemeSpec } from '@/lib/render/spec';
 import type { ErrorMessageCode } from '@/lib/result';
+import type { StudioSavedIdentity } from '@/lib/studio-entry';
 import { remixNameSchema } from '@/lib/validation/remixes';
 import { saveRemix, updateRemix } from '@/server/actions/studio';
 
 export function StudioSaveSheet({
   spec,
   sourceSlug,
+  initialRemix,
   open,
   onOpenChange,
   flushDraft,
@@ -23,6 +25,7 @@ export function StudioSaveSheet({
 }: {
   spec: ThemeSpec;
   sourceSlug: string | null;
+  initialRemix?: StudioSavedIdentity | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   flushDraft: () => void;
@@ -32,11 +35,13 @@ export function StudioSaveSheet({
   const errors = useTranslations('errors');
   const session = authClient.useSession();
   const id = useId();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(initialRemix?.nameEn ?? '');
   const [invalid, setInvalid] = useState(false);
   const [error, setError] = useState<ErrorMessageCode | null>(null);
   const [saving, setSaving] = useState(false);
-  const [savedRemix, setSavedRemix] = useState<{ id: string; ownerId: string } | null>(null);
+  const [savedRemix, setSavedRemix] = useState<{ id: string; ownerId: string } | null>(
+    initialRemix ?? null,
+  );
   const ownerId = session.data?.user.id ?? null;
   const currentOwner = useRef(ownerId);
   useEffect(() => {
@@ -108,7 +113,13 @@ export function StudioSaveSheet({
           </Text>
           <Text color="fg.muted">{t('signInBody')}</Text>
           <Button asChild colorPalette="brand" size="lg">
-            <Link href={{ pathname: '/sign-in', query: { next: '/studio' } }} onClick={flushDraft}>
+            <Link
+              href={{
+                pathname: '/sign-in',
+                query: { next: initialRemix ? `/studio?remix=${initialRemix.id}` : '/studio' },
+              }}
+              onClick={flushDraft}
+            >
               {t('signIn')}
             </Link>
           </Button>

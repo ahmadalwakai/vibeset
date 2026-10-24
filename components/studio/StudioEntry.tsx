@@ -28,6 +28,7 @@ function DraftEntry(props: StudioEntryProps): ReactElement {
       initialSpec={entry.spec}
       sourceSlug={entry.sourceSlug}
       initialSource={props.source?.slug === entry.sourceSlug ? props.source : null}
+      initialRemix={props.initialRemix}
       entryError={props.entryError}
       restored={entry.restored}
     />
@@ -38,7 +39,12 @@ export function StudioEntry(props: StudioEntryProps): ReactElement {
   const mounted = useSyncExternalStore(subscribe, client, server);
   return mounted ? (
     <DraftEntry
-      key={JSON.stringify([props.initialSpec, props.sourceSlug, props.explicit])}
+      key={JSON.stringify([
+        props.initialSpec,
+        props.sourceSlug,
+        props.explicit,
+        props.initialRemix,
+      ])}
       {...props}
     />
   ) : (

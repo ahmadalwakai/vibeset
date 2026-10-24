@@ -14,6 +14,7 @@ import { Link } from '@/i18n/navigation';
 import { shareUrl } from '@/lib/client/share';
 import type { ThemeDetailDTO } from '@/lib/dto';
 import { localized } from '@/lib/utils/localized';
+import { ThemeMenuActions } from './ThemeMenuActions';
 
 function PreparingSheet(): ReactElement {
   const t = useTranslations('theme.download');
@@ -37,6 +38,7 @@ export interface ThemeActionBarProps {
   iconsAction?: ReactNode;
   favoriteAction?: ReactNode;
   reportAction?: ReactNode;
+  collectionAction?: ReactNode;
 }
 
 export function ThemeActionBar({
@@ -44,6 +46,7 @@ export function ThemeActionBar({
   iconsAction,
   favoriteAction,
   reportAction,
+  collectionAction,
 }: ThemeActionBarProps): ReactElement {
   const t = useTranslations('theme.actions');
   const locale = useLocale();
@@ -113,6 +116,7 @@ export function ThemeActionBar({
                 </Icon>
                 {t('share')}
               </Menu.Item>
+              {collectionAction}
               {reportAction}
             </Menu.Content>
           </Menu.Positioner>
@@ -122,7 +126,7 @@ export function ThemeActionBar({
   );
 
   return (
-    <>
+    <ThemeMenuActions>
       <Box
         role="group"
         aria-label={t('label')}
@@ -171,6 +175,6 @@ export function ThemeActionBar({
           <WallpaperDownloadSheet theme={theme} open={sheetOpen} onOpenChange={setSheetOpen} />
         ) : null}
       </Box>
-    </>
+    </ThemeMenuActions>
   );
 }

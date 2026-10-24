@@ -26,6 +26,9 @@ import { PreviewCarousel } from '@/components/theme/PreviewCarousel';
 import { ThemeActionBar } from '@/components/theme/ThemeActionBar';
 import { ThemeCard } from '@/components/theme/ThemeCard';
 import { TrackView } from '@/components/theme/TrackView';
+import { FavoriteButton } from '@/components/theme/FavoriteButton';
+import { ReportMenuItem } from '@/components/theme/ReportMenuItem';
+import { SaveToCollectionButton } from '@/components/theme/SaveToCollectionButton';
 import { Link } from '@/i18n/navigation';
 import type { ThemeCardDTO, ThemeDetailDTO } from '@/lib/dto';
 import { env } from '@/lib/env.client';
@@ -280,7 +283,17 @@ async function ThemeContent({
               })}
             </Text>
           ) : null}
-          <ThemeActionBar theme={theme} iconsAction={<IconExportButton theme={theme} />} />
+          <ThemeActionBar
+            theme={theme}
+            iconsAction={<IconExportButton key="icons" theme={theme} />}
+            favoriteAction={
+              <FavoriteButton key="favorite" themeId={theme.id} name={name} size="lg" />
+            }
+            collectionAction={
+              <SaveToCollectionButton key="collection" themeId={theme.id} menuItem />
+            }
+            reportAction={<ReportMenuItem key="report" themeId={theme.id} />}
+          />
         </Stack>
       </Grid>
       <Suspense fallback={<HomeRailSkeleton />}>

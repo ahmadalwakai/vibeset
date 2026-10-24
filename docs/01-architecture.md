@@ -261,6 +261,14 @@ Studio resolves explicit shared designs before source themes, then a validated l
 
 ---
 
+### 5.2 Saved and private account data
+
+Saved is a public shell with device favourites for guests. After sign-in, a bounded validated local list merges into the account before it is cleared; stale responses cannot populate another account. Private collections and draft remixes are loaded through fresh user guards and never shared caches. Collection mutations serialize on their owner/collection and keep positions contiguous, with limits of 100 collections and 500 items each. Unlisted links reveal only published members; private links require ownership. Saved remixes use `?remix=id` in Studio (after any `s` share parameter, before `from`); the server verifies ownership and draft/source status before serializing the spec, and Save updates that same account-scoped remix.
+
+Account export uses explicit projections inside a repeatable-read transaction, omitting authentication credentials and sessions. The JSON attachment is private/no-store and limited to five requests per day. The report service serializes a reporter/theme pair so concurrent submissions return the same existing open report; visitors are represented only by a salted IP hash.
+
+---
+
 ## 6. Caching & invalidation (Cache Components)
 
 `next.config.ts` → `cacheComponents: true`. Consequences Copilot must respect:
@@ -307,7 +315,7 @@ The authentication before-hook also forces authoritative session reads for core 
 
 Better Auth's default session and database rate-limit storage would retain raw IPs. `databaseHooks.session.create.before` hashes the session IP with `sha256(ip + IP_HASH_SALT)`. Its database-backed custom limiter hashes the complete per-IP/path key with the same salt before writing `rate_limit`. The conditional upsert makes the admission decision atomically, preserving Better Auth's rolling inactivity window; a denial-only read computes Retry-After without read-modify-write. IP tracking remains enabled for abuse protection. These callbacks import server-only modules lazily so the auth CLI can load its configuration.
 
-The authenticated Better Auth deletion hook calls `cleanupUserContent(userId)` before deleting the auth user: non-published owned themes are deleted, published themes survive with `owner_id = NULL`, and dependent private records cascade. This hook-specific service returns `void` because it removes private content and does not invalidate shared public cache tags. R2 cleanup is added in P11. Google is omitted until both OAuth credentials are configured; a partial credential pair fails configuration. Magic-link delivery fails explicitly until Resend credentials are provided.
+The authenticated Better Auth deletion hook calls `cleanupUserContent(userId)` before deleting the auth user: non-published owned themes are deleted, published themes survive with `owner_id = NULL`, and dependent private records cascade. The before-hook returns a cleanup plan containing unused upload keys, deleted theme prefixes and affected public tags. A request-local weak association passes that plan to the after-delete hook only after the auth user is removed. The after-hook immediately expires theme/collection/creator caches to remove stale attribution; it then schedules best-effort R2 removal with `after()` (an awaited fallback is used outside Next). Storage failures are logged without blocking account deletion. Original photos referenced by surviving published themes remain available with those anonymous published designs. Google is omitted until both OAuth credentials are configured; a partial credential pair fails configuration. Magic-link delivery fails explicitly until Resend credentials are provided.
 
 ---
 

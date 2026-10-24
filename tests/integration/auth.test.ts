@@ -6,11 +6,23 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import * as relations from '../../db/relations';
 import * as tables from '../../db/schema';
-import { account, collections, favorites, rateLimit, session, themes, user } from '../../db/schema';
+import {
+  account,
+  collections,
+  creatorProfiles,
+  favorites,
+  rateLimit,
+  session,
+  themes,
+  user,
+} from '../../db/schema';
+import type { AccountCleanupPlan } from '../../lib/account';
 import { specHash } from '../../lib/render/hash';
 import { themeSpecSchema } from '../../lib/render/spec';
 
 vi.mock('server-only', () => ({}));
+const cleanup = vi.hoisted(() => ({ schedule: vi.fn() }));
+vi.mock('../../server/account-cleanup', () => ({ scheduleAccountCleanup: cleanup.schedule }));
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL?.trim();
 const schema = { ...tables, ...relations };
@@ -85,6 +97,7 @@ describe.skipIf(!TEST_DATABASE_URL)('Better Auth database integration', () => {
     const draftId = randomUUID();
     const publishedId = randomUUID();
     const collectionId = randomUUID();
+    const creatorHandle = `auth_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
     const hashIdentifier = (identifier: string): string =>
       createHash('sha256').update(identifier).update(salt).digest('hex');
     const rateKeys = ['/sign-up/email', '/delete-user'].map((path) =>
@@ -184,6 +197,35 @@ describe.skipIf(!TEST_DATABASE_URL)('Better Auth database integration', () => {
         titleEn: 'Integration private collection',
       });
       await db.insert(favorites).values({ userId: signedUp.user.id, themeId: publishedId });
+      await db
+        .insert(creatorProfiles)
+        .values({
+          userId: signedUp.user.id,
+          handle: creatorHandle,
+          displayName: 'Disposable auth creator',
+          isAdult: true,
+          status: 'approved',
+        });
+      const handedOff: {
+        plan: AccountCleanupPlan;
+        remainingAccounts: number;
+        remainingDrafts: number;
+      }[] = [];
+      cleanup.schedule.mockImplementation(async (plan: AccountCleanupPlan) => {
+        const remaining = await db
+          .select({ id: user.id })
+          .from(user)
+          .where(eq(user.id, plan.userId));
+        const drafts = await db
+          .select({ id: themes.id })
+          .from(themes)
+          .where(eq(themes.id, draftId));
+        handedOff.push({
+          plan,
+          remainingAccounts: remaining.length,
+          remainingDrafts: drafts.length,
+        });
+      });
 
       const deleteResponse = await auth.handler(
         new Request(`${origin}/api/auth/delete-user`, {
@@ -199,6 +241,19 @@ describe.skipIf(!TEST_DATABASE_URL)('Better Auth database integration', () => {
           .object({ success: z.literal(true), message: z.literal('User deleted') })
           .parse(await deleteResponse.json()),
       ).toEqual({ success: true, message: 'User deleted' });
+      expect(cleanup.schedule).toHaveBeenCalledOnce();
+      expect(handedOff).toEqual([
+        {
+          plan: {
+            userId: signedUp.user.id,
+            keys: [],
+            prefixes: [`themes/${draftId}/`],
+            tags: ['themes', 'collections', `creator:${creatorHandle}`],
+          },
+          remainingAccounts: 0,
+          remainingDrafts: 0,
+        },
+      ]);
       expect(
         await db
           .select({ id: themes.id, ownerId: themes.ownerId, status: themes.status })

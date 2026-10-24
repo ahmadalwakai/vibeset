@@ -26,7 +26,7 @@ import { track } from '@/lib/client/track';
 import type { ThemeSpec } from '@/lib/render/spec';
 import { STUDIO_PANELS } from '@/lib/studio';
 import type { StudioPanel, StudioShareResult } from '@/lib/studio';
-import type { StudioSource } from '@/lib/studio-entry';
+import type { StudioSavedIdentity, StudioSource } from '@/lib/studio-entry';
 import type { ThemeExportSource } from '@/lib/theme-export';
 import { localized } from '@/lib/utils/localized';
 import { StudioPreview } from './StudioPreview';
@@ -69,12 +69,14 @@ export function StudioShell({
   initialSpec,
   sourceSlug,
   initialSource,
+  initialRemix,
   entryError,
   restored,
 }: {
   initialSpec: ThemeSpec;
   sourceSlug: string | null;
   initialSource: StudioSource | null;
+  initialRemix: StudioSavedIdentity | null;
   entryError: 'invalidLink' | 'themeUnavailable' | null;
   restored: boolean;
 }): ReactElement {
@@ -339,6 +341,7 @@ export function StudioShell({
       {opened.save ? (
         <StudioSaveSheet
           spec={spec}
+          initialRemix={initialRemix}
           sourceSlug={sourceSlug}
           open={save}
           onOpenChange={setSave}

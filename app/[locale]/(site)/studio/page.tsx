@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
@@ -36,6 +37,7 @@ async function StudioContent({
     initialSpec: buildSpec(recipe, palette, createRng(randomInt(2_147_483_647))),
     source: null,
     sourceSlug: null,
+    initialRemix: null,
     explicit: parsed.kind !== 'draft',
     entryError: parsed.kind === 'invalid' ? 'invalidLink' : null,
   };
@@ -44,6 +46,16 @@ async function StudioContent({
     const spec = await decodeStudioShare(parsed.value);
     if (spec) entry.initialSpec = spec;
     else entry.entryError = 'invalidLink';
+  } else if (parsed.kind === 'remix') {
+    const [{ requireUserPage }, { getMyRemix }] = await Promise.all([
+      import('@/server/guards'),
+      import('@/server/admin-queries/user'),
+    ]);
+    const session = await requireUserPage(`/studio?remix=${parsed.id}`);
+    const remix = await getMyRemix(parsed.id);
+    if (!remix) notFound();
+    entry.initialSpec = remix.spec;
+    entry.initialRemix = { id: remix.id, nameEn: remix.nameEn, ownerId: session.user.id };
   } else if (parsed.kind === 'from') {
     try {
       const { getThemeDetail } = await import('@/server/queries/themes');
@@ -74,7 +86,9 @@ export async function generateMetadata({
   return {
     title: t('title'),
     description: t('description'),
-    ...(raw.s !== undefined ? { robots: { index: false, follow: true } } : {}),
+    ...(raw.s !== undefined || raw.remix !== undefined
+      ? { robots: { index: false, follow: true } }
+      : {}),
   };
 }
 export default async function StudioPage({
