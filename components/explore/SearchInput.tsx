@@ -6,8 +6,11 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { usePathname, useRouter } from '@/i18n/navigation';
-import { normalizeThemeListQuery, themeListQuerySchema } from '@/lib/validation/themes';
-import { exploreHref } from './useExploreQuery';
+import {
+  exploreHref,
+  normalizeThemeListQuery,
+  themeListQuerySchema,
+} from '@/lib/validation/theme-query';
 
 export interface SearchInputProps {
   compact?: boolean;

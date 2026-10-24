@@ -101,13 +101,15 @@ Export static decor images (`glyphBadge`, `ring`, `stickerCollage`, `photoFrame`
 
 | Event | When |
 |---|---|
-| `view` | theme page viewed (once per session per theme — `sessionStorage` guard) |
+| `view` | theme page viewed only after optional view statistics are explicitly enabled; once per session per theme (`sessionStorage` guard) |
 | `download` | a wallpaper file was saved/downloaded (after successful share/download, not on click) |
 | `icon_export` | an icon batch was saved or ZIP downloaded (once per export) |
 | `remix` | Studio opened from a theme (`?from=`) and the user downloaded or saved |
 | `setup_complete` | iOS wizard finished for a theme |
 
-Sent with `fetch('/api/track', { method: 'POST', keepalive: true, credentials: 'omit' })` (fire-and-forget). No personal data or cookies are sent. `sendBeacon` is deliberately not used because the [Beacon specification](https://www.w3.org/TR/beacon/) requires credentials to be included. The endpoint never reads authentication cookies or creates analytics cookies.
+Optional automatic view statistics are **off by default**. The Privacy page control (also available in Account settings) records the explicit browser-wide choice as validated `{ v: 1, enabled: boolean }` at `vibeset:view-statistics:v1`; no preference is written merely by visiting. While off or unresolved, `TrackView` neither accesses the viewed-theme session marker nor sends a `view` request. Denied storage keeps a choice only in the current tab; it may reset after reload/close. Cross-tab changes are re-read and validated, and disabling attempts to abort an in-flight view request; it cannot undo a request already processed, erase past totals or remove old markers. The choice is shared across accounts using that browser. The four deliberate-action events above are unchanged.
+
+Events send only `{ themeId, event }` with `fetch('/api/track', { method: 'POST', keepalive: true, credentials: 'omit' })` (fire-and-forget). Omitting credentials prevents cookies on this request; it does not hide the network IP or other request metadata from hosting providers. The endpoint uses a salted IP hash for rate limiting, never reads authentication cookies and creates no analytics cookies. `sendBeacon` is deliberately not used because the [Beacon specification](https://www.w3.org/TR/beacon/) requires credentials to be included. See the public Privacy page for storage and provider-data details; this transport choice is not a claim that no personal data is processed.
 
 ---
 

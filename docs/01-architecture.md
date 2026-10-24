@@ -323,6 +323,12 @@ Production HTTP verification covered bilingual metadata/canonicals, public JSON-
 
 ---
 
+### 6.2 P17 public client preparation (2026-10-24)
+
+Shared public validation now uses canonical Mini boundaries with classic server facades, and the colour-mode snippet uses the existing Phosphor icon package. The production Home artifact measures 400,903 bytes gzip of modern external scripts in each locale, down 8,044 bytes (1.97%) from the preceding 408,947-byte legal/privacy build. The unchanged 180,000-byte limit remains unmet. Shared validation core, React/Next, Chakra and Motion still contribute; this is a shell-artifact comparison, not browser transfer timing or a device-performance pass.
+
+Home's prerendered full RSC segment contains the two intended client message props: common/error recovery plus the ten public namespaces, with no admin/creator dictionary. The two literal JSON slices joined by one newline measure 36,300 bytes for English and 50,469 for Arabic (12,088/14,339 bytes when those joined slices alone are gzipped). These payload measurements are separate from the JavaScript sum and do not represent marginal network savings. Studio/application pages add creator messages locally; protected layouts retain their shared editor namespaces.
+
 ## 7. Database access
 
 - `db` (`drizzle-orm/neon-http`) is the default for every query. No interactive transactions; use `db.batch([...])` for atomic multi-statement writes.
@@ -392,6 +398,7 @@ The owner selected retention of published designs after account deletion, with a
 - next-intl v4, locales `en` (default) and `ar`, `localePrefix: 'as-needed'` → `/t/slug` (en) and `/ar/t/slug`.
 - Root layout is `app/[locale]/layout.tsx`. `i18n/request.ts` reads the locale with `next/root-params`, accepts an explicit `locale` override (Server Actions/Route Handlers don't support root params yet), validates with `hasLocale`, otherwise `notFound()`. **No `setRequestLocale`.**
 - Server Actions return error **codes**; the client translates them (`errors.*` namespace). Actions never need the locale.
+- Server translations retain the complete typed dictionary. The root client provider receives `common`/`errors`; route providers add complete namespaces through `ClientMessages`, explicitly inheriting the locale and composing parent messages because next-intl replaces the message object atomically. Public pages omit admin/creator dictionaries; Studio and the creator application add creator messages locally, while protected layouts retain the namespaces needed by shared editors. Keep new client hooks within a matching scope in `lib/client-messages.ts`.
 - `<html lang dir>`: `dir="rtl"` for `ar`. Chakra `LocaleProvider` set from the locale. Logical properties only (`ms/me/ps/pe`, `insetStart`, `textAlign="start"`); directional icons flip with `_rtl`.
 - Numbers: `Intl.NumberFormat('ar-u-nu-latn')` (Latin digits) for consistency with phone UIs.
 - DTOs carry both languages (`nameEn`, `nameAr`); components pick with `localized(obj, locale)`. One cache entry serves both locales.
@@ -403,6 +410,7 @@ The owner selected retention of published designs after account deletion, with a
 - Headers (in `next.config.ts`): CSP (below), `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`, `X-Frame-Options: DENY`.
 - CSP: `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.vibeset.app https://lh3.googleusercontent.com; connect-src 'self' https://cdn.vibeset.app https://*.r2.cloudflarestorage.com [sentry]; font-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com`.
 - Every Server Action and Route Handler: Zod parse → auth guard → rate limit (where listed) → service. Never trust client-sent ids for ownership; re-check in the service.
+- Frequently loaded browser boundaries use canonical Zod Mini schemas for identifiers, favourites, catalogue query state and cursors. Existing classic server exports wrap those same rules and preserve input/output types and classic `ZodError` handling; cursor functions translate the core error class for existing HTTP 400 mapping. Do not import classic DTO/schema modules into the shared public client path or weaken rules to reduce its bundle.
 - SVG is generated only by our renderer from validated specs and displayed via `<img>` (scripts never execute). User SVG uploads are refused.
 - Uploads: client re-encodes to JPEG (strips EXIF/GPS), server re-processes with `sharp().rotate()` and strips metadata; type/size/dimension/aspect checks.
 - IPs are never stored raw: `sha256(ip + IP_HASH_SALT)`.

@@ -1,5 +1,5 @@
 import { FAVORITES_KEY, MAX_FAVORITES_STORAGE_LENGTH } from '../favorites';
-import { localFavoriteIdsSchema } from '../validation/favorites';
+import { localFavoriteIdsSchema } from '../validation/favorite-boundaries';
 
 let volatileIds: string[] = [];
 let writeFailed = false;

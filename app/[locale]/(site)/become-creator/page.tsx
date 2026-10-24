@@ -2,12 +2,14 @@ import { pageMetadata } from '@/lib/seo';
 import { Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { getTranslations, getLocale } from 'next-intl/server';
+import { getTranslations, getLocale, getMessages } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { CreatorApplication } from '@/components/creator/CreatorApplication';
 import { requireUserPage } from '@/server/guards';
+import { ClientMessages } from '@/components/common/ClientMessages';
+import { selectClientMessages } from '@/lib/client-messages';
 
 async function ApplicationContent(): Promise<ReactElement> {
   await connection();
@@ -26,21 +28,23 @@ async function ApplicationContent(): Promise<ReactElement> {
   );
 }
 export default async function BecomeCreatorPage(): Promise<ReactElement> {
-  const t = await getTranslations('creator.application');
+  const [t, messages] = await Promise.all([getTranslations('creator.application'), getMessages()]);
   return (
-    <Stack gap="7" py={{ base: '6', md: '10' }}>
-      <PageHeader title={t('title')} description={t('description')} />
-      <Suspense
-        fallback={
-          <Stack gap="5">
-            <Skeleton h="48" rounded="card" />
-            <Skeleton h="96" rounded="card" />
-          </Stack>
-        }
-      >
-        <ApplicationContent />
-      </Suspense>
-    </Stack>
+    <ClientMessages messages={selectClientMessages(messages, 'creator')}>
+      <Stack gap="7" py={{ base: '6', md: '10' }}>
+        <PageHeader title={t('title')} description={t('description')} />
+        <Suspense
+          fallback={
+            <Stack gap="5">
+              <Skeleton h="48" rounded="card" />
+              <Skeleton h="96" rounded="card" />
+            </Stack>
+          }
+        >
+          <ApplicationContent />
+        </Suspense>
+      </Stack>
+    </ClientMessages>
   );
 }
 

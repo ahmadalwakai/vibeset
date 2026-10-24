@@ -1,11 +1,20 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 import { gzipSync } from 'node:zlib';
+import { z } from 'zod';
 
 const HOME_BUDGET_BYTES = 180_000;
 
 async function main(): Promise<void> {
+  const { values } = parseArgs({
+    strict: true,
+    allowPositionals: false,
+    options: { check: { type: 'boolean' } },
+  });
+  const { check } = z.strictObject({ check: z.boolean().default(false) }).parse(values);
+  let withinBudget = true;
   for (const locale of ['en', 'ar']) {
     const html = await readFile(`.next/server/app/${locale}.html`, 'utf8');
     const scripts = new Map<string, boolean>();
@@ -32,6 +41,7 @@ async function main(): Promise<void> {
     const modernGzipBytes = chunks
       .filter((entry) => entry.modern)
       .reduce((total, entry) => total + entry.gzipBytes, 0);
+    withinBudget &&= modernGzipBytes < HOME_BUDGET_BYTES;
     process.stdout.write(
       JSON.stringify({
         locale,
@@ -39,11 +49,13 @@ async function main(): Promise<void> {
           'prerendered-shell external scripts, gzip defaults; excludes inline data and runtime streams',
         modernGzipBytes,
         budgetBytes: HOME_BUDGET_BYTES,
-        withinBudget: modernGzipBytes <= HOME_BUDGET_BYTES,
+        withinBudget: modernGzipBytes < HOME_BUDGET_BYTES,
         chunks,
       }) + '\n',
     );
   }
+  // Reporting remains non-blocking unless the caller explicitly requests the fixed budget gate.
+  if (check && !withinBudget) process.exitCode = 1;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

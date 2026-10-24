@@ -6,7 +6,7 @@ import {
   type FavoriteToggleData,
 } from '../favorites';
 import type { ActionResult, ErrorCode, ErrorMessageCode } from '../result';
-import { favoriteIdsSchema, favoriteThemeIdSchema } from '../validation/favorites';
+import { favoriteIdsSchema, favoriteThemeIdSchema } from '../validation/favorite-boundaries';
 import {
   readLocalFavorites,
   removeMergedLocalFavorites,

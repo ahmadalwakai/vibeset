@@ -5,14 +5,16 @@ import { XIcon } from '@phosphor-icons/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import type { ReactElement } from 'react';
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import { Link } from '@/i18n/navigation';
 import type { PublicSettingsDTO } from '@/lib/dto';
 import { localized } from '@/lib/utils/localized';
 
 const storageKey = 'vibeset:announcement-dismissals';
 const eventName = 'vibeset:announcement-dismissed';
-const dismissalsSchema = z.array(z.string().regex(/^[a-f0-9]{64}$/)).max(50);
+const dismissalsSchema = z
+  .array(z.string().check(z.regex(/^[a-f0-9]{64}$/)))
+  .check(z.maxLength(50));
 
 function dismissedIds(): string[] {
   try {

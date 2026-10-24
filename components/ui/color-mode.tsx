@@ -6,7 +6,8 @@ import { ThemeProvider, useTheme } from 'next-themes';
 import type { ThemeProviderProps } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
-import { LuMoon, LuSun } from 'react-icons/lu';
+import { MoonIcon } from '@phosphor-icons/react/dist/csr/Moon';
+import { SunIcon } from '@phosphor-icons/react/dist/csr/Sun';
 
 export type ColorModeProviderProps = ThemeProviderProps;
 
@@ -42,7 +43,7 @@ export function useColorModeValue<T>(light: T, dark: T): T {
 
 export function ColorModeIcon(): React.ReactElement {
   const { colorMode } = useColorMode();
-  return colorMode === 'dark' ? <LuMoon /> : <LuSun />;
+  return colorMode === 'dark' ? <MoonIcon /> : <SunIcon />;
 }
 
 type ColorModeButtonProps = IconButtonProps;

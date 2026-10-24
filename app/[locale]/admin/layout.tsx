@@ -1,13 +1,15 @@
 import { Badge, Button, Flex, Skeleton, Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { PublishQueueProvider } from '@/components/admin/PublishQueueProvider';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { Link } from '@/i18n/navigation';
 import { formatNumber } from '@/lib/utils/format';
+import { ClientMessages } from '@/components/common/ClientMessages';
+import { selectClientMessages } from '@/lib/client-messages';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 async function AdminBadges(): Promise<ReactElement> {
@@ -55,17 +57,24 @@ async function AdminContent({ children }: { children: ReactNode }): Promise<Reac
     </PublishQueueProvider>
   );
 }
-export default function AdminLayout({ children }: { children: ReactNode }): ReactElement {
+export default async function AdminLayout({
+  children,
+}: {
+  children: ReactNode;
+}): Promise<ReactElement> {
+  const messages = await getMessages();
   return (
-    <Suspense
-      fallback={
-        <Stack p="6" gap="6">
-          <Skeleton h="16" />
-          <Skeleton h="96" />
-        </Stack>
-      }
-    >
-      <AdminContent>{children}</AdminContent>
-    </Suspense>
+    <ClientMessages messages={selectClientMessages(messages, 'private')}>
+      <Suspense
+        fallback={
+          <Stack p="6" gap="6">
+            <Skeleton h="16" />
+            <Skeleton h="96" />
+          </Stack>
+        }
+      >
+        <AdminContent>{children}</AdminContent>
+      </Suspense>
+    </ClientMessages>
   );
 }

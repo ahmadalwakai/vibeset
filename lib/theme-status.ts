@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { actorIdSchema, themeIdSchema as canonicalThemeIdSchema } from './validation/identifiers';
 
 export const THEME_STATUSES = [
   'draft',
@@ -12,14 +13,9 @@ export const themeStatusSchema = z.enum(THEME_STATUSES);
 export const themeSourceSchema = z.enum(['generated', 'admin', 'creator', 'remix']);
 export type ThemeStatus = z.infer<typeof themeStatusSchema>;
 export type ThemeSource = z.infer<typeof themeSourceSchema>;
-export const themeIdSchema = z.uuid().length(36).toLowerCase();
+export const themeIdSchema = z.string().pipe(canonicalThemeIdSchema);
 
-const actorId = z
-  .string()
-  .trim()
-  .min(1)
-  .max(256)
-  .regex(/^[^\s\u0000-\u001f\u007f]+$/);
+const actorId = z.string().pipe(actorIdSchema);
 export const actorSchema = z.discriminatedUnion('kind', [
   z.strictObject({
     kind: z.literal('user'),

@@ -6,6 +6,8 @@ Mobile-first, soft and polished, fast. Built on Chakra UI v3 tokens in `design/`
 
 Legal documents use the installed Chakra CLI's `components/ui/prose.tsx` snippet for semantic paragraphs, lists and headings, with token borders/shadows, underlined links and visible keyboard focus. Literal scoped selectors retain strict style types without unchecked assertions; explicit RTL overrides preserve zero tracking, normal emphasis and the documented ×1.1 body/heading line height. It needs no additional component recipes. The document page supplies one `h1`; body sections start at `h2`. Legal prose lives in typed locale TSX; interactive control and notice strings stay in matching `messages` keys.
 
+The colour-mode snippet uses Phosphor Sun/Moon icons from their direct client entry points, matching the product icon system. It no longer requires `react-icons`; retain its translated labels, target size and theme persistence when regenerating snippets.
+
 ---
 
 ## 1. Brand

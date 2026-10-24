@@ -22,7 +22,7 @@ import {
   favoriteIdsResponseSchema,
   favoriteMergeResultSchema,
   favoriteToggleResultSchema,
-} from '@/lib/validation/favorites';
+} from '@/lib/validation/favorite-boundaries';
 import { mergeLocalFavorites, toggleFavorite } from '@/server/actions/favorites';
 
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);

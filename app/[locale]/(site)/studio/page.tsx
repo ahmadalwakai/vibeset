@@ -3,7 +3,7 @@ import { Stack } from '@chakra-ui/react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { pageMetadata } from '@/lib/seo';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
@@ -12,6 +12,8 @@ import { StudioEntry } from '@/components/studio/StudioEntry';
 import { StudioSkeleton } from '@/components/studio/StudioSkeleton';
 import type { StudioEntryProps } from '@/lib/studio-entry';
 import { parseStudioEntryQuery } from '@/lib/validation/studio-entry';
+import { ClientMessages } from '@/components/common/ClientMessages';
+import { selectClientMessages } from '@/lib/client-messages';
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -98,13 +100,15 @@ export default async function StudioPage({
 }: {
   searchParams: SearchParams;
 }): Promise<ReactElement> {
-  const t = await getTranslations('studio');
+  const [t, messages] = await Promise.all([getTranslations('studio'), getMessages()]);
   return (
-    <Stack gap="6" py={{ base: '6', md: '10' }}>
-      <PageHeader title={t('title')} description={t('description')} />
-      <Suspense fallback={<StudioSkeleton />}>
-        <StudioContent searchParams={searchParams} />
-      </Suspense>
-    </Stack>
+    <ClientMessages messages={selectClientMessages(messages, 'creator')}>
+      <Stack gap="6" py={{ base: '6', md: '10' }}>
+        <PageHeader title={t('title')} description={t('description')} />
+        <Suspense fallback={<StudioSkeleton />}>
+          <StudioContent searchParams={searchParams} />
+        </Suspense>
+      </Stack>
+    </ClientMessages>
   );
 }

@@ -4,14 +4,11 @@ import { useRouter } from '@/i18n/navigation';
 import type { ThemeListQuery } from '@/lib/dto';
 import {
   normalizeThemeListQuery,
-  serializeThemeListQuery,
   themeListQuerySchema,
-} from '@/lib/validation/themes';
+  exploreHref,
+} from '@/lib/validation/theme-query';
 
-export function exploreHref(query: ThemeListQuery): string {
-  const search = serializeThemeListQuery(query);
-  return `/explore${search ? `?${search}` : ''}`;
-}
+export { exploreHref } from '@/lib/validation/theme-query';
 export function useExploreQuery(): {
   query: ThemeListQuery;
   update: (patch: Partial<ThemeListQuery>) => void;

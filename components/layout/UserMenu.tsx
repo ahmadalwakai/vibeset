@@ -11,7 +11,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { ReactElement } from 'react';
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { toaster } from '@/components/ui/toaster';

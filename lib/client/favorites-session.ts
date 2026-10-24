@@ -1,14 +1,14 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import type { FavoritesSnapshot, FavoritesStore, FavoriteToggleData } from '../favorites';
 import type { ActionResult, ErrorMessageCode } from '../result';
-import { favoriteUserIdSchema } from '../validation/favorites';
+import { favoriteUserIdSchema } from '../validation/favorite-boundaries';
 import { sessionErrorCode } from './session-error';
 
 const sessionSchema = z.object({
-  data: z.object({ user: z.object({ id: favoriteUserIdSchema }) }).nullable(),
+  data: z.nullable(z.object({ user: z.object({ id: favoriteUserIdSchema }) })),
   isPending: z.boolean(),
-  isRefetching: z.boolean().optional().default(false),
-  error: z.unknown().optional(),
+  isRefetching: z._default(z.optional(z.boolean()), false),
+  error: z.optional(z.unknown()),
 });
 
 export interface FavoritesSessionState {

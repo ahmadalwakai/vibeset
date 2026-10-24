@@ -1,7 +1,7 @@
 import { LocaleProvider } from '@chakra-ui/react';
 import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import type { ReactElement } from 'react';
 import { EmotionRegistry } from '@/components/ui/emotion-registry';
 import { Provider } from '@/components/ui/provider';
@@ -9,6 +9,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { fontVariables } from '@/design/fonts';
 import { routing } from '@/i18n/routing';
 import { env } from '@/lib/env.client';
+import { selectClientMessages } from '@/lib/client-messages';
 import { pageMetadata } from '@/lib/seo';
 
 export function generateStaticParams(): { locale: (typeof routing.locales)[number] }[] {
@@ -35,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function LocaleLayout({
   children,
 }: LayoutProps<'/[locale]'>): Promise<ReactElement> {
-  const locale = await getLocale();
+  const [locale, messages] = await Promise.all([getLocale(), getMessages()]);
 
   return (
     <html
@@ -48,7 +49,7 @@ export default async function LocaleLayout({
         <EmotionRegistry>
           <Provider>
             <LocaleProvider locale={locale === 'ar' ? 'ar-SA' : 'en-GB'}>
-              <NextIntlClientProvider>
+              <NextIntlClientProvider messages={selectClientMessages(messages, 'root')}>
                 {children}
                 <Toaster />
               </NextIntlClientProvider>
