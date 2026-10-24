@@ -96,7 +96,7 @@ workflows:
           mkdir -p build
           xcodebuild -workspace ios/Vibeset.xcworkspace -scheme Vibeset \
             -configuration Release -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' -arch arm64 \
+            -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build/simulator CODE_SIGN_IDENTITY='' \
             CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO build \
             2>&1 | tee build/simulator-xcodebuild.log
