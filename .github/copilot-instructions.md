@@ -1,6 +1,6 @@
 # Copilot instructions — Vibeset
 
-Vibeset is a free, web-first platform of aesthetic phone themes (wallpapers + matching icon packs + widget designs), remixable, in English and Arabic (RTL). Roles: visitor, user, creator, admin — each with complete tools.
+Vibeset is a free platform of aesthetic phone themes (wallpapers + matching icon packs + widget designs), remixable, in English and Arabic (RTL). Roles: visitor, user, creator, admin — each with complete tools.
 
 **Specs are the source of truth** — read the relevant file before writing code:
 `docs/00-product.md` · `docs/01-architecture.md` · `docs/02-data-model.md` · `docs/03-api-and-permissions.md` · `docs/04-design-system.md` · `docs/05-content-pipeline.md` · `docs/06-install-flows.md` · `docs/08-quality-checklists.md`.
@@ -11,6 +11,8 @@ If the code you are about to write contradicts a doc, stop and say so. If a deci
 Next.js 16 (≥ 16.3, App Router, Turbopack, `cacheComponents: true`) · React 19.2 · TypeScript strict · npm · Chakra UI v3 + `@emotion/react` + `next-themes` · `motion` (`motion/react`) · `@phosphor-icons/react` · next-intl v4 (`en`, `ar`) · Neon Postgres · Drizzle ORM (stable line) · Better Auth · Zod 4 · Cloudflare R2 via `@aws-sdk/client-s3` · `@resvg/resvg-js` + `sharp` · `@phosphor-icons/core` · `culori` · `fflate` · `lz-string` · Resend · Recharts (admin only) · Vitest · Playwright · `tsx` + `dotenv-cli` for scripts.
 
 Never add: Tailwind, Prisma, NextAuth, TanStack Query, `@chakra-ui/icons`, lodash, moment, axios. Any other new dependency needs a one-line justification.
+
+The native iPhone app in `mobile/` uses a separate Expo SDK 58 / React Native 0.88 / React 19.3 package and native views, per its scoped `AGENTS.md`. The Chakra/Next stack and browser-only conventions above apply to the web product. The owner prioritized native implementation on 24 October 2026; remaining web launch gates do not postpone starting the app.
 
 ## Project layout (no `src/`)
 

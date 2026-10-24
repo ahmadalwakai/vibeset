@@ -1,4 +1,55 @@
 workflows:
+  ios-native-unsigned:
+    name: Vibeset native iPhone compile (unsigned)
+    working_directory: mobile
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      node: 24
+      xcode: '27.1'
+      cocoapods: default
+      groups:
+        - vibeset_native
+      vars:
+        VIBESET_NATIVE_GENERATE: '1'
+        CI: '1'
+        EXPO_NO_TELEMETRY: '1'
+    cache:
+      cache_paths:
+        - $HOME/.npm
+    scripts:
+      - name: Install shared contract dependencies
+        script: npm ci --prefix .. --include=dev --include=optional
+      - name: Install native app dependencies
+        script: npm ci --include=dev --include=optional
+      - name: Check native identifiers and public origins
+        script: npm run check:native
+      - name: Check native dependency compatibility
+        script: npm run check:expo
+      - name: Native TypeScript and lint
+        script: npm run typecheck && npm run lint
+      - name: Native contract tests
+        script: npm test
+      - name: Generate iOS application and widget extension
+        script: npm run prebuild:ios
+      - name: Install iOS pods
+        script: |
+          set -euo pipefail
+          cd ios
+          pod install
+      - name: Compile iPhone application and widgets without signing
+        script: |
+          set -euo pipefail
+          test -d ios/Vibeset.xcworkspace
+          xcodebuild -workspace ios/Vibeset.xcworkspace -scheme Vibeset \
+            -configuration Debug -destination 'generic/platform=iOS' \
+            -derivedDataPath build/unsigned CODE_SIGNING_ALLOWED=NO build
+          test -d build/unsigned/Build/Products/Debug-iphoneos/Vibeset.app
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/unsigned/Build/Products/Debug-iphoneos/Vibeset.app \
+            build/vibeset-unsigned-ios-app.zip
+    artifacts:
+      - mobile/build/vibeset-unsigned-ios-app.zip
   web-production:
     name: Vibeset web production build
     instance_type: mac_mini_m2

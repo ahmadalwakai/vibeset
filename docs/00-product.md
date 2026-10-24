@@ -34,7 +34,7 @@ Business model: free download, most content behind a **VIP subscription** (US li
 
 ## 2. Positioning
 
-Vibeset is a **free, web-first theme platform**: browse hundreds of curated themes, remix any of them live (colours, wallpaper, icon style), and export wallpapers at any resolution plus icon packs for any app — on iPhone, Android or desktop, in English or Arabic. No paywall, no watermark, no account required.
+Vibeset is a **free phone-theme platform with a native iPhone app and a supporting web product**: browse hundreds of curated themes, remix any of them live (colours, wallpaper, icon style), and export wallpapers at any resolution plus icon packs for any app — on iPhone, Android or desktop, in English or Arabic. No paywall, no watermark, no account required.
 
 ---
 
@@ -43,16 +43,16 @@ Vibeset is a **free, web-first theme platform**: browse hundreds of curated them
 | | ThemePack | Vibeset |
 |---|---|---|
 | Price | Free + VIP subscription | 100% free. No paywall, no watermark, account optional |
-| Platforms | iOS app | Web/PWA on iPhone, Android, desktop. Native widget app = Phase 2 |
+| Platforms | iOS app | Native iPhone app in implementation now; supporting web/PWA on iPhone, Android and desktop |
 | Customisation | Static packs | **Remix any theme** live: palette, wallpaper generator, icon style |
 | Icon coverage | Fixed list | 110+ app catalogue + **custom icon for any app** (1,500 glyphs) |
 | Wallpaper sizes | Phone | Vector-generated → phone, tablet, desktop, 4K, "my exact screen" |
 | Setup | Manual | Guided iOS wizard with progress tracking + bulk "Save to Photos" |
 | Language | English-first | English + Arabic with full RTL; Ramadan/Eid seasonal collections |
 | Discovery | Inside the app | SEO page per theme/aesthetic/collection, shareable links, Pinterest-ready images |
-| Widgets | Live native widgets | Widget designs in previews + static decor images now; **live native widgets in Phase 2** |
+| Widgets | Live native widgets | WidgetKit calendar/time implementation in progress; native compilation and real-device verification pending |
 
-Be honest with yourself: on day one ThemePack still wins on live widgets. Phase 2 (`docs/07-roadmap-phase2-native.md`) closes that gap using the same API and theme tokens.
+The owner prioritized the native iPhone app on 24 October 2026. Native widgets and exports are being implemented and verified against the same API/theme tokens per `docs/07-roadmap-phase2-native.md`; do not claim an implemented feature until its actual native checks pass. Remaining web launch work proceeds alongside native delivery.
 
 ---
 

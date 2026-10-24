@@ -46,3 +46,15 @@ next-env.d.ts
 /blob-report
 /.tmp
 /.playwright-mcp
+
+# Native app local/generated files (iOS is generated on macOS)
+/mobile/node_modules/
+/mobile/.expo/
+/mobile/dist/
+/mobile/coverage/
+/mobile/ios/
+/mobile/android/
+/mobile/build/
+*.p8
+*.p12
+*.mobileprovision

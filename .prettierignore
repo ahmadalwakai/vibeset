@@ -8,3 +8,9 @@ playwright-report
 test-results
 blob-report
 package-lock.json
+mobile/package-lock.json
+mobile/.expo
+mobile/dist
+mobile/ios
+mobile/android
+mobile/build

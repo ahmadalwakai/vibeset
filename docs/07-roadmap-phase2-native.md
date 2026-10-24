@@ -2,13 +2,13 @@
 
 Phase 1 (web) cannot put live widgets on a home screen — no web app can. Phase 2 adds a small native app that turns any Vibeset theme into real widgets. It reuses everything Phase 1 builds: `/api/v1`, `ThemeSpec` tokens, the renderer, the content.
 
-**Delivery order** — complete and verify the web product (P00–P17), then build the Expo native companion and submit its first iOS beta to TestFlight. Web usage and activation still guide the scope and timing of a public native release; they do not block the requested private beta preparation.
+**Delivery priority — updated by the owner on 24 October 2026:** build the real native iPhone app now, alongside remaining web/provider launch work. Reuse the implemented public API, theme data and brand assets. Do not postpone native implementation for the web JavaScript budget, public-launch content count or adoption milestones. Reachable real services, native functionality, signing, privacy and device verification remain prerequisites to distributing a usable TestFlight beta. A web archive or Metro JavaScript export is not an iOS build or upload.
 
 ---
 
 ## 1. Shape
 
-- **Expo (React Native, TypeScript)** in `mobile/` inside the same repo, with its own package/config and a dedicated Codemagic iOS build/sign/upload workflow after web verification. Keep the existing web workflow intact; choose one signing authority rather than independently managing the same identifiers through Codemagic and EAS.
+- **Expo (React Native, TypeScript)** in `mobile/` inside the same repo, with its own package/config and a dedicated Codemagic iOS build/sign/upload workflow with independent native verification. Keep the existing web workflow intact; choose one signing authority rather than independently managing the same identifiers through Codemagic and EAS.
 - Screens: Home (featured + trending from `/api/v1/themes`), Theme detail, My widgets, Icon exporter (same flow as web, native share sheet), Settings.
 - Auth (optional, for synced favourites): Better Auth's Expo integration against the same server — verify the current package/plugin name in Better Auth docs at that time.
 
@@ -62,11 +62,11 @@ widgets read tokens + render natively (works offline, no server calls from widge
 
 ## 7. First TestFlight readiness — 24 October 2026
 
-**Verify web P00–P17 first, then implement and test the native companion through Codemagic.** Preparation does not require public adoption milestones, but it does not waive the agreed web gates. The repository currently has no `mobile/` scaffold, Expo/iOS project, widget extension, native signing configuration or IPA. No Apple team, registered app record or TestFlight upload has been verified. The existing `web-production` Codemagic archive is a web server artifact.
+**Implement and test the native iPhone app now through a dedicated Codemagic workflow.** This supersedes the earlier web-first implementation order; pending provider and native distribution gates remain explicit. The repository now contains native Expo source in `mobile/`: real catalogue/detail screens, local favourites, Photos/share adapters, bilingual settings and a calendar/time widget with a native-refresh provider plugin. Windows verification covers TypeScript/tests and the iOS Metro/Hermes bundle only. A generated iOS/Xcode project, compiled extension, signing configuration and IPA remain unverified. No Apple team, registered app record or TestFlight upload has been verified. The existing `web-production` Codemagic archive is a web server artifact.
 
 Reuse `public/brand/app-icon-1024.png`, `app-icon.svg`, `logo-mark.svg`, the licensed fonts and generic glyph assets in the eventual native catalogue. Approved public operator/contact metadata is **Ahmad Alwakai — ahmadalwakai@gmx.com** (`lib/legal.ts`). It does not establish Apple membership, legal seller identity, mailbox verification or ownership of a `gmx` Bundle ID namespace.
 
-The current [Expo SDK 58 release](https://expo.dev/changelog/sdk-58) is dated 15 October 2026 and targets iOS 27/React Native 0.88. Apple currently requires uploads built with **Xcode 26 or later and iOS/iPadOS 26 SDK or later**; that is an upload floor, not the selected Expo toolchain or deployment target. Codemagic lists an [Xcode 27.1 image](https://docs.codemagic.io/specs-macos/xcode-27-1/) for M2/M4. Pin and validate a compatible released SDK/Xcode pair when native implementation starts; do not copy web dependency versions or select an edge image blindly. [Apple requirements](https://developer.apple.com/news/upcoming-requirements/).
+The current [Expo SDK 58 release](https://expo.dev/changelog/sdk-58) is dated 15 October 2026 and targets iOS 27/React Native 0.88 with React 19.3. The initial package selects Expo 58.0.19 and React Native 0.88.0 separately from the web app’s React version. Apple currently requires uploads built with **Xcode 26 or later and iOS/iPadOS 26 SDK or later**; that is an upload floor, not the selected Expo toolchain or deployment target. Codemagic lists an [Xcode 27.1 image](https://docs.codemagic.io/specs-macos/xcode-27-1/) for M2/M4. Pin and validate a compatible released SDK/Xcode pair when native implementation starts; do not copy web dependency versions or select an edge image blindly. [Apple requirements](https://developer.apple.com/news/upcoming-requirements/).
 
 Before the first beta:
 
@@ -76,4 +76,4 @@ Before the first beta:
 4. **Native privacy and device checks:** review actual dependencies, required-reason APIs/privacy manifests, encryption/export answers and native permission descriptions. Request only needed photo access; location remains optional with a manual alternative. Preserve privacy defaults and account deletion/reporting where those features are offered. Test EN/AR/RTL, accessibility, offline/errors, native save/share, widget App Group persistence and timeline updates on a real iPhone; web tests do not establish native correctness. [Expo privacy manifests](https://docs.expo.dev/guides/apple-privacy/).
 5. **Beta outcome:** upload, wait for Apple processing/compliance, assign an internal tester group and verify an actual installation. Internal testers are eligible App Store Connect users; external invitations require beta metadata and first-build Beta App Review. Builds expire after 90 days. Upload, processing, review approval and successful installation are separate milestones; no Apple acceptance/date is guaranteed. [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/).
 
-This section records readiness work only. It does not create a native scaffold, change an API, register identifiers, configure accounts or submit a build.
+The native implementation and its commands are documented in `mobile/README.md`. It does not register Apple identifiers, confirm accounts or submit a build. The separate `ios-native-unsigned` Codemagic workflow compiles an unsigned app/extension on macOS only after verified identifiers and public origins are supplied; it performs no signing or publishing.

@@ -20,6 +20,7 @@ export default defineConfig([
     'playwright-report/**',
     'test-results/**',
     'blob-report/**',
+    'mobile/**',
   ]),
   {
     rules: {
