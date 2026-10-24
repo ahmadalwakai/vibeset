@@ -209,6 +209,8 @@ Used in previews and as static decor exports (no text in exports): `glyphBadge` 
 
 Studio's readable widget placeholder title and body both use `widgets.ink`; `widgets.accent` stays decorative. Outline widgets use an opaque `palette.bg` surface, matching `renderWidget`, so their text does not sit directly over arbitrary wallpaper colours. These Studio preview choices do not change stored specs, exported wallpaper bytes or duplicate fingerprints.
 
+The Studio phone preview is busy until its first wallpaper is prepared and decoded. It displays a loading surface/status without foreground text during that initial wait, then shows the first complete frame without a fade. Later wallpaper updates retain the previous matched preview until the next image is decoded, then crossfade the wallpaper and its matching foreground together over 160 ms (respecting reduced motion). A failed update ends the busy state, keeps any completed preview and offers Retry.
+
 ## 6. Previews (`lib/render/preview.ts`)
 
 - `renderHomePreview(spec, glyphs, apps, { w, h, prefix? })`: generic phone silhouette, status bar (digits + cell/wifi/battery glyphs), one medium widget, 4 × 4 icons from the 16 top-ranked catalogue apps, dock with 4 icons on a glass panel. Apps are explicit ranked catalog input; labels are rounded pills (no words).

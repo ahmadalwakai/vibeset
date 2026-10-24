@@ -10,16 +10,18 @@ import {
   Stack,
   Tabs,
   Text,
+  VisuallyHidden,
 } from '@chakra-ui/react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import { memo, useDeferredValue, useEffect, useState } from 'react';
+import { memo, useDeferredValue, useEffect, useEffectEvent, useState } from 'react';
 import type { ReactElement } from 'react';
 import { PhoneFrame } from '@/components/theme/PhoneFrame';
 import dynamic from 'next/dynamic';
 import { useAppCatalog } from '@/hooks/useAppCatalog';
 import type { AppDTO } from '@/lib/dto';
 import type { StudioWallpaperPreview } from '@/lib/client/studio-preview';
+import { prepareStudioPreviewFrame } from '@/lib/client/studio-preview-frame';
 import type { ThemeSpec } from '@/lib/render/spec';
 import type { FontId } from '@/lib/render/types';
 
@@ -36,91 +38,119 @@ const StudioIconPreview = dynamic(
   { loading: () => <Skeleton h="48" w="full" /> },
 );
 
-const WallpaperSurface = memo(
-  function WallpaperSurface({
-    spec,
-    which,
-    onForeground,
-  }: {
+const WallpaperSurface = memo(function WallpaperSurface({
+  spec,
+  which,
+  cacheKey,
+  children,
+}: {
+  spec: ThemeSpec;
+  which: 'home' | 'lock';
+  cacheKey: string;
+  children: (frame: {
+    foreground: string;
     spec: ThemeSpec;
     which: 'home' | 'lock';
-    cacheKey: string;
-    onForeground: (colour: string) => void;
-  }): ReactElement {
-    const t = useTranslations('studio.preview');
-    const reduced = useReducedMotion();
-    const [attempt, setAttempt] = useState(0);
-    const [result, setResult] = useState<StudioWallpaperPreview | null>(null);
-    const [failed, setFailed] = useState(false);
-    useEffect(() => {
-      const controller = new AbortController();
-      const wallpaper = which === 'lock' ? (spec.lockWallpaper ?? spec.wallpaper) : spec.wallpaper;
-      const timer = setTimeout(
-        () => {
-          void import('@/lib/client/studio-preview')
-            .then((m) => m.prepareStudioWallpaperPreview(spec, which, controller.signal))
-            .then((value) => {
-              if (!controller.signal.aborted) {
-                setResult(value);
-                setFailed(false);
-                onForeground(value.foreground);
-              }
-            })
-            .catch(() => {
-              if (!controller.signal.aborted) setFailed(true);
-            });
-        },
-        wallpaper.kind === 'scatter' ? 120 : 0,
-      );
-      return () => {
-        clearTimeout(timer);
-        controller.abort();
-      };
-    }, [spec, which, attempt, onForeground]);
-    return (
-      <Box position="absolute" inset="0" bg={spec.palette.bg}>
-        <AnimatePresence initial={false}>
-          {result ? (
-            <motion.div
-              key={result.src}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reduced ? 0.08 : 0.16 }}
-              style={{ position: 'absolute', inset: 0 }}
-            >
-              <Image src={result.src} alt="" position="absolute" inset="0" w="full" h="full" />
-              {result.noise ? (
-                <Box
-                  position="absolute"
-                  inset="0"
-                  backgroundImage={`url("${result.noise}")`}
-                  mixBlendMode="soft-light"
-                  pointerEvents="none"
-                />
-              ) : null}
-            </motion.div>
-          ) : (
-            <Skeleton h="full" />
-          )}
-        </AnimatePresence>
-        {failed ? (
-          <Button
-            position="absolute"
-            bottom="4"
-            insetStart="4"
-            minH="11"
-            size="sm"
-            onClick={() => setAttempt((v) => v + 1)}
-          >
-            {t('retry')}
-          </Button>
-        ) : null}
-      </Box>
+  }) => ReactElement;
+}): ReactElement {
+  const t = useTranslations('studio.preview');
+  const preview = useTranslations('theme.preview');
+  const reduced = useReducedMotion();
+  const [attempt, setAttempt] = useState(0);
+  const [result, setResult] = useState<{
+    value: StudioWallpaperPreview;
+    spec: ThemeSpec;
+    which: 'home' | 'lock';
+    requestKey: string;
+    first: boolean;
+  } | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
+  const requestKey = JSON.stringify([cacheKey, attempt]);
+  const busy = result?.requestKey !== requestKey && failed !== requestKey;
+  const isScatter =
+    (which === 'lock' ? (spec.lockWallpaper ?? spec.wallpaper) : spec.wallpaper).kind === 'scatter';
+  const prepare = useEffectEvent(async (signal: AbortSignal) => {
+    const frameSpec = spec;
+    const frameWhich = which;
+    const value = await prepareStudioPreviewFrame(async () => {
+      const { prepareStudioWallpaperPreview } = await import('@/lib/client/studio-preview');
+      return prepareStudioWallpaperPreview(frameSpec, frameWhich, signal);
+    }, signal);
+    return { value, spec: frameSpec, which: frameWhich };
+  });
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => {
+        void prepare(controller.signal)
+          .then((frame) => {
+            if (!controller.signal.aborted) {
+              setResult((previous) => ({ ...frame, requestKey, first: previous === null }));
+              setFailed(null);
+            }
+          })
+          .catch(() => {
+            if (!controller.signal.aborted) setFailed(requestKey);
+          });
+      },
+      isScatter ? 120 : 0,
     );
-  },
-  (a, b) => a.cacheKey === b.cacheKey,
-);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [requestKey, isScatter]);
+  const renderedSpec = result?.requestKey === requestKey ? spec : result?.spec;
+  const renderedWhich = result?.requestKey === requestKey ? which : result?.which;
+  return (
+    <Box position="absolute" inset="0" bg={spec.palette.bg} aria-busy={busy}>
+      {busy ? <VisuallyHidden role="status">{preview('loading')}</VisuallyHidden> : null}
+      <AnimatePresence initial={false}>
+        {result && renderedSpec && renderedWhich ? (
+          <motion.div
+            key={result.requestKey}
+            initial={result.first ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduced ? 0.08 : 0.16 }}
+            style={{ position: 'absolute', inset: 0 }}
+          >
+            <Box position="absolute" inset="0" bg={renderedSpec.palette.bg} />
+            <Image src={result.value.src} alt="" position="absolute" inset="0" w="full" h="full" />
+            {result.value.noise ? (
+              <Box
+                position="absolute"
+                inset="0"
+                backgroundImage={`url("${result.value.noise}")`}
+                mixBlendMode="soft-light"
+                pointerEvents="none"
+              />
+            ) : null}
+            {children({
+              foreground: result.value.foreground,
+              spec: renderedSpec,
+              which: renderedWhich,
+            })}
+          </motion.div>
+        ) : (
+          <Skeleton h="full" />
+        )}
+      </AnimatePresence>
+      {failed === requestKey ? (
+        <Button
+          position="absolute"
+          bottom="4"
+          insetStart="4"
+          minH="11"
+          size="sm"
+          onClick={() => setAttempt((v) => v + 1)}
+        >
+          {t('retry')}
+        </Button>
+      ) : null}
+    </Box>
+  );
+});
 
 const IconGrid = memo(
   function IconGrid({
@@ -273,16 +303,10 @@ export function StudioPreview({
   const panels = useTranslations('studio.panels');
   const deferred = useDeferredValue(spec);
   const [which, setWhich] = useState<'home' | 'lock' | 'icons'>('home');
-  const [foreground, setForeground] = useState(spec.palette.ink);
   const catalog = useAppCatalog();
   const wallpaper =
     which === 'lock' ? (deferred.lockWallpaper ?? deferred.wallpaper) : deferred.wallpaper;
   const wallpaperKey = JSON.stringify([deferred.palette, wallpaper, which]);
-  const iconKey = JSON.stringify([
-    deferred.palette,
-    deferred.icons,
-    deferred.icons.fill === 'wallpaper' ? deferred.wallpaper : null,
-  ]);
   return (
     <Stack gap="4" align="center" aria-label={t('label')}>
       <Tabs.Root
@@ -317,100 +341,114 @@ export function StudioPreview({
             <StudioIconPreview spec={deferred} />
           ) : (
             <PhoneFrame label={t(which)}>
-              <WallpaperSurface
-                spec={deferred}
-                which={which}
-                cacheKey={wallpaperKey}
-                onForeground={setForeground}
-              />
-              <Box
-                position="absolute"
-                inset="0"
-                pointerEvents="none"
-                color={foreground}
-                fontFamily={fonts[deferred.type.body]}
-              >
-                {wallpaper.kind === 'pattern' ? (
-                  <Box
-                    position="absolute"
-                    top="0"
-                    w="full"
-                    h="10%"
-                    bg={foreground === '\u0023ffffff' ? 'blackAlpha.600' : 'whiteAlpha.700'}
-                  />
-                ) : null}
-                <Flex
-                  position="absolute"
-                  top="3%"
-                  insetStart="7%"
-                  insetEnd="7%"
-                  justify="space-between"
-                  align="center"
-                  fontSize="xs"
-                  fontWeight="semibold"
-                >
-                  <Text>{t('time')}</Text>
-                  <Text aria-hidden>▴ ▰</Text>
-                </Flex>
-                {which === 'lock' ? (
-                  <Stack
-                    position="absolute"
-                    top="15%"
-                    w="full"
-                    textAlign="center"
-                    gap="0"
-                    fontFamily={fonts[deferred.type.display]}
-                  >
-                    <Text fontSize="sm">{t('date')}</Text>
-                    <Text fontSize="5xl" fontWeight="semibold" lineHeight="1.2">
-                      {t('time')}
-                    </Text>
-                  </Stack>
-                ) : (
-                  <>
-                    <Stack
+              <WallpaperSurface spec={deferred} which={which} cacheKey={wallpaperKey}>
+                {({ foreground, spec: rendered, which: renderedWhich }) => {
+                  const renderedWallpaper =
+                    renderedWhich === 'lock'
+                      ? (rendered.lockWallpaper ?? rendered.wallpaper)
+                      : rendered.wallpaper;
+                  return (
+                    <Box
                       position="absolute"
-                      top="13%"
-                      insetStart="7%"
-                      insetEnd="7%"
-                      h="19%"
-                      justify="center"
-                      px="4"
-                      rounded={`${deferred.widgets.radius * 100}%`}
-                      bg={
-                        deferred.widgets.style === 'outline'
-                          ? deferred.palette.bg
-                          : deferred.widgets.style === 'glass'
-                            ? `color-mix(in srgb, ${deferred.widgets.surface} 72%, transparent)`
-                            : deferred.widgets.surface
-                      }
-                      backgroundImage={
-                        deferred.widgets.style === 'paper'
-                          ? `repeating-linear-gradient(transparent 0 1rem, color-mix(in srgb, ${deferred.widgets.ink} 12%, transparent) 1rem 1.05rem)`
-                          : undefined
-                      }
-                      backdropFilter={deferred.widgets.style === 'glass' ? 'blur(8px)' : undefined}
-                      borderWidth={deferred.widgets.style === 'outline' ? 'medium' : '0'}
-                      borderColor={deferred.widgets.ink}
-                      color={deferred.widgets.ink}
+                      inset="0"
+                      pointerEvents="none"
+                      color={foreground}
+                      fontFamily={fonts[rendered.type.body]}
                     >
-                      <DecorSymbols spec={deferred} />
-                      <Text
-                        fontFamily={fonts[deferred.type.display]}
-                        fontSize="lg"
+                      {renderedWallpaper.kind === 'pattern' ? (
+                        <Box
+                          position="absolute"
+                          top="0"
+                          w="full"
+                          h="10%"
+                          bg={foreground === '\u0023ffffff' ? 'blackAlpha.600' : 'whiteAlpha.700'}
+                        />
+                      ) : null}
+                      <Flex
+                        position="absolute"
+                        top="3%"
+                        insetStart="7%"
+                        insetEnd="7%"
+                        justify="space-between"
+                        align="center"
+                        fontSize="xs"
                         fontWeight="semibold"
-                        lineClamp="1"
                       >
-                        {t('widgetTitle')}
-                      </Text>
-                      <Text fontSize="xs" lineClamp="2">
-                        {t('widgetBody')}
-                      </Text>
-                    </Stack>
-                    <IconGrid spec={deferred} apps={catalog.apps} cacheKey={iconKey} />
-                  </>
-                )}
-              </Box>
+                        <Text>{t('time')}</Text>
+                        <Text aria-hidden>▴ ▰</Text>
+                      </Flex>
+                      {renderedWhich === 'lock' ? (
+                        <Stack
+                          position="absolute"
+                          top="15%"
+                          w="full"
+                          textAlign="center"
+                          gap="0"
+                          fontFamily={fonts[rendered.type.display]}
+                        >
+                          <Text fontSize="sm">{t('date')}</Text>
+                          <Text fontSize="5xl" fontWeight="semibold" lineHeight="1.2">
+                            {t('time')}
+                          </Text>
+                        </Stack>
+                      ) : (
+                        <>
+                          <Stack
+                            position="absolute"
+                            top="13%"
+                            insetStart="7%"
+                            insetEnd="7%"
+                            h="19%"
+                            justify="center"
+                            px="4"
+                            rounded={`${rendered.widgets.radius * 100}%`}
+                            bg={
+                              rendered.widgets.style === 'outline'
+                                ? rendered.palette.bg
+                                : rendered.widgets.style === 'glass'
+                                  ? `color-mix(in srgb, ${rendered.widgets.surface} 72%, transparent)`
+                                  : rendered.widgets.surface
+                            }
+                            backgroundImage={
+                              rendered.widgets.style === 'paper'
+                                ? `repeating-linear-gradient(transparent 0 1rem, color-mix(in srgb, ${rendered.widgets.ink} 12%, transparent) 1rem 1.05rem)`
+                                : undefined
+                            }
+                            backdropFilter={
+                              rendered.widgets.style === 'glass' ? 'blur(8px)' : undefined
+                            }
+                            borderWidth={rendered.widgets.style === 'outline' ? 'medium' : '0'}
+                            borderColor={rendered.widgets.ink}
+                            color={rendered.widgets.ink}
+                          >
+                            <DecorSymbols spec={rendered} />
+                            <Text
+                              fontFamily={fonts[rendered.type.display]}
+                              fontSize="lg"
+                              fontWeight="semibold"
+                              lineClamp="1"
+                            >
+                              {t('widgetTitle')}
+                            </Text>
+                            <Text fontSize="xs" lineClamp="2">
+                              {t('widgetBody')}
+                            </Text>
+                          </Stack>
+                          <IconGrid
+                            spec={rendered}
+                            apps={catalog.apps}
+                            cacheKey={JSON.stringify([
+                              rendered.palette,
+                              rendered.icons,
+                              rendered.icons.fill === 'wallpaper' ? rendered.wallpaper : null,
+                            ])}
+                          />
+                        </>
+                      )}
+                    </Box>
+                  );
+                }}
+              </WallpaperSurface>
             </PhoneFrame>
           )}
         </Tabs.Content>

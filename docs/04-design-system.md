@@ -2,6 +2,8 @@
 
 Mobile-first, soft and polished, fast. Built on Chakra UI v3 tokens in `design/`. **Components never use raw hex values or px magic numbers** — only tokens and semantic tokens defined here.
 
+`design/system.ts` composes Chakra's public `defaultBaseConfig`, the explicit defaults in `design/base-config.ts` and Vibeset's overrides. All default tokens, conditions, utilities, global styles and the 14 ordinary/24 slot recipes used by repository components are retained; unused recipes are omitted to reduce the shared client configuration. When introducing a new Chakra component or snippet, check its recipe and transitive indicators/loading controls and add any missing defaults before using it. Do not reintroduce the complete `defaultConfig` or recipe maps without measuring the client cost.
+
 ---
 
 ## 1. Brand
@@ -39,7 +41,7 @@ Keep Chakra's default palettes (red, green, yellow…) for status colours.
 
 ## 3. Semantic tokens (`design/semantic-tokens.ts`)
 
-Override Chakra's built-in semantic tokens so every v3 component inherits the brand. Format: `{ value: { base: …, _light: …, _dark: … } }`, with `_light` equal to `base`. The explicit `_light` replaces inherited Chakra light-mode values when our configuration merges with `defaultConfig`; a `base` override alone leaves those inherited conditional values active.
+Override Chakra's built-in semantic tokens so every v3 component inherits the brand. Format: `{ value: { base: …, _light: …, _dark: … } }`, with `_light` equal to `base`. The explicit `_light` replaces inherited Chakra light-mode values when our configuration merges with the retained Chakra defaults; a `base` override alone leaves those inherited conditional values active.
 
 | Token               | Light (`base`) | Dark (`_dark`) |
 | ------------------- | -------------- | -------------- |

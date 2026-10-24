@@ -20,7 +20,7 @@ For a fresh checkout, copy `.env.example` to `.env.local` and supply the public 
 
 ## P01 database and auth core
 
-The Neon `vibeset` project is in AWS London. `main` remains empty; both reviewed migrations are applied to `dev`, and `test` was branched from that migrated development state. Local `.env.local` uses `dev` for the app and the separate `test` branch for integration tests. It contains fresh local secrets and is ignored by Git.
+The Neon `vibeset` project is in AWS London. `main` remains empty; all three reviewed migrations are applied to `dev` and the separate `test` branch. Local `.env.local` uses `dev` for the app and `test` for integration tests. It contains fresh local secrets and is ignored by Git.
 
 The migrations create 20 tables:
 
@@ -204,6 +204,16 @@ GitHub workflows now prepare credential-free checks, isolated Neon coverage, ver
 
 Final P16 checks pass: typecheck, lint, 2,220 tests across 178 files, production build (212 static shells/paths), standalone native-render probe and independent review. One concurrency-dependent last-admin assertion skipped in the combined run; both affected suites then passed separately (13 tests, no skips). Combined line coverage is renderer 99.03%, services 95.74% and utils 100%, above unchanged 80/70/90 gates. The full browser run passed 77 checks in 5.8 minutes; its seven explicit skips cover three real-R2 publication cases and four desktop-only export/share cases on mobile projects. All disposable accounts/content were removed; limiter records retain their ordinary expiry. English/Arabic message keys match (1,588). Final Home shell scripts remain 417,451 bytes gzip in both languages against the unchanged 180,000-byte target; this is an artifact measurement, not a device-performance pass.
 
+The actual [P16 push CI run](https://github.com/ahmadalwakai/vibeset/actions/runs/40076199673) could not start a runner because GitHub reported an account billing lock. It executed zero steps; its dependent database coverage job skipped. Resolve the account lock and rerun CI before claiming a cloud check passed. No workflow/source fix follows from that account-level failure.
+
+## P17 launch preparation (in progress)
+
+Vercel's deployment command now generates Chakra types, runs reviewed migrations against its injected database URL, then builds Next.js. Ordinary `npm run build` remains migration-free. The configured function region is London (`lhr1`), matching the existing London Neon project; the daily cron is unchanged. A guarded rehearsal ran the deployment command only against the verified isolated test branch, with all three migration hashes/timestamps checked beforehand and the ledger unchanged afterward. This verifies the no-pending-migrations path, not new DDL or a live deployment. Serialize migration runners per database before enabling live builds.
+
+The explicit Chakra base configuration preserves current defaults and all used component recipes while dropping unused recipes. The final production artifact reduced each locale's Home scripts from 417,451 to 408,948 bytes gzip (8,503 bytes saved); the 180,000-byte launch budget remains unmet. New Chakra components/snippets require checking their recipe dependencies. Six bilingual legal drafts remain local and unpublished while operator/contact details and reviewed privacy clauses are settled. The owner chose to retain published designs after account deletion with a separate removal request process; the monitored contact and final grant/handling terms still need confirmation. The legal texts need review by a qualified person before launch. No accessible Vercel project was established in the connected account; live providers, private backups/restore, device recordings/checks and human curation of at least 300 published production themes remain pending. P17 and native/TestFlight delivery remain open.
+
+Studio now withholds foreground text until the initial wallpaper is decoded, then keeps each image/spec/foreground together during later crossfades. Loading status, cancellation and Retry preserve the last completed preview without exposing mismatched clock text over a skeleton. Eight lifecycle regressions cover delayed preparation/decode, failure, retry and abort. Final local verification passes typecheck, lint, all 2,229 tests (179 files, no skips), coverage at 99.03% renderer / 95.81% services / 100% utils, production build (212 static shells/paths), standalone render probe and independent reviews. The rebuilt full browser suite passes 77 checks in 5.7 minutes with the same seven explicit R2/device-scope skips; fixture accounts and content are removed afterward. These emulated checks do not replace live-provider or physical-device release verification.
+
 ## Codemagic build
 
 The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the public `ahmadalwakai/vibeset` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.
@@ -218,7 +228,7 @@ Codemagic must clone a committed remote revision; local changes cannot be built 
 
 [Build #4](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc00e04a72334e32e49513) successfully built P07 commit `456e734` on Mac mini M2 in 2m 48s. Typecheck, lint, unit tests, the credential-free production build and standalone packaging passed; the artifact bundle is 23.06 MB. It has not been downloaded or started on a compatible host. This result covers P06/P07, while later work remains under local verification.
 
-[Build #5](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc34a04a72334e32e49d6b) successfully built P13 commit `11e1bcc` on Mac mini M2 in 2m 17s, covering P08–P13. Typecheck, lint, unit tests, production build and standalone packaging passed. The artifact bundle is 30.66 MB; it has not been downloaded or started on a compatible host. P14–P16 have subsequent local verification; they are not covered by this cloud build.
+[Build #5](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc34a04a72334e32e49d6b) successfully built P13 commit `11e1bcc` on Mac mini M2 in 2m 17s, covering P08–P13. Typecheck, lint, unit tests, production build and standalone packaging passed. The artifact bundle is 30.66 MB; it has not been downloaded or started on a compatible host. P14–P17 have subsequent local verification; they are not covered by this cloud build.
 
 ## Checks
 

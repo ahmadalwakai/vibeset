@@ -354,6 +354,8 @@ Better Auth's default session and database rate-limit storage would retain raw I
 
 After Better Auth validates a deletion request, its before-delete hook calls `deleteAccountAndContent(userId)`. One transaction locks the auth user `FOR UPDATE`, waits for creator/upload operations holding `FOR SHARE`, captures unused upload keys and deleted theme prefixes, removes non-published owned themes and deletes the user. Published themes survive with `owner_id = NULL`; dependent private records cascade. The confirmed cleanup plan immediately expires theme/collection/creator caches and schedules best-effort R2 removal with `after()` (an awaited fallback is used outside Next), before Better Auth idempotently completes its adapter deletion and clears the cookie. No row-lock gap remains for new uploads or finalization, and uncertain commits never trigger storage deletion. Storage failures are logged without blocking account deletion. Original photos referenced by surviving published themes remain available with those anonymous published designs. Google is omitted until both OAuth credentials are configured; a partial credential pair fails configuration. Magic-link delivery fails explicitly until Resend credentials are provided.
 
+The owner selected retention of published designs after account deletion, with a separate removal request process. P17 must provide a monitored contact and reviewed withdrawal/takedown handling before launch; account deletion alone must not promise removal of published work or settle the creator licence terms.
+
 ---
 
 ## 9. Storage (R2)
@@ -420,6 +422,8 @@ The CSP uses the validated origin of `NEXT_PUBLIC_CDN_URL` instead of the produc
 | Production | Neon `main` | `vibeset-assets` + `cdn.vibeset.app` | Vercel Cron enabled |
 
 P16 automation uses protected environments: `ci-database` requires an empty dedicated Neon template (schema-only branching does not copy migration-history rows); `e2e-preview` requires the verified deployment's actual isolated database credential and explicit trusted project/ref/hostname. Ordinary preview database names are never guessed. E2E seeding refuses pre-existing users/themes, production and fingerprint mismatches. Provider secrets and raw browser auth/trace artifacts are never published. Weekly SQL backups use a separate private R2 bucket with backup-only credentials, disabled public access and a verified 60-day lifecycle; the public theme asset bucket is forbidden.
+
+Vercel uses `npm run vercel-build`: Chakra type generation → reviewed Drizzle migrations → Next.js build, with the deployment's injected direct database URL and no dotenv file loader. Ordinary `npm run build` remains migration-free. Confirm the deployment's Neon branch identity before allowing the migration step; a later build failure does not revert database changes. Before enabling live builds, enforce one migration runner at a time for each database (including manual scripts and repeated builds), and recheck the migration ledger after a failed or cancelled build before retrying. Separate preview branches may migrate independently. Functions are configured for London (`lhr1`); confirm alignment with the intended London Neon project before deployment. The existing daily cron remains `17 3 * * *` (03:17 UTC).
 
 **Regions**: put the Neon project and the Vercel function region in the same place — e.g. Neon AWS London ↔ Vercel `lhr1`, or Neon AWS Frankfurt ↔ Vercel `fra1` (good for UK + Middle East audiences). A function in the US talking to a database in Europe adds ~80 ms to every uncached query.
 
