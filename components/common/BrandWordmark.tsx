@@ -24,7 +24,7 @@ export function BrandWordmark({ label, size = 'header' }: BrandWordmarkProps): R
       <Box as="span" aria-hidden="true">
         v
         <Box as="span" position="relative" display="inline-block">
-          ı
+          i
           <Icon
             asChild
             position="absolute"

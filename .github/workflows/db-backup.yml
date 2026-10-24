@@ -1,0 +1,55 @@
+name: Private database backup
+on:
+  schedule:
+    - cron: '23 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: private-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    # Restrict this environment to main. Required reviewers also gate scheduled jobs.
+    environment: db-backup
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --include=dev --include=optional
+      - name: Verify private bucket, retention and separate credentials before reading production
+        run: npx tsx scripts/db-backup.ts preflight
+        env: &backup-env
+          BACKUP_DATABASE_URL_UNPOOLED: ${{ secrets.BACKUP_DATABASE_URL_UNPOOLED }}
+          BACKUP_R2_ACCOUNT_ID: ${{ vars.BACKUP_R2_ACCOUNT_ID }}
+          BACKUP_R2_BUCKET: ${{ vars.BACKUP_R2_BUCKET }}
+          R2_ASSETS_BUCKET: ${{ vars.R2_ASSETS_BUCKET }}
+          BACKUP_R2_ACCESS_KEY_ID: ${{ secrets.BACKUP_R2_ACCESS_KEY_ID }}
+          BACKUP_R2_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_R2_SECRET_ACCESS_KEY }}
+          BACKUP_CF_API_TOKEN: ${{ secrets.BACKUP_CF_API_TOKEN }}
+          BACKUP_PG_MAJOR: ${{ vars.BACKUP_PG_MAJOR }}
+      - name: Install the configured PostgreSQL client major
+        env:
+          PG_MAJOR: ${{ vars.BACKUP_PG_MAJOR }}
+        run: |
+          set -euo pipefail
+          case "$PG_MAJOR" in 14|15|16|17|18) ;; *) echo '::error::Set BACKUP_PG_MAJOR to the production Neon major.'; exit 1;; esac
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --location -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main' | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y "postgresql-client-$PG_MAJOR"
+          echo "/usr/lib/postgresql/$PG_MAJOR/bin" >> "$GITHUB_PATH"
+      - name: Dump, gzip, upload privately and verify remote checksum metadata
+        run: npx tsx scripts/db-backup.ts backup
+        env: *backup-env
+      # Dumps and credentials are deliberately never uploaded as GitHub artifacts.

@@ -56,7 +56,7 @@ export async function SiteHeader(): Promise<ReactElement> {
               _hover={{ textDecoration: 'none', color: 'brand.fg' }}
               focusRing="outside"
             >
-              <Link href="/" aria-label={common('brandName')}>
+              <Link href="/">
                 <BrandWordmark label={common('brandName')} />
               </Link>
             </ChakraLink>

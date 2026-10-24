@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { toaster } from '@/components/ui/toaster';
 import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { sessionErrorCode } from '@/lib/client/session-error';
 import type { CreatorContext, CreatorLink } from '@/lib/creator';
 import type { ErrorMessageCode } from '@/lib/result';
 import { applyForCreatorSchema, creatorHandleSchema } from '@/lib/validation/creator';
@@ -239,6 +240,14 @@ export function CreatorApplication({
         <Skeleton h="48" rounded="card" />
         <Skeleton h="96" rounded="card" />
       </Stack>
+    );
+  if (!session.data && session.error)
+    return (
+      <ErrorState
+        code={sessionErrorCode(session.error)}
+        onRetry={() => void session.refetch()}
+        retrying={session.isRefetching}
+      />
     );
   if (session.data?.user.id !== ownerId) return <ErrorState code="UNAUTHENTICATED" />;
   return <ApplicationContent key={ownerId} profile={profile} applicationsOpen={applicationsOpen} />;

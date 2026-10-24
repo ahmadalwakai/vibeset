@@ -33,7 +33,6 @@ export function FilterFields({
             wrap={compact ? 'wrap' : 'nowrap'}
             overflowX={compact ? 'visible' : 'auto'}
             pb="1"
-            aria-label={t(`groups.${kind}`)}
           >
             {tags
               .filter((tag) => tag.kind === kind)

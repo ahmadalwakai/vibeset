@@ -54,7 +54,7 @@ export function ThemeCard({ theme, priority = false, actions }: ThemeCardProps):
             focusRing="outside"
             _hover={{ textDecoration: 'none' }}
           >
-            <Link href={`/t/${theme.slug}`} aria-label={t('open', { name })}>
+            <Link href={`/t/${theme.slug}`}>
               <Box
                 position="relative"
                 aspectRatio={9 / 19.5}

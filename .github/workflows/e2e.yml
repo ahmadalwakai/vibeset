@@ -1,0 +1,93 @@
+name: Preview E2E
+run-name: Preview E2E for ${{ github.event.deployment.sha }}
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+concurrency:
+  group: e2e-${{ github.event.deployment.id }}
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    if: github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Preview' && github.event.deployment.production_environment == false
+    # Match the reviewed win32 screenshot baselines. Build/coverage stay on Linux.
+    runs-on: windows-2025
+    defaults:
+      run:
+        shell: bash
+    timeout-minutes: 45
+    # Required reviewers approve the exact deployment SHA before this job gets secrets.
+    environment: e2e-preview
+    steps:
+      - name: Checkout trusted verification code from the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --include=dev --include=optional
+      - name: Verify deployment before checking out its code or providing database credentials
+        id: target
+        run: npx tsx scripts/ci/verify-preview.ts
+        env:
+          E2E_PREVIEW_HOSTNAME: ${{ vars.E2E_PREVIEW_HOSTNAME }}
+          E2E_TRUSTED_BRANCHES: ${{ vars.E2E_TRUSTED_BRANCHES || '["main"]' }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Checkout the verified deployment commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+          persist-credentials: false
+      - run: npm ci --include=dev --include=optional
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Verify runtime database identity, seed, test and clean up
+        run: |
+          set -euo pipefail
+          for name in TEST_DATABASE_URL E2E_ASSET_ORIGIN INTERNAL_API_SECRET R2_ACCOUNT_ID R2_BUCKET R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Configure $name for this exact isolated preview deployment before running browser coverage."
+              exit 1
+            fi
+          done
+          env -u DATABASE_URL -u DATABASE_URL_UNPOOLED npm run test:e2e -- --mode remote --base-url "$E2E_ALLOWED_REMOTE_ORIGIN" --asset-origin "$E2E_ASSET_ORIGIN"
+        env:
+          TEST_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+          E2E_DATABASE_URL_UNPOOLED: ${{ secrets.E2E_DATABASE_URL_UNPOOLED }}
+          E2E_ALLOWED_REMOTE_ORIGIN: ${{ steps.target.outputs.base_url }}
+          E2E_ASSET_ORIGIN: ${{ vars.E2E_ASSET_ORIGIN }}
+          NEXT_PUBLIC_CDN_URL: ${{ vars.E2E_ASSET_ORIGIN }}
+          INTERNAL_API_SECRET: ${{ secrets.E2E_INTERNAL_API_SECRET }}
+          R2_ACCOUNT_ID: ${{ vars.E2E_R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ vars.E2E_R2_BUCKET }}
+          E2E_ALLOWED_STORAGE_BUCKET: ${{ vars.E2E_R2_BUCKET }}
+          R2_ACCESS_KEY_ID: ${{ secrets.E2E_R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.E2E_R2_SECRET_ACCESS_KEY }}
+          E2E_TEST_AUTH: '1'
+          VERCEL_ENV: preview
+          NODE_ENV: test
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: .tmp/e2e-report.json
+          PLAYWRIGHT_HTML_OUTPUT_DIR: .tmp/e2e-raw-report
+      - name: Build sanitized report
+        if: always() && steps.target.outcome == 'success'
+        run: |
+          if [ -f .tmp/e2e-report.json ]; then
+            npx tsx scripts/ci/sanitize-e2e-report.ts
+          fi
+      - name: Upload sanitized report only
+        if: always() && steps.target.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: preview-e2e-summary-${{ github.event.deployment.id }}
+          path: .tmp/e2e-summary/
+          if-no-files-found: warn
+          retention-days: 7
+          include-hidden-files: false

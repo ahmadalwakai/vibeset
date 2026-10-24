@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { ErrorState } from '@/components/common/ErrorState';
 import { toaster } from '@/components/ui/toaster';
 import { authClient } from '@/lib/auth-client';
+import { sessionErrorCode } from '@/lib/client/session-error';
 import {
   nextPublishJobs,
   publishQueueBusy,
@@ -67,6 +68,14 @@ export function PublishQueueProvider({
 }): ReactElement {
   const session = authClient.useSession();
   if (session.isPending) return <Skeleton h="96" rounded="card" />;
+  if (!session.data && session.error)
+    return (
+      <ErrorState
+        code={sessionErrorCode(session.error)}
+        onRetry={() => void session.refetch()}
+        retrying={session.isRefetching}
+      />
+    );
   if (session.data?.user.id !== ownerId || session.data.user.role !== 'admin')
     return <ErrorState code="UNAUTHENTICATED" />;
   return <QueueProvider key={ownerId}>{children}</QueueProvider>;

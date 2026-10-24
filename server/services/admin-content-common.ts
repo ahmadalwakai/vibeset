@@ -1,4 +1,5 @@
 import 'server-only';
+import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { z } from 'zod';
 import { dbPool } from '../../db/pool';
 import type { Actor } from '../../lib/theme-status';
@@ -34,8 +35,14 @@ export async function contentTransaction<T>(
     });
   } catch (error) {
     if (error instanceof AppError) throw error;
+    let cause: unknown = error;
+    const seen = new Set<unknown>();
+    while (cause instanceof DrizzleQueryError && !seen.has(cause)) {
+      seen.add(cause);
+      cause = cause.cause;
+    }
     const code =
-      typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+      typeof cause === 'object' && cause !== null && 'code' in cause ? cause.code : undefined;
     if (code === '23505') throw new AppError('CONFLICT');
     throw error;
   }

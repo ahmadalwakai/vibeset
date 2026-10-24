@@ -68,7 +68,13 @@ function PreviewImage({
   return (
     <>
       {!loaded ? (
-        <Skeleton position="absolute" inset="0" aria-label={t('preview.loading')} />
+        <Skeleton
+          position="absolute"
+          inset="0"
+          role="img"
+          aria-busy="true"
+          aria-label={t('preview.loading')}
+        />
       ) : null}
       <Image
         ref={imageRef}

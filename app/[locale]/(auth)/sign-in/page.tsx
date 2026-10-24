@@ -5,6 +5,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 import { SignInForm } from '@/components/auth/SignInForm';
+import { E2ePasswordSignInForm } from '@/components/auth/E2ePasswordSignInForm';
 import { SignInSkeleton } from '@/components/auth/SignInSkeleton';
 import { redirect } from '@/i18n/navigation';
 import { localizeNextPath, unlocalizeNextPath } from '@/lib/utils/next-path';
@@ -22,15 +23,27 @@ async function SignInContent({
   ]);
   const callbackURL = localizeNextPath(params.next, locale);
   if (session && !session.user.banned) redirect({ href: unlocalizeNextPath(callbackURL), locale });
+  const testAuth = env.E2E_TEST_AUTH === '1' && !session?.user.banned;
+  const databaseFingerprint = testAuth
+    ? (await import('@/server/e2e')).fingerprintE2eDatabase(env.DATABASE_URL)
+    : null;
 
   return (
-    <SignInForm
-      callbackURL={callbackURL}
-      googleAvailable={Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET)}
-      magicLinkAvailable={Boolean(env.RESEND_API_KEY && env.EMAIL_FROM)}
-      callbackError={typeof params.error === 'string' && params.error.length > 0}
-      banned={Boolean(session?.user.banned)}
-    />
+    <>
+      <SignInForm
+        callbackURL={callbackURL}
+        googleAvailable={Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET)}
+        magicLinkAvailable={Boolean(env.RESEND_API_KEY && env.EMAIL_FROM)}
+        callbackError={typeof params.error === 'string' && params.error.length > 0}
+        banned={Boolean(session?.user.banned)}
+      />
+      {databaseFingerprint ? (
+        <E2ePasswordSignInForm
+          callbackURL={callbackURL}
+          databaseFingerprint={databaseFingerprint}
+        />
+      ) : null}
+    </>
   );
 }
 

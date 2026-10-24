@@ -1,6 +1,8 @@
 # Vibeset
 
-P00–P06 foundations: Next.js 16 with Cache Components, React 19.2, Chakra UI v3, an English/Arabic site shell and sign-in screens, Neon/Drizzle schema, guarded Better Auth endpoints, a deterministic theme renderer, versioned publishing services and a curated theme generator. Catalog and Studio arrive in later phases.
+Vibeset is a free English/Arabic platform for phone wallpapers, matching icon packs and decorative widget designs. The web implementation includes the searchable catalogue, theme downloads, Studio remixing, saved collections, creator tools and administrator workflows. It uses Next.js 16 with Cache Components, React 19.2, Chakra UI v3, Neon/Drizzle and guarded Better Auth endpoints.
+
+Local implementation and verification are progressing through the ordered phase prompts. Live provider verification, launch requirements and the later native companion/TestFlight submission remain pending; the phase records below distinguish completed checks from those open gates.
 
 ## Local development
 
@@ -12,7 +14,7 @@ npm run chakra:typegen
 npm run dev
 ```
 
-Open http://localhost:3000 for English or http://localhost:3000/ar for Arabic. The temporary Home provides the translated hero and app shell. Locale switching preserves the current path and query. Mobile has a five-tab bottom bar; desktop uses the header navigation. Destination pages are implemented in their ordered phases and currently show the localized 404.
+Open http://localhost:3000 for English or http://localhost:3000/ar for Arabic. Home, Explore, theme details, Studio, setup guides and signed-in workspaces are implemented. Locale switching preserves the current path and query. Mobile has a five-tab bottom bar; desktop uses the header navigation. Private tools require the relevant account role, and data-backed pages require the configured development database.
 
 For a fresh checkout, copy `.env.example` to `.env.local` and supply the public site/CDN URLs for the shell. Supply real Neon URLs, Better Auth URL/secret, IP hash salt, cron secret and internal API secret before using the database/auth modules. Server configuration is validated when its module is imported; missing values produce key-specific errors. Credentials are never checked into this repository.
 
@@ -192,6 +194,16 @@ Typecheck, lint, all 2,086 passing tests (two conditional database skips, 164 fi
 
 The final English/Arabic Home shells each reference 416,897 bytes gzip of modern external scripts, exceeding the unchanged 180 KB budget. `npm run audit:bundles` reports that artifact measurement; it does not measure browser transfers or runtime streams. No Lighthouse/Web Vitals, physical installation, Rich Results validation or performance pass is claimed. The Chrome extension remains disconnected, and live provider/R2 checks remain pending. These are open release checks; no public launch or TestFlight upload is claimed.
 
+## P16 testing and CI
+
+The isolated browser runner builds the standalone app, verifies its database identity, creates disposable role accounts and rendered catalogue assets, then runs English/Arabic role, accessibility and RTL checks on iPhone, Android and desktop emulation. Fixture journals survive uncertain cleanup so recovery can remove only owned content. Protected-preview access and sanitized reports keep credentials and raw auth traces out of published artifacts. The test password form is unavailable in Vercel production.
+
+Browser verification exposed and fixed session lookup failures being treated as guest sessions: unknown identity now masks favourites, blocks local saves and provides Retry before loading account data. Other authenticated surfaces show the same initial-session error state. Studio widget labels use their ink colour instead of a potentially unreadable accent, and outline previews match the renderer background. The packaged server also includes and probes Sharp's native companion files, fonts and glyphs.
+
+GitHub workflows now prepare credential-free checks, isolated Neon coverage, verified Preview E2E and weekly SQL backups to a separate private R2 bucket with a guarded restore rehearsal. Their protected environments and live provider/backup runs remain pending. Local fixture publication is not proof of live R2 publishing. Physical-device sharing/install checks, legal review, human production curation and the Home JavaScript budget remain release gates.
+
+Final P16 checks pass: typecheck, lint, 2,220 tests across 178 files, production build (212 static shells/paths), standalone native-render probe and independent review. One concurrency-dependent last-admin assertion skipped in the combined run; both affected suites then passed separately (13 tests, no skips). Combined line coverage is renderer 99.03%, services 95.74% and utils 100%, above unchanged 80/70/90 gates. The full browser run passed 77 checks in 5.8 minutes; its seven explicit skips cover three real-R2 publication cases and four desktop-only export/share cases on mobile projects. All disposable accounts/content were removed; limiter records retain their ordinary expiry. English/Arabic message keys match (1,588). Final Home shell scripts remain 417,451 bytes gzip in both languages against the unchanged 180,000-byte target; this is an artifact measurement, not a device-performance pass.
+
 ## Codemagic build
 
 The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the public `ahmadalwakai/vibeset` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.
@@ -206,7 +218,7 @@ Codemagic must clone a committed remote revision; local changes cannot be built 
 
 [Build #4](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc00e04a72334e32e49513) successfully built P07 commit `456e734` on Mac mini M2 in 2m 48s. Typecheck, lint, unit tests, the credential-free production build and standalone packaging passed; the artifact bundle is 23.06 MB. It has not been downloaded or started on a compatible host. This result covers P06/P07, while later work remains under local verification.
 
-[Build #5](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc34a04a72334e32e49d6b) successfully built P13 commit `11e1bcc` on Mac mini M2 in 2m 17s, covering P08–P13. Typecheck, lint, unit tests, production build and standalone packaging passed. The artifact bundle is 30.66 MB; it has not been downloaded or started on a compatible host. P14/P15 have subsequent local verification; they are not covered by this cloud build.
+[Build #5](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc34a04a72334e32e49d6b) successfully built P13 commit `11e1bcc` on Mac mini M2 in 2m 17s, covering P08–P13. Typecheck, lint, unit tests, production build and standalone packaging passed. The artifact bundle is 30.66 MB; it has not been downloaded or started on a compatible host. P14–P16 have subsequent local verification; they are not covered by this cloud build.
 
 ## Checks
 
@@ -229,6 +241,8 @@ See [START-HERE.md](START-HERE.md), [the architecture](docs/01-architecture.md) 
 Chakra's generated color-mode snippet requires `react-icons`; it is retained as a snippet dependency. Product UI icons use Phosphor.
 
 The Emotion streaming registry uses `@emotion/cache` to keep Chakra CSS and Cache Components hydration consistent. A scoped esbuild override patches Drizzle Kit's legacy development loader; `drizzle-kit --version` verifies CLI startup.
+
+P16 adds `@axe-core/playwright` for automated WCAG assertions, following [Playwright's accessibility workflow](https://playwright.dev/docs/accessibility-testing). Targeted Zod overrides make Chakra CLI and Vercel's CLI config parser use the app's patched Zod version for [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5); actual Chakra type generation and the dependency audit pass. Test/CI configuration, isolated fixture recovery, protected preview requirements and private backup/restore commands are documented in [the quality checklist](docs/08-quality-checklists.md#8-automated-test-runs-p16).
 
 P00 verification passed: 36 environment boundary tests, TypeScript, ESLint, production build, Chakra type generation, complete dependency tree and a zero-vulnerability npm audit. Browser checks covered 360px, 768px and 1440px layouts, light/dark persistence, Arabic/RTL typography, reduced-motion cold loads, both button toasts, hydration and keyboard skip navigation.
 

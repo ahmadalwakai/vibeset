@@ -39,6 +39,7 @@ workflows:
           if [ -d public ]; then
             cp -R public .next/standalone/public
           fi
+          npx tsx scripts/check-standalone.ts
           artifact="build/vibeset-web-$(node -p process.platform)-$(node -p process.arch).tar.gz"
           tar --exclude='.env*' --exclude='**/.env*' -czf "$artifact" -C .next/standalone .
     artifacts:

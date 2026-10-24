@@ -992,7 +992,16 @@
     "accountMenu": "Account menu for {name}",
     "member": "Vibeset member",
     "creatorStudio": "Creator studio",
-    "administration": "Administration"
+    "administration": "Administration",
+    "e2e": {
+      "title": "Test account sign-in",
+      "description": "Available only in isolated test environments.",
+      "email": "Test account email",
+      "password": "Test account password",
+      "submit": "Sign in to test account",
+      "invalid": "Check the test email and password.",
+      "passwordInvalid": "Enter a password between 8 and 128 characters."
+    }
   },
   "creator": {
     "title": "Creator space",

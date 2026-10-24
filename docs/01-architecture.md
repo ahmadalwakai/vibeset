@@ -334,7 +334,15 @@ Production HTTP verification covered bilingual metadata/canonicals, public JSON-
 - Protections: an admin cannot change their own role or ban themselves; the last admin cannot be demoted or banned.
 - Test-only email+password sign-in exists only when `E2E_TEST_AUTH=1`, and env validation refuses that flag when `VERCEL_ENV=production`.
 
+The test password form is rendered by the server only under that validated flag. Its noncredential SHA-256 database fingerprint lets the E2E seeder verify the app is connected to the explicit isolated test database before creating disposable accounts. No privileged HTTP seeding endpoint exists. Browser projects have separate role accounts; local fixtures use actual renderer output on a temporary loopback asset server. This tests browsing/export separately from real R2 publication, which stays pending until test storage is configured.
+
+Standalone deployment traces explicitly include Sharp's native libvips companion files and the renderer's fonts/glyphs, with escaped locale-route patterns. `scripts/check-standalone.ts` starts a fresh Node process inside the artifact, rejects dependencies resolved from the workspace, runs resvg → Sharp PNG conversion and checks every required font/glyph file. Local E2E, Linux CI and Codemagic packaging run this credential-free probe; successful compilation alone does not verify native runtime dependencies.
+
 Vibeset's request-cached `getSession()` bypasses the five-minute cookie cache for authorization, so session revocation, bans and role changes take effect immediately. The Better Auth cookie cache remains enabled for its own client session reads. The auth handler and guarded session lookup load validated server configuration at request time, after the dynamic boundary; public shell prerendering does not need server credentials. Serving sign-in or authentication requests still requires valid core server configuration.
+
+Client session errors do not confirm that a user is anonymous. When account, creator, admin queue or authenticated save/collection surfaces have no confirmed session data, a failed lookup shows a translated retryable error (`RATE_LIMITED` for HTTP 429, otherwise `NETWORK`) before any sign-in or unauthenticated view. Retained valid session data keeps established forms mounted and existing owner/role gates unchanged. Server guards still authorize every protected read and mutation.
+
+Favorites treats pending, failed or malformed session identity as unknown and masks favorite state until it can resolve the account. Only a successful anonymous session lookup enables local-only favorites. Before each toggle, the fresh shared session atom must be settled and match the store account; a failed lookup cannot enable either a local toggle or an authenticated mutation. Retry refetches the session and checks its fresh atom before loading or merging favorites, because Better Auth's `refetch()` can resolve without throwing after an unsuccessful request.
 
 Better Auth's `/admin/*` HTTP endpoints are disabled. Role and moderation changes go through Vibeset's guarded services and audit log, preventing alternate plugin endpoints from bypassing its safeguards. The system role-management service serializes role changes with a transaction advisory lock and checks the last-admin invariant before writing the role and audit record in that transaction.
 
@@ -410,6 +418,8 @@ The CSP uses the validated origin of `NEXT_PUBLIC_CDN_URL` instead of the produc
 | Local | Neon `dev` branch | R2 bucket `vibeset-dev` | `.env.local` |
 | Preview (per PR) | Neon branch auto-created by the Vercel integration | `vibeset-dev` | OAuth: test on a stable staging domain, not random preview URLs |
 | Production | Neon `main` | `vibeset-assets` + `cdn.vibeset.app` | Vercel Cron enabled |
+
+P16 automation uses protected environments: `ci-database` requires an empty dedicated Neon template (schema-only branching does not copy migration-history rows); `e2e-preview` requires the verified deployment's actual isolated database credential and explicit trusted project/ref/hostname. Ordinary preview database names are never guessed. E2E seeding refuses pre-existing users/themes, production and fingerprint mismatches. Provider secrets and raw browser auth/trace artifacts are never published. Weekly SQL backups use a separate private R2 bucket with backup-only credentials, disabled public access and a verified 60-day lifecycle; the public theme asset bucket is forbidden.
 
 **Regions**: put the Neon project and the Vercel function region in the same place — e.g. Neon AWS London ↔ Vercel `lhr1`, or Neon AWS Frankfurt ↔ Vercel `fra1` (good for UK + Middle East audiences). A function in the US talking to a database in Europe adds ~80 ms to every uncached query.
 

@@ -124,6 +124,16 @@ function SavedFavorites(): ReactElement {
 export function SavedTabs(): ReactElement {
   const t = useTranslations('saved');
   const favorites = useFavorites();
+  const privateContent = (children: ReactElement): ReactElement =>
+    favorites.status === 'loading' ? (
+      <SavedLoading />
+    ) : favorites.status === 'error' && !favorites.isSignedIn ? (
+      <ErrorState code={favorites.error ?? 'NETWORK'} onRetry={favorites.refresh} />
+    ) : favorites.isSignedIn ? (
+      children
+    ) : (
+      <SavedSignIn />
+    );
   return (
     <Box pb="12">
       <Tabs.Root defaultValue="favourites" colorPalette="brand" lazyMount unmountOnExit>
@@ -137,24 +147,8 @@ export function SavedTabs(): ReactElement {
         <Tabs.Content value="favourites">
           <SavedFavorites />
         </Tabs.Content>
-        <Tabs.Content value="collections">
-          {favorites.status === 'loading' ? (
-            <SavedLoading />
-          ) : favorites.isSignedIn ? (
-            <Collections />
-          ) : (
-            <SavedSignIn />
-          )}
-        </Tabs.Content>
-        <Tabs.Content value="remixes">
-          {favorites.status === 'loading' ? (
-            <SavedLoading />
-          ) : favorites.isSignedIn ? (
-            <Remixes />
-          ) : (
-            <SavedSignIn />
-          )}
-        </Tabs.Content>
+        <Tabs.Content value="collections">{privateContent(<Collections />)}</Tabs.Content>
+        <Tabs.Content value="remixes">{privateContent(<Remixes />)}</Tabs.Content>
       </Tabs.Root>
     </Box>
   );

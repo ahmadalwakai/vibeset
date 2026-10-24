@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar, Icon, IconButton, Menu, Portal, Text } from '@chakra-ui/react';
+import { Avatar, Icon, IconButton, Menu, Portal, Text, VisuallyHidden } from '@chakra-ui/react';
 import {
   HeartIcon,
   PaintBrushIcon,
@@ -67,18 +67,12 @@ export function UserMenu({
   return (
     <Menu.Root positioning={{ placement: 'bottom-end' }}>
       <Menu.Trigger asChild>
-        <IconButton
-          variant="ghost"
-          rounded="button"
-          minH="11"
-          minW="11"
-          aria-label={t('accountMenu', { name: displayName })}
-          disabled={pending}
-        >
+        <IconButton variant="ghost" rounded="button" minH="11" minW="11" disabled={pending}>
           <Avatar.Root size={compact ? 'xs' : 'sm'} colorPalette="brand">
             <Avatar.Fallback name={displayName} />
             {avatar.success && <Avatar.Image src={avatar.data} alt="" />}
           </Avatar.Root>
+          <VisuallyHidden>{` ${t('accountMenu', { name: displayName })}`}</VisuallyHidden>
         </IconButton>
       </Menu.Trigger>
       <Portal>

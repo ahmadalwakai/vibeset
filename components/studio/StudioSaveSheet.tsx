@@ -5,9 +5,11 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent, ReactElement } from 'react';
 import { ResponsiveSheet } from '@/components/common/ResponsiveSheet';
+import { ErrorState } from '@/components/common/ErrorState';
 import { toaster } from '@/components/ui/toaster';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { sessionErrorCode } from '@/lib/client/session-error';
 import type { ThemeSpec } from '@/lib/render/spec';
 import type { ErrorMessageCode } from '@/lib/result';
 import type { StudioSavedIdentity } from '@/lib/studio-entry';
@@ -106,6 +108,12 @@ export function StudioSaveSheet({
         <Stack align="center" py="6">
           <Spinner />
         </Stack>
+      ) : !session.data && session.error ? (
+        <ErrorState
+          code={sessionErrorCode(session.error)}
+          onRetry={() => void session.refetch()}
+          retrying={session.isRefetching}
+        />
       ) : !session.data ? (
         <Stack gap="4">
           <Text as="h3" textStyle="heading.sm">

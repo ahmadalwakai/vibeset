@@ -5,10 +5,12 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { ResponsiveSheet } from '@/components/common/ResponsiveSheet';
+import { ErrorState } from '@/components/common/ErrorState';
 import { CollectionForm } from '@/components/collections/CollectionForm';
 import { toaster } from '@/components/ui/toaster';
 import { Link } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { sessionErrorCode } from '@/lib/client/session-error';
 import type { UserCollectionSummary } from '@/lib/collections';
 import type { ErrorMessageCode } from '@/lib/result';
 import {
@@ -194,6 +196,12 @@ export function SaveToCollectionSheet({
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title={t('saveToCollection')}>
       {session.isPending ? (
         <Skeleton h="24" />
+      ) : !session.data && session.error ? (
+        <ErrorState
+          code={sessionErrorCode(session.error)}
+          onRetry={() => void session.refetch()}
+          retrying={session.isRefetching}
+        />
       ) : !session.data ? (
         <Stack gap="4">
           <Text as="h3" textStyle="heading.sm">

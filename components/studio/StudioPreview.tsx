@@ -379,7 +379,7 @@ export function StudioPreview({
                       rounded={`${deferred.widgets.radius * 100}%`}
                       bg={
                         deferred.widgets.style === 'outline'
-                          ? 'transparent'
+                          ? deferred.palette.bg
                           : deferred.widgets.style === 'glass'
                             ? `color-mix(in srgb, ${deferred.widgets.surface} 72%, transparent)`
                             : deferred.widgets.surface
@@ -403,7 +403,7 @@ export function StudioPreview({
                       >
                         {t('widgetTitle')}
                       </Text>
-                      <Text fontSize="xs" color={deferred.widgets.accent} lineClamp="2">
+                      <Text fontSize="xs" lineClamp="2">
                         {t('widgetBody')}
                       </Text>
                     </Stack>

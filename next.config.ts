@@ -41,8 +41,11 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ['@resvg/resvg-js'],
   outputFileTracingIncludes: {
+    // Native libvips companions are loaded by Sharp's addon, outside JS imports.
+    '/*': ['./node_modules/@img/sharp-*/**/*'],
     '/api/admin/**': ['./public/glyphs/**/*', './assets/fonts/**/*'],
-    '/[locale]/admin/**': ['./public/glyphs/**/*', './assets/fonts/**/*'],
+    '/\\[locale\\]/admin/**': ['./public/glyphs/**/*', './assets/fonts/**/*'],
+    '/\\[locale\\]/creator/**': ['./public/glyphs/**/*', './assets/fonts/**/*'],
   },
   async headers(): Promise<{ source: string; headers: { key: string; value: string }[] }[]> {
     return [

@@ -11,6 +11,12 @@ import {
 import type { ReactElement, ReactNode } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { createFavoritesStore } from '@/lib/client/favorites-store';
+import {
+  favoritesSessionSnapshot,
+  refreshFavoritesSession,
+  resolveFavoritesSession,
+  toggleFavoritesForSession,
+} from '@/lib/client/favorites-session';
 import { FAVORITES_KEY, type FavoritesContextValue } from '@/lib/favorites';
 import {
   favoriteIdsResponseSchema,
@@ -21,9 +27,16 @@ import { mergeLocalFavorites, toggleFavorite } from '@/server/actions/favorites'
 
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 
+function readSession(): unknown {
+  return authClient.$store.atoms.session?.get();
+}
+
 export function FavoritesProvider({ children }: { children: ReactNode }): ReactElement {
   const session = authClient.useSession();
-  const userId = session.isPending ? undefined : (session.data?.user.id ?? null);
+  const [previousFailure, setPreviousFailure] = useState(false);
+  const identity = resolveFavoritesSession(session, previousFailure);
+  if (identity.failed !== previousFailure) setPreviousFailure(identity.failed);
+  const userId = identity.userId;
   const [store] = useState(() =>
     createFavoritesStore({
       list: async (signal) => {
@@ -48,20 +61,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }): ReactE
     store.getSnapshot,
     store.getServerSnapshot,
   );
-  const current = useMemo(
-    () =>
-      snapshot.accountId === userId
-        ? snapshot
-        : {
-            ...snapshot,
-            ids: [],
-            pending: [],
-            status: 'loading' as const,
-            error: null,
-            isSignedIn: typeof userId === 'string',
-          },
-    [snapshot, userId],
-  );
+  const current = favoritesSessionSnapshot(snapshot, identity);
   useEffect(() => {
     void store.setAccount(userId);
   }, [store, userId]);
@@ -83,10 +83,10 @@ export function FavoritesProvider({ children }: { children: ReactNode }): ReactE
       isSignedIn: current.isSignedIn,
       isFavorite: (id) => current.ids.includes(id.toLowerCase()),
       isPending: (id) => current.pending.includes(id.toLowerCase()),
-      toggle: store.toggle,
-      refresh: store.refresh,
+      toggle: (id) => toggleFavoritesForSession(store, readSession, id),
+      refresh: () => refreshFavoritesSession(store, readSession, session.refetch),
     }),
-    [current, store],
+    [current, store, session.refetch],
   );
   return <FavoritesContext value={value}>{children}</FavoritesContext>;
 }

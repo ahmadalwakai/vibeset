@@ -12,6 +12,7 @@ import { toaster } from '@/components/ui/toaster';
 import { useThemeEditor } from '@/hooks/useThemeEditor';
 import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { sessionErrorCode } from '@/lib/client/session-error';
 import type { CreatorThemeEditorDTO } from '@/lib/creator';
 import type { CreatorThemeDetails } from '@/lib/creator-studio';
 import { creatorDetailsFromTheme } from '@/lib/creator-studio';
@@ -46,6 +47,14 @@ export function CreatorThemeEditor(props: CreatorThemeEditorProps): ReactElement
     if (!session.isPending) currentOwner.current = session.data?.user.id ?? null;
   }, [session.isPending, session.data?.user.id]);
   if (session.isPending) return <Skeleton h="96" rounded="card" />;
+  if (!session.data && session.error)
+    return (
+      <ErrorState
+        code={sessionErrorCode(session.error)}
+        onRetry={() => void session.refetch()}
+        retrying={session.isRefetching}
+      />
+    );
   if (session.data?.user.id !== props.ownerId) return <ErrorState code="UNAUTHENTICATED" />;
   return (
     <CreatorEditorForm

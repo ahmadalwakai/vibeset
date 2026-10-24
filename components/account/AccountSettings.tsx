@@ -11,6 +11,7 @@ import { toaster } from '@/components/ui/toaster';
 import { Link, useRouter } from '@/i18n/navigation';
 import type { AccountProfile } from '@/lib/account';
 import { authClient } from '@/lib/auth-client';
+import { sessionErrorCode } from '@/lib/client/session-error';
 import type { ErrorMessageCode } from '@/lib/result';
 import { updateAccountSchema } from '@/lib/validation/account';
 import { apiErrorSchema } from '@/lib/validation/themes';
@@ -23,6 +24,14 @@ export function AccountSettings({ profile }: { profile: AccountProfile }): React
     if (!session.isPending) currentOwner.current = session.data?.user.id ?? null;
   }, [session.isPending, session.data?.user.id]);
   if (session.isPending) return <Skeleton h="96" rounded="card" />;
+  if (!session.data && session.error)
+    return (
+      <ErrorState
+        code={sessionErrorCode(session.error)}
+        onRetry={() => void session.refetch()}
+        retrying={session.isRefetching}
+      />
+    );
   if (session.data?.user.id !== profile.id) return <ErrorState code="UNAUTHENTICATED" />;
   return <AccountForm key={profile.id} profile={profile} currentOwner={currentOwner} />;
 }

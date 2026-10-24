@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 export const emailSignInSchema = z.strictObject({ email: z.string().trim().pipe(z.email()) });
 
+export const e2ePasswordSignInSchema = z.strictObject({
+  email: z.string().trim().max(254).pipe(z.email()),
+  password: z.string().min(8).max(128),
+});
+
 export const nextPathSchema = z
   .string()
   .min(1)
@@ -24,7 +29,7 @@ export const nextPathSchema = z
         let pathname = parsed.pathname;
         for (let count = 0; count < 6; count += 1) {
           const decoded = decodeURIComponent(pathname);
-        if (/^\/(?:(?:en|ar)\/)?\/|[\\\u0000-\u0020\u007f]/.test(decoded)) return false;
+          if (/^\/(?:(?:en|ar)\/)?\/|[\\\u0000-\u0020\u007f]/.test(decoded)) return false;
           if (decoded === pathname) {
             return !/^\/(?:(?:en|ar)\/)?sign-in(?:\/|$)/.test(decoded);
           }

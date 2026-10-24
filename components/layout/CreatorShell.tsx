@@ -23,6 +23,7 @@ import { ResponsiveSheet } from '@/components/common/ResponsiveSheet';
 import { ColorModeButton } from '@/components/ui/color-mode';
 import { Link, usePathname } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
+import { sessionErrorCode } from '@/lib/client/session-error';
 import { LocaleSwitcher } from './LocaleSwitcher';
 
 const links = [
@@ -50,6 +51,14 @@ export function CreatorShell({
         <Skeleton h="16" />
         <Skeleton h="96" />
       </Stack>
+    );
+  if (!session.data && session.error)
+    return (
+      <ErrorState
+        code={sessionErrorCode(session.error)}
+        onRetry={() => void session.refetch()}
+        retrying={session.isRefetching}
+      />
     );
   if (session.data?.user.id !== ownerId) return <ErrorState code="UNAUTHENTICATED" />;
   return (

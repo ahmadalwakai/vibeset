@@ -5,6 +5,8 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { playgroundStateSchema, renderSampleSpec } from '../../content/render-sample';
+import { AESTHETICS } from '../../content/aesthetics';
+import { getPalette } from '../../content/palettes';
 import { user } from '../../db/schema/auth';
 import { themeStatsDaily } from '../../db/schema/engagement';
 import { creatorProfiles, reports } from '../../db/schema/moderation';
@@ -13,6 +15,8 @@ import { tags, themeTags } from '../../db/schema/taxonomy';
 import { themes } from '../../db/schema/themes';
 import { decodeAdminReviewCursor } from '../../lib/validation/admin-queries';
 import { specHash } from '../../lib/render/hash';
+import { buildSpec } from '../../lib/render/build-spec';
+import { createRng } from '../../lib/render/prng';
 import type { ThemeAssets } from '../../lib/theme-assets';
 import type * as Counts from '../../server/admin-queries/counts';
 import type * as Dashboard from '../../server/admin-queries/dashboard';
@@ -389,5 +393,107 @@ describe.skipIf(!testUrl)('guarded admin reads on disposable isolated database f
     expect(options.tags.some((tag) => tag.id === tagIds[1] && !tag.isActive)).toBe(true);
     expect(options.runs.some((run) => run.id === runId)).toBe(true);
     expect(JSON.stringify(options)).not.toContain('@example.invalid');
+  });
+  it('decodes 1-bit and 64-bit duplicate distances with a real creator submission and 25 published neighbors', async () => {
+    const creatorId = `p16-duplicate-${token}`;
+    const submittedId = randomUUID();
+    const publishedIds = Array.from({ length: 25 }, () => randomUUID());
+    const customTagId = randomUUID();
+    const customAesthetic = `p16-duplicate-${token}`;
+    const previousHashes = await database
+      .select({ id: themes.id, previewHash: themes.previewHash })
+      .from(themes)
+      .where(inArray(themes.id, ids));
+    const recipe = AESTHETICS[0];
+    const paletteId = recipe?.palettes[0];
+    const palette = paletteId ? getPalette(paletteId) : null;
+    if (!recipe || !palette) throw new Error('Missing creator fixture recipe');
+    const design = buildSpec(recipe, palette, createRng(1601));
+    const canonicalHash = await specHash(design);
+    try {
+      // All modified pre-existing rows belong to this suite; unrelated hashes are untouched.
+      await database.update(themes).set({ previewHash: null }).where(inArray(themes.id, ids));
+      await database.insert(user).values({
+        id: creatorId,
+        name: 'Duplicate regression creator',
+        email: `${creatorId}@example.invalid`,
+      });
+      await database.insert(creatorProfiles).values({
+        userId: creatorId,
+        handle: `p16_${token}`,
+        displayName: 'Duplicate regression creator',
+        status: 'approved',
+        isAdult: true,
+      });
+      await database.insert(tags).values({
+        id: customTagId,
+        slug: customAesthetic,
+        kind: 'aesthetic',
+        nameEn: 'Custom E2E aesthetic',
+        nameAr: 'جمالية اختبار',
+      });
+      await database.insert(themes).values([
+        ...publishedIds.map((id, index) => ({
+          id,
+          slug: `p16-published-${token}-${index}`,
+          nameEn: `Published duplicate ${index}`,
+          source: 'generated' as const,
+          status: 'published' as const,
+          spec: design,
+          specHash: canonicalHash,
+          previewHash: '0000000000000001',
+          publishedAt: new Date(),
+        })),
+        {
+          id: submittedId,
+          slug: `p16-submitted-${token}`,
+          nameEn: 'Actual creator submission',
+          ownerId: creatorId,
+          source: 'creator',
+          status: 'pending_review',
+          spec: design,
+          specHash: canonicalHash,
+          submittedAt: new Date(),
+          previewHash: '0000000000000000',
+        },
+      ]);
+      await database.insert(themeTags).values({ themeId: submittedId, tagId: customTagId });
+      for (const [neighborHash, distance] of [
+        ['0000000000000001', 1],
+        ['ffffffffffffffff', 64],
+      ] as const) {
+        await database
+          .update(themes)
+          .set({ previewHash: neighborHash })
+          .where(inArray(themes.id, publishedIds));
+        const raw = await database.execute<{ topLevel: unknown; nested: { distance: unknown } }>(
+          sql`SELECT bit_count(('x0000000000000000')::bit(64) # ('x'||${neighborHash})::bit(64)) AS "topLevel",
+            json_build_object('distance',bit_count(('x0000000000000000')::bit(64) # ('x'||${neighborHash})::bit(64))) AS nested`,
+        );
+        expect(raw.rows[0]?.topLevel).toBe(String(distance));
+        expect(raw.rows[0]?.nested.distance).toBe(distance);
+        const page = await review.listAdminReview({ aesthetic: customAesthetic });
+        expect(page.items).toHaveLength(1);
+        expect(page.items[0]?.nearestDuplicate).toMatchObject({
+          id: [...publishedIds].sort()[0],
+          distance,
+        });
+        expect((await review.getAdminReviewItem(submittedId))?.nearestDuplicate?.distance).toBe(
+          distance,
+        );
+      }
+      await database.update(themes).set({ previewHash: null }).where(eq(themes.id, submittedId));
+      expect((await review.getAdminReviewItem(submittedId))?.nearestDuplicate).toBeNull();
+    } finally {
+      await database.delete(themes).where(inArray(themes.id, [...publishedIds, submittedId]));
+      await database.delete(tags).where(eq(tags.id, customTagId));
+      await database.delete(user).where(eq(user.id, creatorId));
+      for (const row of previousHashes)
+        if (row.previewHash !== null)
+          await database
+            .update(themes)
+            .set({ previewHash: row.previewHash })
+            .where(eq(themes.id, row.id));
+    }
   });
 });

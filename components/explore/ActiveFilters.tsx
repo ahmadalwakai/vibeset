@@ -30,7 +30,7 @@ export function ActiveFilters({ tags }: { tags: readonly TagDTO[] }): ReactEleme
   ];
   if (!filters.length) return null;
   return (
-    <Flex gap="2" wrap="wrap" align="center" aria-label={t('activeFilters')}>
+    <Flex role="group" gap="2" wrap="wrap" align="center" aria-label={t('activeFilters')}>
       {filters.map((filter) => (
         <Button
           key={filter.key}
