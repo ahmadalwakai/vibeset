@@ -114,10 +114,11 @@ workflows:
       - name: Capture actual simulator launch diagnostics
         script: |
           set -euo pipefail
-          node --input-type=module <<'NODE'
+          node --import tsx --input-type=module <<'NODE'
           import { execFileSync, spawnSync } from 'node:child_process';
-          import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+          import { mkdirSync, writeFileSync } from 'node:fs';
           import { setTimeout as delay } from 'node:timers/promises';
+          import { runSetupUiTests } from './scripts/ui-tests/run.ts';
 
           const output = 'build/simulator-diagnostics';
           const app = 'build/simulator/Build/Products/Release-iphonesimulator/Vibeset.app';
@@ -132,6 +133,7 @@ workflows:
             apiReachabilityVerified: false,
             uiReadinessVerified: false,
             widgetPlacementVerified: false,
+            setupScreensVerified: false,
             testFlightUpload: false,
             screenshots: [],
             stages: [],
@@ -216,17 +218,23 @@ workflows:
             // A bounded diagnostic sample after the API's 20-second timeout; this is not a UI-ready assertion.
             await delay(25_000);
             screenshot('settled-screenshot', udid, `${output}/launch-after-25s.jpg`, 60_000);
-            // Open the real shipped setup routes against the live published pack. These captures
-            // establish screen evidence only; they never save files or confirm installation steps.
-            const packs = JSON.parse(readFileSync('../content/native-beta/icon-packs.json', 'utf8'));
-            const setupSlug = packs[0]?.slug;
-            if (typeof setupSlug !== 'string' || !/^[a-z0-9][a-z0-9-]{0,159}$/.test(setupSlug)) {
-              throw new Error('A canonical published setup slug is required.');
-            }
-            for (const step of ['wallpaper', 'icons', 'widget']) {
-              stage(`setup-${step}-open`, ['openurl', udid, `vibeset://setup/${setupSlug}?step=${step}`], 30_000);
-              await delay(25_000);
-              screenshot(`setup-${step}-screenshot`, udid, `${output}/setup-${step}.jpg`, 60_000);
+            // XCTest taps the shipped catalogue CTA and actual screen controls. No URL opener,
+            // permission bypass, fabricated data, Photos saves or installation claims are used.
+            const uiStage = { name: 'setup-ui-tests', timeoutMs: 1_200_000, status: 'running', startedAt: new Date().toISOString() };
+            const uiStarted = Date.now();
+            report.stages.push(uiStage);
+            persist();
+            try {
+              report.screenshots.push(...runSetupUiTests(udid, output));
+              report.setupScreensVerified = true;
+              uiStage.status = 'succeeded';
+            } catch {
+              uiStage.status = 'failed';
+              uiStage.code = 'UI_TEST_FAILED';
+              throw new Error('The real catalogue-to-setup UI assertions failed.');
+            } finally {
+              uiStage.elapsedMs = Date.now() - uiStarted;
+              persist();
             }
           } catch (error) {
             failure = error;

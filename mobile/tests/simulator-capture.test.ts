@@ -2,9 +2,12 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+import { setupAttachmentPaths } from '../scripts/ui-tests/run';
 
 const workflow = readFileSync(new URL('../../codemagic.yaml', import.meta.url), 'utf8');
-const embedded = /node --input-type=module <<'NODE'\r?\n([\s\S]*?)\r?\n\s+NODE/.exec(workflow)?.[1];
+const embedded = /node --import tsx --input-type=module <<'NODE'\r?\n([\s\S]*?)\r?\n\s+NODE/.exec(
+  workflow,
+)?.[1];
 if (!embedded) throw new Error('The actual simulator capture script is required.');
 const source = embedded
   .split('\n')
@@ -18,6 +21,7 @@ const captureSchema = z.object({
   apiReachabilityVerified: z.literal(false),
   uiReadinessVerified: z.literal(false),
   widgetPlacementVerified: z.literal(false),
+  setupScreensVerified: z.boolean(),
   testFlightUpload: z.literal(false),
   screenshots: z.array(
     z.object({
@@ -33,7 +37,7 @@ const captureSchema = z.object({
     z.object({
       name: z.string(),
       status: z.enum(['succeeded', 'failed']),
-      timeoutMs: z.number().positive().max(600_000),
+      timeoutMs: z.number().positive().max(1_200_000),
       elapsedMs: z.number().nonnegative(),
       code: z.string().optional(),
     }),
@@ -41,7 +45,13 @@ const captureSchema = z.object({
 });
 
 async function exercise(
-  mode: 'success' | 'install-timeout' | 'unconfirmed-launch' | 'wrong-size' | 'unsupported-format',
+  mode:
+    | 'success'
+    | 'install-timeout'
+    | 'unconfirmed-launch'
+    | 'wrong-size'
+    | 'unsupported-format'
+    | 'ui-test-failure',
 ) {
   const calls: { operation: string; args: readonly string[]; timeout: number }[] = [];
   const files = new Map<string, string>();
@@ -51,7 +61,18 @@ async function exercise(
     console: { log: (message: string) => messages.push(message) },
     mkdirSync: () => undefined,
     writeFileSync: (path: string, value: string) => files.set(path, value),
-    readFileSync: () => JSON.stringify([{ slug: 'published-theme' }]),
+    runSetupUiTests: (device: string, output: string) => {
+      expect(device).toBe(ownedId);
+      expect(output).toBe('build/simulator-diagnostics');
+      if (mode === 'ui-test-failure') throw new Error('Private full command not retained');
+      return ['wallpaper', 'icons', 'widget'].map((step) => ({
+        file: `${output}/setup-${step}.jpg`,
+        width: 1320,
+        height: 2868,
+        format: 'jpeg',
+        hasAlpha: false,
+      }));
+    },
     delay: async (milliseconds: number) => expect(milliseconds).toBe(25_000),
     spawnSync: (command: string, args: readonly string[], options: { timeout: number }) => {
       expect(command).toBe('xcrun');
@@ -150,14 +171,10 @@ describe('actual Codemagic simulator capture orchestration', () => {
     expect(report.appInstallationVerified).toBe(true);
     expect(report.launchAccepted).toBe(true);
     expect(report.screenshots).toHaveLength(6);
-    expect(calls.filter(({ operation }) => operation === 'io')).toHaveLength(6);
-    expect(
-      calls.filter(({ operation }) => operation === 'openurl').map(({ args }) => args.at(-1)),
-    ).toEqual(
-      ['wallpaper', 'icons', 'widget'].map(
-        (step) => `vibeset://setup/published-theme?step=${step}`,
-      ),
-    );
+    expect(calls.filter(({ operation }) => operation === 'io')).toHaveLength(3);
+    expect(calls.filter(({ operation }) => operation === 'openurl')).toEqual([]);
+    expect(report.setupScreensVerified).toBe(true);
+    expect(report.stages.find(({ name }) => name === 'setup-ui-tests')?.timeoutMs).toBe(1_200_000);
     expect(
       calls
         .filter(({ operation }) => operation === 'io')
@@ -165,6 +182,48 @@ describe('actual Codemagic simulator capture orchestration', () => {
     ).toBe(true);
     expect(report.stages.every(({ status }) => status === 'succeeded')).toBe(true);
     expect(calls.slice(-2).map(({ operation }) => operation)).toEqual(['shutdown', 'delete']);
+  });
+
+  it('does not claim setup screen evidence when real XCTest navigation fails and still cleans its owned simulator', async () => {
+    const { calls, report, error } = await exercise('ui-test-failure');
+    expect(String(error)).toContain('failed at setup-ui-tests');
+    expect(report.setupScreensVerified).toBe(false);
+    expect(report.stages.find(({ name }) => name === 'setup-ui-tests')?.status).toBe('failed');
+    expect(report.screenshots.some(({ file }) => file.includes('setup-wallpaper'))).toBe(false);
+    expect(calls.slice(-2).map(({ operation }) => operation)).toEqual(['shutdown', 'delete']);
+  });
+
+  it('requires exactly one bounded local JPEG attachment for each asserted setup screen', () => {
+    const manifest = [
+      {
+        attachments: ['wallpaper', 'icons', 'widget'].map((step) => ({
+          exportedFileName: `${step}.jpeg`,
+          suggestedHumanReadableName: `setup-${step}_0_UUID.jpeg`,
+        })),
+      },
+    ];
+    expect(setupAttachmentPaths(manifest).map(({ step }) => step)).toEqual([
+      'wallpaper',
+      'icons',
+      'widget',
+    ]);
+    const exactNames = [
+      {
+        attachments: ['wallpaper', 'icons', 'widget'].map((step) => ({
+          exportedFileName: `${step}.jpg`,
+          suggestedHumanReadableName: `setup-${step}`,
+        })),
+      },
+    ];
+    expect(setupAttachmentPaths(exactNames)).toHaveLength(3);
+    const traversal = structuredClone(manifest);
+    traversal[0]?.attachments.splice(0, 1, {
+      exportedFileName: '../outside.jpg',
+      suggestedHumanReadableName: 'setup-wallpaper_0_UUID.jpeg',
+    });
+    expect(() => setupAttachmentPaths(traversal)).toThrow();
+    expect(() => setupAttachmentPaths([{ attachments: [] }])).toThrow();
+    expect(() => setupAttachmentPaths([...manifest, ...manifest])).toThrow();
   });
 
   it('retains the install failure despite diagnostic or shutdown failures and only describes its owned simulator', async () => {
