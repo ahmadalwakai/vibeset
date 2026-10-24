@@ -75,6 +75,7 @@ export function createThemeSetupStore(
   };
   let known = false;
   let hydration: Promise<void> | undefined;
+  let recovery: Promise<void> | undefined;
   let queue = Promise.resolve();
   let revision = 0;
   const listeners = new Set<() => void>();
@@ -99,7 +100,11 @@ export function createThemeSetupStore(
       emit({ progress: defaults, loading: false, saving: false, issue: 'INVALID_STORAGE' });
     }
   };
-  const hydrate = (): Promise<void> => (hydration ??= read());
+  const recoverRead = (): Promise<void> =>
+    (recovery ??= read().finally(() => {
+      recovery = undefined;
+    }));
+  const hydrate = (): Promise<void> => (hydration ??= recoverRead());
   const update = async (
     change: (progress: ThemeSetupProgress) => ThemeSetupProgress,
   ): Promise<void> => {
@@ -131,7 +136,7 @@ export function createThemeSetupStore(
     hydrate,
     update,
     retry: async () => {
-      if (!known) await read();
+      if (!known) await recoverRead();
       else await update((current) => current);
     },
   };

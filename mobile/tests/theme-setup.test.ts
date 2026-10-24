@@ -48,6 +48,39 @@ describe('native theme setup progress', () => {
     expect(disk.setItem).toHaveBeenCalledTimes(1);
   });
 
+  it('shares concurrent recovery reads so a late retry cannot replace newly saved progress', async () => {
+    const disk = storage();
+    disk.getItem.mockRejectedValueOnce(new Error('temporary native failure'));
+    const store = createThemeSetupStore(disk, pack);
+    await store.hydrate();
+    expect(store.getSnapshot().issue).toBe('READ_FAILED');
+
+    let resolveRead: (value: string | null) => void = () => {};
+    const pendingRead = new Promise<string | null>((resolve) => {
+      resolveRead = resolve;
+    });
+    disk.getItem.mockImplementationOnce(() => pendingRead);
+    const firstRetry = store.retry();
+    const secondRetry = store.retry();
+    expect(disk.getItem).toHaveBeenCalledTimes(2);
+    expect(disk.setItem).not.toHaveBeenCalled();
+
+    resolveRead(null);
+    await firstRetry;
+    await store.update((value) => ({ ...value, saved: ['phone'] }));
+    await secondRetry;
+    expect(store.getSnapshot().progress.saved).toEqual(['phone']);
+    expect(disk.getItem).toHaveBeenCalledTimes(2);
+
+    // Once the baseline is known, explicit retry persists current choices;
+    // it must never read an older disk snapshot over them.
+    await store.retry();
+    expect(disk.getItem).toHaveBeenCalledTimes(2);
+    const reopened = createThemeSetupStore(disk, pack);
+    await reopened.hydrate();
+    expect(reopened.getSnapshot().progress.saved).toEqual(['phone']);
+  });
+
   it('retains partial Photos success and confirmed steps across app reopen without marking unsaved icons installed', async () => {
     const disk = storage();
     const store = createThemeSetupStore(disk, pack);
