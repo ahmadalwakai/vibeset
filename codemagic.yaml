@@ -225,6 +225,85 @@ workflows:
       - $CM_BUILD_DIR/mobile/build/vibeset-simulator-ios-app.zip
       - $CM_BUILD_DIR/mobile/build/simulator-xcodebuild.log
       - $CM_BUILD_DIR/mobile/build/simulator-diagnostics/**
+  ios-native-cloud-signing-probe:
+    name: Vibeset Apple cloud signing diagnostic (never uploads)
+    working_directory: mobile
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    # Requires durable saved development keys/profiles; never fetches distribution identities.
+    integrations:
+      app_store_connect: Vibeset Codemagic
+    environment:
+      node: 24
+      xcode: '27.1'
+      cocoapods: default
+      ios_signing:
+        certificates:
+          - certificate: vibeset_development
+            environment_variable: VIBESET_DEVELOPMENT_CERTIFICATE_PATH
+        provisioning_profiles:
+          - profile: vibeset_development_app
+            environment_variable: VIBESET_DEVELOPMENT_APP_PROFILE_PATH
+          - profile: vibeset_development_calendar
+            environment_variable: VIBESET_DEVELOPMENT_CALENDAR_PROFILE_PATH
+      # No provider group, service defaults or publishing block.
+      vars:
+        VIBESET_NATIVE_CLOUD_PROBE: '1'
+        VIBESET_NATIVE_GENERATE: compile
+        VIBESET_IOS_BUNDLE_ID: com.ahmadalwakai.vibeset
+        VIBESET_IOS_WIDGET_BUNDLE_ID: com.ahmadalwakai.vibeset.calendar
+        VIBESET_IOS_APP_GROUP: group.com.ahmadalwakai.vibeset
+        VIBESET_IOS_TEAM_ID: BXK52CMHR2
+        CI: '1'
+        EXPO_NO_DOTENV: '1'
+        EXPO_NO_TELEMETRY: '1'
+    cache:
+      cache_paths:
+        - $HOME/.npm
+    scripts:
+      - name: Install shared dependencies without integration secrets
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          set +x
+          for native_secret_name in ${!APP_STORE_CONNECT_@} CERTIFICATE_PRIVATE_KEY CERTIFICATE_PRIVATE_KEY_PASSWORD CERTIFICATE_PASSWORD CM_CERTIFICATE CM_CERTIFICATE_PASSWORD CM_PROVISIONING_PROFILE APP_SPECIFIC_PASSWORD; do
+            unset "$native_secret_name"
+          done
+          npm ci --prefix .. --include=dev --include=optional
+      - name: Install native dependencies without integration secrets
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          set +x
+          for native_secret_name in ${!APP_STORE_CONNECT_@} CERTIFICATE_PRIVATE_KEY CERTIFICATE_PRIVATE_KEY_PASSWORD CERTIFICATE_PASSWORD CM_CERTIFICATE CM_CERTIFICATE_PASSWORD CM_PROVISIONING_PROFILE APP_SPECIFIC_PASSWORD; do
+            unset "$native_secret_name"
+          done
+          npm ci --include=dev --include=optional
+      - name: Require an explicit manual diagnostic and the existing integration
+        script: node --import tsx scripts/probe-cloud-signing.ts preflight
+      - name: Check native dependency compatibility
+        script: node --import tsx scripts/check-ios-release.ts run-build npm run check:expo
+      - name: Native TypeScript and lint
+        script: |
+          set -euo pipefail
+          node --import tsx scripts/check-ios-release.ts run-build npm run typecheck
+          node --import tsx scripts/check-ios-release.ts run-build npm run lint
+      - name: Native contract tests
+        script: node --import tsx scripts/check-ios-release.ts run-build npm test
+      - name: Generate diagnostic-only device application and extension
+        script: node --import tsx scripts/check-ios-release.ts run-build npm run prebuild:ios:compile
+      - name: Install iOS pods without integration secrets
+        script: |
+          set -euo pipefail
+          cd ios
+          node --import tsx ../scripts/check-ios-release.ts run-build pod install
+      - name: Probe development archive and Apple cloud export without uploading
+        script: |
+          set -euo pipefail
+          set +x
+          node --import tsx scripts/probe-cloud-signing.ts run
+    artifacts:
+      - $CM_BUILD_DIR/mobile/build/cloud-signing-diagnostics/summary.json
   ios-native-testflight:
     name: Vibeset native iPhone TestFlight (internal only)
     working_directory: mobile
