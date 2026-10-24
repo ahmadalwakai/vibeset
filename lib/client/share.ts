@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_ICON_EXPORT_FILES } from '../icon-export';
 import { canShareFiles, isIOS } from './platform';
 import type { Platform } from './platform';
 
@@ -24,7 +25,7 @@ function validateFiles(files: File[]): File[] {
   return z
     .array(z.instanceof(File).refine((file) => file.size > 0, 'File must not be empty'))
     .min(1)
-    .max(100)
+    .max(MAX_ICON_EXPORT_FILES)
     .parse(files);
 }
 

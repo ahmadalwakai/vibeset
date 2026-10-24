@@ -77,6 +77,50 @@ export function ThemeActionBar({
     }
   }
 
+  const secondaryActions = (
+    <>
+      <Button asChild variant="outline" rounded="button" size="lg" minW="11" px="3">
+        <Link href={{ pathname: '/studio', query: { from: theme.slug } }} aria-label={t('remix')}>
+          <Icon asChild boxSize="5">
+            <MagicWandIcon aria-hidden />
+          </Icon>
+          <Text as="span" display={{ base: iconsAction ? 'inline' : 'none', sm: 'inline' }}>
+            {t('remix')}
+          </Text>
+        </Link>
+      </Button>
+      {favoriteAction}
+      <Menu.Root positioning={{ placement: 'top-end' }}>
+        <Menu.Trigger asChild>
+          <IconButton
+            variant="ghost"
+            rounded="button"
+            size="lg"
+            aria-label={t('more')}
+            loading={sharing}
+          >
+            <Icon asChild boxSize="6">
+              <DotsThreeIcon aria-hidden weight="bold" />
+            </Icon>
+          </IconButton>
+        </Menu.Trigger>
+        <Portal>
+          <Menu.Positioner>
+            <Menu.Content rounded="input" shadow="float" minW="48">
+              <Menu.Item value="share" minH="11" disabled={sharing} onSelect={() => void share()}>
+                <Icon asChild boxSize="5">
+                  <ShareNetworkIcon aria-hidden />
+                </Icon>
+                {t('share')}
+              </Menu.Item>
+              {reportAction}
+            </Menu.Content>
+          </Menu.Positioner>
+        </Portal>
+      </Menu.Root>
+    </>
+  );
+
   return (
     <>
       <Box
@@ -98,7 +142,7 @@ export function ThemeActionBar({
           },
         }}
       >
-        <Flex align="center" gap="2" wrap="wrap">
+        <Flex align="center" gap="2" wrap={iconsAction ? 'nowrap' : 'wrap'}>
           <Button
             colorPalette="brand"
             rounded="button"
@@ -116,54 +160,13 @@ export function ThemeActionBar({
             {t('download')}
           </Button>
           {iconsAction}
-          <Button asChild variant="outline" rounded="button" size="lg" minW="11" px="3">
-            <Link
-              href={{ pathname: '/studio', query: { from: theme.slug } }}
-              aria-label={t('remix')}
-            >
-              <Icon asChild boxSize="5">
-                <MagicWandIcon aria-hidden />
-              </Icon>
-              <Text as="span" display={{ base: 'none', sm: 'inline' }}>
-                {t('remix')}
-              </Text>
-            </Link>
-          </Button>
-          {favoriteAction}
-          <Menu.Root positioning={{ placement: 'top-end' }}>
-            <Menu.Trigger asChild>
-              <IconButton
-                variant="ghost"
-                rounded="button"
-                size="lg"
-                aria-label={t('more')}
-                loading={sharing}
-              >
-                <Icon asChild boxSize="6">
-                  <DotsThreeIcon aria-hidden weight="bold" />
-                </Icon>
-              </IconButton>
-            </Menu.Trigger>
-            <Portal>
-              <Menu.Positioner>
-                <Menu.Content rounded="input" shadow="float" minW="48">
-                  <Menu.Item
-                    value="share"
-                    minH="11"
-                    disabled={sharing}
-                    onSelect={() => void share()}
-                  >
-                    <Icon asChild boxSize="5">
-                      <ShareNetworkIcon aria-hidden />
-                    </Icon>
-                    {t('share')}
-                  </Menu.Item>
-                  {reportAction}
-                </Menu.Content>
-              </Menu.Positioner>
-            </Portal>
-          </Menu.Root>
+          {!iconsAction ? secondaryActions : null}
         </Flex>
+        {iconsAction ? (
+          <Flex align="center" justify="end" gap="2" mt="2">
+            {secondaryActions}
+          </Flex>
+        ) : null}
         {opened ? (
           <WallpaperDownloadSheet theme={theme} open={sheetOpen} onOpenChange={setSheetOpen} />
         ) : null}

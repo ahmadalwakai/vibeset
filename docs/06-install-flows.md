@@ -39,25 +39,27 @@ canShareFiles(files: File[])  // !!navigator.canShare?.({ files })
 
 ### 3.2 App icons (the main event)
 
-1. **Get icons** → app picker: default = top 24 from the catalogue; search (name + aliases, trigram on server, fuzzy on client); category chips; **+ Custom icon** (label + any glyph from the manifest). Selection persists in `localStorage` (`vibeset:selected-apps`).
-2. **Generate** → renderer + glyph weight JSON load on demand → icons render in chunks of 6 with `await scheduler.yield?.() ?? new Promise(r => setTimeout(r))` between chunks, progress "12 / 24", cancel button (AbortController). iOS icons are opaque, full-bleed 512 × 512 PNG.
+1. **Get icons** → app picker: default = first 24 sorted by rank then slug; search includes names and Arabic aliases; category chips; **+ Custom icon** (label + any glyph from the manifest). Persist validated `{ v: 1, appSlugs, custom }` in `localStorage` at `vibeset:selected-apps`; retain intentional empty choices, reconcile stale IDs and use a current-document memory fallback when storage is blocked. Limits are 125 catalogue apps plus 20 custom icons; optional four decor outputs bring the export cap to 149 files and 64 MiB. Custom filename IDs are `custom-{UUID}` and never derive from labels.
+2. **Generate** → renderer + required glyph weight JSON load on demand → icons render in chunks of 6. Await `scheduler.yield()` when supported, otherwise await a timer between chunks. Show progress "12 / 24" and cancel with AbortController. iOS icons are opaque, full-bleed 512 × 512 PNG.
 3. **Save to Photos** in batches ("Save 1–20", "Save 21–24"), each a separate tap.
 4. **Set them up** → `/setup/ios?theme={slug}` wizard.
 
 ### 3.3 Setup wizard (`/setup/ios`)
 
-Chakra `Steps` for the one-time intro, then a per-app checklist. Progress saved in `localStorage` (`vibeset:ios-wizard:{slug}` → `{ done: string[] }`), so users can leave and come back.
+Chakra `Steps` for the one-time intro, then a per-app checklist. Progress saved in `localStorage` (`vibeset:ios-wizard:{slug || 'default'}` → `{ v: 1, done: string[], completed: boolean }`), so users can leave and come back. Reconcile IDs with the current catalogue/custom selection. The completion flag prevents duplicate setup tracking across reloads or unchecking/rechecking; an explicit reset starts a new setup. When storage is blocked, keep validated progress in memory for the current document so navigating away and back preserves the checklist and completion claim.
 
 For each selected app (card with the app's new icon):
 
 1. **Open Shortcuts** button → `shortcuts://create-shortcut` (fallback text: "Open the Shortcuts app and tap +").
 2. Tap **Add Action** → search **Open App** → tap it → tap **App** → choose *{App}*.
-3. Tap the shortcut name at the top ▾ (or the share icon) → **Add to Home Screen**.
+3. Open the shortcut's **Details** controls → **Add to Home Screen**. Control placement can vary by iOS version.
 4. Tap the small icon → **Choose Photo** → pick the *{App}* icon you saved.
 5. Rename to *{App}* → **Add**.
 6. Tap **Done ✓** in Vibeset → next app.
 
 Finish screen: hide the original icons (long-press → Remove App → **Remove from Home Screen**; the app stays in the App Library), plus the wallpaper reminder.
+
+The Shortcuts URL, Open App action and custom Home Screen icon flow follow Apple's [URL scheme](https://support.apple.com/en-euro/guide/shortcuts/apda283236d7/ios), [creation guide](https://support.apple.com/guide/shortcuts/create-a-custom-shortcut-apd84c576f8c/ios) and [Home Screen instructions](https://support.apple.com/en-euro/guide/shortcuts/apd735880972/9.0/ios/26). The readable Home Screen guide is versioned iOS26; verify current device labels before release instead of promising exact control positions.
 
 Each step has a 3–6 s silent looping MP4 (our own screen recordings, < 600 KB, `playsInline muted loop`) stored in R2. Step labels in Shortcuts change between iOS versions: re-verify text and recordings at every major iOS release (checklist in `docs/08`).
 
@@ -67,7 +69,7 @@ Track `setup_complete` once when every selected app is ticked.
 
 ### 3.4 Decor widgets (optional)
 
-Export static decor images (`glyphBadge`, `ring`, `stickerCollage`, `photoFrame`) → save to Photos → user creates an album → adds the **Photos** widget and points it at that album (verify album selection on the current iOS before promoting this feature). Copy must be honest: "static decorative widgets — live widgets are coming in the Vibeset app".
+Export static decor images (`glyphBadge`, `ring`, `stickerCollage`, `photoFrame`) → save to Photos → add them with a compatible photo widget. Widget setup varies by device; do not promise current album-selection controls until verified on that device. Copy must be honest: "static decorative widgets — live widgets are coming in the Vibeset app".
 
 ---
 

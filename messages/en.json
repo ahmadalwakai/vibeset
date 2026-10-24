@@ -264,8 +264,120 @@
       "errors": {
         "network": "We could not prepare this image. Check your connection and try again.",
         "activation": "Tap Save again to open the share sheet.",
-        "save": "We could not save this image. Try again or choose another browser."
-      }
+        "save": "We could not save this image. Try again or choose another browser.",
+        "render": "We could not create this wallpaper on your device. Try a smaller size."
+      },
+      "desktop4k": "4K desktop",
+      "screen": "My screen",
+      "rendering": "Rendering your wallpaper…"
+    },
+    "icons": {
+      "title": "Your matching icons",
+      "description": "Pick your apps. We’ll make the icons on your device.",
+      "steps": {
+        "pick": "Pick",
+        "generate": "Create",
+        "save": "Save"
+      },
+      "loadingCatalogue": "Loading your app choices…",
+      "catalogueUnavailable": "We could not load the app catalogue.",
+      "emptyCatalogue": "No apps are available yet. You can still add a custom icon.",
+      "searchLabel": "Search apps",
+      "searchPlaceholder": "App name or alias",
+      "allCategories": "All apps",
+      "selectAll": "Select shown apps",
+      "selectNone": "Clear app selection",
+      "selected": "{count} selected",
+      "selectionLimit": "Choose up to {count} apps, plus your custom icons.",
+      "noneSelected": "Choose an app or add a custom icon to get started.",
+      "generate": "Create icons",
+      "cancel": "Cancel generation",
+      "back": "Back to apps",
+      "progress": "{completed} / {total}",
+      "working": "Making your icons…",
+      "cancelled": "Generation cancelled. Your selection is still here.",
+      "errorTitle": "Your icons could not be created.",
+      "errorDescription": "Your selection is saved. Try again to create the pack.",
+      "retry": "Try again",
+      "finished": "{count} images, ready for you.",
+      "editSelection": "Change apps",
+      "saveRange": "Save {from}–{to}",
+      "saveAgainRange": "Save {from}–{to} again",
+      "savedRange": "Saved {from}–{to}",
+      "downloadZip": "Download ZIP",
+      "preparingZip": "Preparing your ZIP…",
+      "zipError": "We could not prepare the ZIP. Try again.",
+      "shareImages": "Share images",
+      "saveFailed": "We could not save these images. Try again or use another browser.",
+      "activationRequired": "Tap Save again to open the share sheet.",
+      "setUpIos": "Set them up on iPhone",
+      "setUpAndroid": "Set them up on Android",
+      "setUpDesktop": "Desktop guide",
+      "iosUnsupported": "This browser cannot share images to Photos. Open in Safari, or download the ZIP.",
+      "iosSaveHint": "Save each batch separately, then choose Save Images in the share sheet.",
+      "downloadStarted": "Your download has started.",
+      "batchSaved": "Your image batch was shared.",
+      "previewUnavailable": "Icon preview unavailable",
+      "generatedAlt": "Generated icon: {name}",
+      "warnings": {
+        "photo-wallpaper-fallback": "For these icons, your photo is replaced with a matching gradient. Your wallpaper stays the same.",
+        "missing-glyph": "A missing symbol was replaced with a simple circle."
+      },
+      "widgetDecor": {
+        "label": "Include widget decor",
+        "description": "Static decorative images for a compatible photo widget. Live widgets are coming in the Vibeset app."
+      },
+      "custom": {
+        "title": "Make an icon for any app",
+        "add": "Add a custom icon",
+        "label": "App label",
+        "labelPlaceholder": "What is your app called?",
+        "glyph": "Symbol",
+        "pickGlyph": "Choose a symbol",
+        "addIcon": "Add icon",
+        "remove": "Remove {label}",
+        "limit": "You can add up to {count} custom icons.",
+        "invalidLabel": "Use 1–24 characters, without line breaks.",
+        "chooseGlyph": "Choose a symbol for this icon.",
+        "empty": "No custom icons yet.",
+        "checking": "Checking your saved symbols…"
+      },
+      "glyph": {
+        "title": "Choose a symbol",
+        "searchLabel": "Search symbols",
+        "searchPlaceholder": "Try heart, moon or flower",
+        "loading": "Loading symbols…",
+        "error": "We could not load the symbols.",
+        "empty": "No matching symbols. Try another word.",
+        "limited": "Showing {count} of {total}. Search to narrow the results.",
+        "select": "Choose {name}",
+        "selected": "Selected: {name}"
+      },
+      "categories": {
+        "ai": "AI",
+        "education": "Education",
+        "finance": "Finance",
+        "food": "Food",
+        "games": "Games",
+        "health": "Health",
+        "lifestyle": "Lifestyle",
+        "media": "Video & media",
+        "messaging": "Messaging",
+        "music": "Music",
+        "news": "News",
+        "photo": "Photo & design",
+        "productivity": "Productivity",
+        "shopping": "Shopping",
+        "social": "Social",
+        "system": "Phone essentials",
+        "travel": "Travel",
+        "utilities": "Utilities",
+        "other": "Other"
+      },
+      "getIcons": "Get icons",
+      "noApps": "No matching apps. Try another name or category.",
+      "saveFirst": "Save your images first. Your setup guide will appear here.",
+      "prepareZip": "Prepare ZIP download"
     }
   },
   "studio": {
@@ -383,7 +495,101 @@
     }
   },
   "setup": {
-    "title": "Set up your theme"
+    "title": "Set up your theme",
+    "ios": {
+      "title": "Make your iPhone feel like you.",
+      "description": "A little setup, a whole new home screen. We’ll walk you through every icon.",
+      "metadataTitle": "iPhone theme setup · Vibeset",
+      "metadataDescription": "Save your icons and set up matching iPhone shortcuts, one simple step at a time.",
+      "progress": "{done} / {total} icons complete",
+      "appHeading": "Set up {app}",
+      "openShortcuts": "Open Shortcuts",
+      "openFallback": "If Shortcuts does not open, open the Shortcuts app yourself and start a new shortcut.",
+      "markDone": "Done",
+      "markUndone": "Mark as unfinished",
+      "reset": "Start again",
+      "resetTitle": "Reset your progress?",
+      "resetBody": "Your selected apps stay the same. This clears the setup checklist.",
+      "continue": "Continue setup",
+      "completeTitle": "Your new home screen is ready.",
+      "completeBody": "Hide the original icons from your home screen and set your matching wallpaper to finish the look.",
+      "emptyTitle": "Choose your icons first.",
+      "emptyBody": "Pick a theme and the apps you want to personalise. Your checklist will be waiting here.",
+      "chooseIcons": "Get matching icons",
+      "browseThemes": "Browse themes",
+      "themeUnavailable": "We could not load this theme. You can retry or follow the steps with simple symbols.",
+      "withoutTheme": "You can follow these steps with icons you have already saved.",
+      "loading": "Getting your setup checklist ready…",
+      "steps": {
+        "openTitle": "Create a shortcut",
+        "openBody": "Open Shortcuts and start a new shortcut.",
+        "actionTitle": "Choose the app",
+        "actionBody": "Add the Open App action. Tap App in that action and choose {app}.",
+        "detailsTitle": "Open shortcut details",
+        "detailsBody": "Open the shortcut’s details menu, then choose Add to Home Screen.",
+        "photoTitle": "Pick your new icon",
+        "photoBody": "Tap the icon preview, choose Choose Photo, then select the {app} icon you saved.",
+        "nameTitle": "Give it a name",
+        "nameBody": "Name the shortcut {app}, then tap Add.",
+        "finishTitle": "Make it yours",
+        "finishBody": "Return here and mark this app as done. Repeat for your next app."
+      },
+      "faq": {
+        "title": "A few things to know",
+        "bannerQuestion": "Why does a banner appear when I open an app?",
+        "bannerAnswer": "iOS may show a banner when an app opens through Shortcuts. This is part of iOS and Vibeset cannot remove it.",
+        "automaticQuestion": "Can Vibeset set up every icon automatically?",
+        "automaticAnswer": "iOS does not allow apps or websites to change other app icons automatically. Each shortcut needs this one-time setup."
+      }
+    },
+    "android": {
+      "title": "A fresh home screen on Android.",
+      "description": "Save your wallpaper and icons, then make the look your own.",
+      "metadataTitle": "Android theme setup · Vibeset",
+      "metadataDescription": "Set your Android wallpaper and use matching icons with a compatible launcher.",
+      "steps": {
+        "saveTitle": "Save your theme",
+        "saveBody": "Download the wallpaper and icon ZIP. Extract the ZIP so your icon images are easy to find.",
+        "wallpaperTitle": "Set your wallpaper",
+        "wallpaperBody": "Open the wallpaper in Gallery or Downloads and choose Set as wallpaper. Your phone may also offer Wallpaper & style from the home screen.",
+        "iconsTitle": "Choose a compatible launcher",
+        "iconsBody": "Most built-in launchers cannot change icons individually. Use a launcher that supports custom icons, or a shortcut-maker app.",
+        "customizeTitle": "Add each icon",
+        "customizeBody": "In your launcher or shortcut app, edit an app’s icon and choose its matching PNG. Repeat for your other apps."
+      }
+    },
+    "desktop": {
+      "title": "Bring your look to your desktop.",
+      "description": "Save a wallpaper for your computer, or prepare an icon pack for your phone.",
+      "metadataTitle": "Desktop wallpaper setup · Vibeset",
+      "metadataDescription": "Set a Vibeset wallpaper on Mac or Windows and download matching icon images.",
+      "steps": {
+        "saveTitle": "Download your wallpaper",
+        "saveBody": "Choose Desktop in the wallpaper panel. Generated wallpapers also offer 4K desktop and My screen.",
+        "macTitle": "On Mac",
+        "macBody": "Open System Settings → Wallpaper → Add Photo, then choose the saved image.",
+        "windowsTitle": "On Windows",
+        "windowsBody": "Right-click the saved image and choose Set as desktop background.",
+        "iconsTitle": "Keep your icon pack handy",
+        "iconsBody": "Download the icon ZIP and extract it. Transfer the PNGs to your phone to set them up there."
+      }
+    },
+    "intro": {
+      "saveTitle": "Save icons",
+      "saveBody": "Save each image batch to Photos before you begin.",
+      "shortcutsTitle": "Create shortcuts",
+      "shortcutsBody": "Make a home screen shortcut for each app using your new icon.",
+      "hideTitle": "Hide originals",
+      "hideBody": "Press and hold an original icon, choose Remove App, then Remove from Home Screen. The app stays in your App Library.",
+      "wallpaperTitle": "Set wallpaper",
+      "wallpaperBody": "Open your saved wallpaper in Photos, tap Share, then Use as Wallpaper."
+    },
+    "common": {
+      "backTheme": "Back to theme",
+      "explore": "Explore themes",
+      "shortcutsNote": "You choose and configure each shortcut. Vibeset does not install profiles or change your apps.",
+      "staticDecor": "Widget decor is a static image for a compatible photo widget. Live widgets are coming in the Vibeset app."
+    }
   },
   "saved": {
     "title": "Saved"

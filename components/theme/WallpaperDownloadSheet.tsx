@@ -4,7 +4,7 @@ import { Box, Button, Field, Icon, NativeSelect, Spinner, Stack, Text } from '@c
 import { CheckCircleIcon } from '@phosphor-icons/react/dist/csr/CheckCircle';
 import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { ResponsiveSheet } from '@/components/common/ResponsiveSheet';
 import { toaster } from '@/components/ui/toaster';
@@ -12,11 +12,17 @@ import { usePlatform } from '@/hooks/usePlatform';
 import { Link } from '@/i18n/navigation';
 import { canShareFiles } from '@/lib/client/platform';
 import type { PlatformInfo } from '@/lib/client/platform';
+import {
+  createWallpaperOptions,
+  prepareWallpaper,
+  screenDimensions,
+} from '@/lib/client/generated-wallpaper';
 import { chooseSaveStrategy, downloadFile, shareFiles } from '@/lib/client/share';
 import { track } from '@/lib/client/track';
-import { chooseWallpaperSize, prepareWallpaperFile } from '@/lib/client/wallpaper';
+import { chooseWallpaperSize } from '@/lib/client/wallpaper';
 import type { ThemeDetailDTO } from '@/lib/dto';
 import { formatNumber } from '@/lib/utils/format';
+import type { WallpaperDimensions, WallpaperSize } from '@/lib/wallpaper-export';
 
 export interface WallpaperDownloadSheetProps {
   theme: ThemeDetailDTO;
@@ -25,6 +31,19 @@ export interface WallpaperDownloadSheetProps {
 }
 
 type Preparation = { key: string; status: 'ready'; file: File } | { key: string; status: 'error' };
+
+function currentScreen(): WallpaperDimensions | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    return screenDimensions({
+      width: window.screen.width,
+      height: window.screen.height,
+      pixelRatio: window.devicePixelRatio,
+    });
+  } catch {
+    return undefined;
+  }
+}
 
 function WallpaperDownloadBody({
   theme,
@@ -36,7 +55,19 @@ function WallpaperDownloadBody({
   const t = useTranslations('theme.download');
   const locale = useLocale();
   const selectId = useId();
-  const [size, setSize] = useState(() => chooseWallpaperSize(theme.wallpapers, platform)?.size);
+  const [screenSize, setScreenSize] = useState(currentScreen);
+  const options = useMemo(
+    () =>
+      createWallpaperOptions({
+        spec: theme.spec,
+        wallpapers: theme.wallpapers,
+        screen: screenSize,
+      }),
+    [theme.spec, theme.wallpapers, screenSize],
+  );
+  const [size, setSize] = useState<WallpaperSize>(
+    () => chooseWallpaperSize(theme.wallpapers, platform)?.size ?? 'desktop4k',
+  );
   const [attempt, setAttempt] = useState(0);
   const [prepared, setPrepared] = useState<Preparation | null>(null);
   const [saving, setSaving] = useState(false);
@@ -45,25 +76,43 @@ function WallpaperDownloadBody({
   const sequence = useRef(0);
   const pending = useRef(false);
   const completed = useRef(false);
+  const mounted = useRef(false);
   const successHeading = useRef<HTMLHeadingElement>(null);
-  const selected = theme.wallpapers.find((item) => item.size === size) ?? theme.wallpapers[0];
-  const url = selected?.url;
-  const width = selected?.w;
-  const height = selected?.h;
-  const bytes = selected?.bytes;
-  const selectedSize = selected?.size;
+  const selected =
+    options.find((item) => (item.kind === 'cdn' ? item.asset.size : item.size) === size) ??
+    options[0];
+  const details = selected?.kind === 'cdn' ? selected.asset : selected;
   const key = JSON.stringify([
     theme.id,
     theme.slug,
-    url,
-    width,
-    height,
-    bytes,
-    selectedSize,
+    selected,
+    selected?.kind === 'render' ? theme.spec : null,
     attempt,
   ]);
   const file = prepared?.key === key && prepared.status === 'ready' ? prepared.file : null;
   const failed = prepared?.key === key && prepared.status === 'error';
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const resize = (): void => {
+      const next = currentScreen();
+      setScreenSize((previous) =>
+        previous?.w === next?.w && previous?.h === next?.h ? previous : next,
+      );
+    };
+    window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', resize);
+    return () => {
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('orientationchange', resize);
+    };
+  }, []);
 
   useEffect(() => {
     if (saved) successHeading.current?.focus();
@@ -72,12 +121,13 @@ function WallpaperDownloadBody({
   useEffect(() => {
     const controller = new AbortController();
     const id = ++sequence.current;
-    if (url && width && height && bytes && selectedSize) {
-      void prepareWallpaperFile(
-        theme.slug,
-        { url, w: width, h: height, bytes, size: selectedSize },
-        controller.signal,
-      )
+    if (selected) {
+      void prepareWallpaper({
+        slug: theme.slug,
+        spec: theme.spec,
+        option: selected,
+        signal: controller.signal,
+      })
         .then((file) => {
           if (!controller.signal.aborted && sequence.current === id)
             setPrepared({ key, status: 'ready', file });
@@ -91,12 +141,11 @@ function WallpaperDownloadBody({
       sequence.current += 1;
       controller.abort();
     };
-  }, [key, theme.slug, url, width, height, bytes, selectedSize]);
+  }, [key, theme.slug, theme.spec, selected]);
 
   async function save(): Promise<void> {
     if (!file || pending.current || completed.current) return;
     pending.current = true;
-    const id = sequence.current;
     setSaving(true);
     setActivationRequired(false);
     try {
@@ -112,21 +161,21 @@ function WallpaperDownloadBody({
         completed.current = true;
         track(theme.id, 'download');
       }
-      if (sequence.current !== id) return;
+      if (!mounted.current) return;
       if (result === 'saved') setSaved(true);
       if (result === 'activation-required') {
         setActivationRequired(true);
         toaster.create({ type: 'info', title: t('errors.activation') });
       }
     } catch {
-      if (sequence.current === id) toaster.create({ type: 'error', title: t('errors.save') });
+      if (mounted.current) toaster.create({ type: 'error', title: t('errors.save') });
     } finally {
       pending.current = false;
-      if (sequence.current === id) setSaving(false);
+      if (mounted.current) setSaving(false);
     }
   }
 
-  if (!selected)
+  if (!selected || !details)
     return (
       <Text py="4" role="status" color="fg.muted">
         {t('noSizes')}
@@ -171,42 +220,57 @@ function WallpaperDownloadBody({
         <NativeSelect.Root size="lg" disabled={saving}>
           <NativeSelect.Field
             id={selectId}
-            value={selected.size}
+            value={details.size}
             onChange={(event) => {
-              const option = theme.wallpapers.find((item) => item.size === event.target.value);
+              const option = options.find(
+                (item) =>
+                  (item.kind === 'cdn' ? item.asset.size : item.size) === event.target.value,
+              );
               if (option) {
-                setSize(option.size);
+                setSize(option.kind === 'cdn' ? option.asset.size : option.size);
                 setActivationRequired(false);
               }
             }}
           >
-            {theme.wallpapers.map((item) => (
-              <option key={item.size} value={item.size}>
-                {t(item.size)}
-              </option>
-            ))}
+            {options.map((item) => {
+              const size = item.kind === 'cdn' ? item.asset.size : item.size;
+              return (
+                <option key={size} value={size}>
+                  {t(size)}
+                </option>
+              );
+            })}
           </NativeSelect.Field>
           <NativeSelect.Indicator />
         </NativeSelect.Root>
         <Field.HelperText>
           {t('dimensions', {
-            w: formatNumber(selected.w, locale),
-            h: formatNumber(selected.h, locale),
+            w: formatNumber(details.w, locale),
+            h: formatNumber(details.h, locale),
           })}
-          {' · '}
-          {t('fileSize', {
-            size: formatNumber(selected.bytes / 1024, locale, {
-              style: 'unit',
-              unit: 'kilobyte',
-              maximumFractionDigits: 0,
-            }),
-          })}
+          {selected.kind === 'cdn' || file ? (
+            <>
+              {' '}
+              {' · '}
+              {t('fileSize', {
+                size: formatNumber(
+                  (selected.kind === 'cdn' ? selected.asset.bytes : (file?.size ?? 0)) / 1024,
+                  locale,
+                  {
+                    style: 'unit',
+                    unit: 'kilobyte',
+                    maximumFractionDigits: 0,
+                  },
+                ),
+              })}
+            </>
+          ) : null}
         </Field.HelperText>
       </Field.Root>
       {failed ? (
         <Stack gap="3" role="alert">
           <Text textStyle="body.sm" color="red.fg">
-            {t('errors.network')}
+            {t(selected.kind === 'render' ? 'errors.render' : 'errors.network')}
           </Text>
           <Button variant="outline" size="lg" onClick={() => setAttempt((value) => value + 1)}>
             {t('retry')}
@@ -216,7 +280,7 @@ function WallpaperDownloadBody({
         <Stack align="center" py="5" role="status" aria-live="polite" aria-busy="true">
           <Spinner color="brand.fg" size="lg" />
           <Text textStyle="body.sm" color="fg.muted">
-            {t('preparing')}
+            {t(selected.kind === 'render' ? 'rendering' : 'preparing')}
           </Text>
         </Stack>
       ) : null}
@@ -262,7 +326,7 @@ export function WallpaperDownloadSheet({
     >
       {open && platform ? (
         <WallpaperDownloadBody
-          key={JSON.stringify([theme.id, theme.wallpapers])}
+          key={JSON.stringify([theme.id, theme.spec, theme.wallpapers])}
           theme={theme}
           platform={platform}
         />

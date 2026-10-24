@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import type { WallpaperDownloadDTO } from '../dto';
 import { env } from '../env.client';
+import { MAX_WALLPAPER_BYTES } from '../wallpaper-export';
 import type { PlatformInfo } from './platform';
 
-const MAX_WALLPAPER_BYTES = 32 * 1024 * 1024;
 const wallpaperSchema = z.object({
   size: z.enum(['phone', 'tablet', 'desktop']),
   url: z.url().max(4096),

@@ -21,6 +21,7 @@ import { TagChip } from '@/components/common/TagChip';
 import { HomeRailSkeleton } from '@/components/home/HomeSections';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { HorizontalRail } from '@/components/theme/HorizontalRail';
+import { IconExportButton } from '@/components/theme/IconExportButton';
 import { PreviewCarousel } from '@/components/theme/PreviewCarousel';
 import { ThemeActionBar } from '@/components/theme/ThemeActionBar';
 import { ThemeCard } from '@/components/theme/ThemeCard';
@@ -212,7 +213,7 @@ async function ThemeContent({
     <Stack
       gap={{ base: '10', md: '16' }}
       pt={{ base: '6', md: '10' }}
-      pb={{ base: '24', md: '12' }}
+      pb={{ base: '40', md: '12' }}
     >
       <JsonLd data={structuredData} />
       <TrackView themeId={theme.id} />
@@ -279,7 +280,7 @@ async function ThemeContent({
               })}
             </Text>
           ) : null}
-          <ThemeActionBar theme={theme} />
+          <ThemeActionBar theme={theme} iconsAction={<IconExportButton theme={theme} />} />
         </Stack>
       </Grid>
       <Suspense fallback={<HomeRailSkeleton />}>

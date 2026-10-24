@@ -14,16 +14,17 @@ From any theme, a user picks their apps (or any custom app), gets a matching ico
 ## Tasks
 
 1. **Icon export engine** — `lib/client/icon-export.ts`:
-   `exportIcons({ spec, apps, custom, platform: 'ios' | 'shaped', signal, onProgress }) → Promise<File[]>`
-   - Loads the glyph weight JSON for `spec.icons.glyphWeight` (+ sticker weight) via `lib/client/glyphs.ts`.
+   `exportIcons({ slug, spec, apps, custom, platform: 'ios' | 'shaped', signal, onProgress, onWarning, decor? }) → Promise<File[]>`
+   - Shared contracts live in `lib/icon-export.ts`; boundaries in `lib/validation/icon-export.ts`. Allow 125 selected catalogue apps, 20 custom icons and optionally four decor outputs (149 files, 64 MiB aggregate). Custom IDs are `custom-{UUID}`, independent of their 1–24 character display labels; filenames use those IDs. Fixed decor filename segments are lowercase (`widget-glyphbadge`, `widget-ring`, `widget-stickercollage`, `widget-photoframe`).
+   - Loads `spec.icons.glyphWeight` (also used by stickers/decor), plus a generated wallpaper's scatter weight or filled pattern glyphs when required, via `lib/client/glyphs.ts`.
    - For `fill: 'wallpaper'`: renders the wallpaper once (photo wallpapers → fall back to `gradient` with palette colours and report it in the UI).
    - Renders each icon with `renderIcon` → `rasterizeInBrowser` 512×512 PNG; chunks of 6 with a yield between chunks; checks `signal.aborted` between items; names `vibeset-{slug}-{appSlug}.png`.
-   - Pure helpers in `lib/client/icon-export-utils.ts`: `defaultSelection(apps)`, `chunk(files, n)`, `fileNameFor(slug, appSlug)`, `matchesSearch(app, query)` (case/diacritic-insensitive, aliases incl. Arabic).
+   - Pure helpers in `lib/client/icon-export-utils.ts`: `defaultSelection(apps)` (sort rank then slug, take the first 24), `chunk(files, n)`, `fileNameFor(slug, appSlug)`, `matchesSearch(app, query)` (case/diacritic-insensitive, aliases incl. Arabic). Mini previews and exports share the same photo-to-gradient fallback context and typed warnings. Yield between chunks using guarded `scheduler.yield()` or an awaited timer fallback.
 
 2. **App catalogue on the client** — `hooks/useAppCatalog.ts`: fetch `/api/v1/apps` once (module-level promise cache), abort-safe.
 
 3. **Icon export sheet** — `components/theme/IconExportSheet.tsx` (client, `next/dynamic` on first open), three steps with Chakra `Steps`:
-   1. **Pick apps** — search, category chips, select all/none, default = rank ≤ 24, selection persisted (`vibeset:selected-apps`), live mini-preview of each icon in the theme style (render lazily as items scroll into view). **+ Custom icon**: label (1–24 chars) + `GlyphPicker` (search over `manifest.json` names/tags, max 120 results rendered, keyboard accessible).
+   1. **Pick apps** — search, category chips, select all/none, default = first 24 by rank/slug. Persist validated `{ v: 1, appSlugs, custom }` at `vibeset:selected-apps`, retaining a valid empty choice and using defaults only for absent/corrupt data. Reconcile stale catalogue/glyph IDs; keep a memory fallback during the current document when storage is denied. Live mini-preview of each icon in the theme style renders lazily as items scroll into view. **+ Custom icon**: label (1–24 chars) + `GlyphPicker` (search over `manifest.json` names/tags, max 120 results rendered, keyboard accessible).
    2. **Generate** — progress "12 / 24" with `aria-live`, cancel (AbortController), finished icons pop into a grid.
    3. **Save** — iOS: batch buttons "Save 1–20", "Save 21–24" (each a direct `shareFiles` call), then "Set them up" → `/setup/ios?theme={slug}`. Android/desktop: "Download ZIP" (`lib/client/zip.ts` with `fflate` async `zip`, level 0) + "Share images" when supported, then link to `/setup/android`.
    - `track('icon_export')` once after the first successful save/ZIP.
@@ -35,7 +36,7 @@ From any theme, a user picks their apps (or any custom app), gets a matching ico
 
 6. **iOS wizard** — `app/[locale]/(site)/setup/ios/page.tsx`: static intro (cached) + client `IosSetupWizard` in Suspense (reads `?theme`, loads `ThemeDetailDTO` via `/api/v1/themes/[slug]`, selected apps from `localStorage`).
    - Intro `Steps` (Save icons → Create shortcuts → Hide originals → Set wallpaper).
-   - Per-app checklist cards: app icon (re-rendered small from spec, or plain glyph without a theme), the 6 steps from `docs/06` §3.3, "Open Shortcuts" button (`shortcuts://create-shortcut`), "Done ✓". Progress bar; state in `vibeset:ios-wizard:{slug}`; resume where you left off.
+   - Per-app checklist cards: app icon (re-rendered small from spec, or plain glyph without a theme), the 6 steps from `docs/06` §3.3, "Open Shortcuts" button (`shortcuts://create-shortcut`), "Done ✓". Progress bar; validated `{ v: 1, done: string[], completed: boolean }` at `vibeset:ios-wizard:{slug || 'default'}`. Reconcile unknown IDs, resume the first unfinished app, and claim setup tracking once until an explicit reset. Custom labels/glyphs survive from the shared selection.
    - Step media: `components/setup/StepMedia.tsx` plays `muted playsInline loop` MP4 from `${CDN}/setup/ios/{step}.mp4` when present (constant list in `content/setup-media.ts`), otherwise a numbered illustration built from Phosphor glyphs. (Recording the clips is a content task in P17.)
    - Finish screen + FAQ; `track('setup_complete')` once.
 
