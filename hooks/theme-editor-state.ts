@@ -96,6 +96,8 @@ function mutedInk(ink: string, background: string): string {
 
 function editedSpec(spec: ThemeSpec, action: EditorAction): unknown {
   switch (action.type) {
+    case 'replaceSpec':
+      return action.spec;
     case 'setPaletteRole':
       return Object.hasOwn(spec.palette, action.role) && String(action.role) !== 'mode'
         ? { ...spec, palette: { ...spec.palette, [action.role]: action.value } }

@@ -194,11 +194,11 @@ Notes: `saveRemix` and `updateRemix` reject `kind: 'image'` in either home or lo
 | Action | Input | Output | Tags |
 |---|---|---|---|
 | `adminUpdateTheme` | `{ id, nameEn, nameAr, descriptionEn, descriptionAr, tagSlugs, spec?, isFeatured }` | `{ id, stale }` | `themes`, `theme:{slug}` if published |
-| `adminTransitionThemes` | `{ ids ≤ 100, to: 'approved'\|'rejected'\|'archived'\|'draft', reason? }` | `{ results: { id, ok, code? }[] }` | per result |
-| `adminSetFeatured` | `{ ids, featured }` | `{ count }` | `themes`, `theme:{slug}…` |
-| `adminTagThemes` | `{ ids, add: slugs, remove: slugs }` | `{ count }` | `themes`, `theme:{slug}…` |
-| `adminAddToCollection` | `{ ids, collectionId }` | `{ count }` | `collections`, `collection:{slug}` |
-| `adminDeleteThemes` | `{ ids }` (non-published) | `{ count }` | — |
+| `adminTransitionThemes` | `{ ids ≤ 100, to: 'approved'\|'rejected'\|'archived'\|'draft', reason?, reviewVersion? }` | `{ count, results: { id, ok, code? }[] }` | per result |
+| `adminSetFeatured` | `{ ids, featured }` | `{ count, results: { id, ok, code? }[] }` | `themes`, `theme:{slug}…` |
+| `adminTagThemes` | `{ ids, add: slugs, remove: slugs }` | `{ count, results: { id, ok, code? }[] }` | `themes`, `theme:{slug}…` |
+| `adminAddToCollection` | `{ ids, collectionId }` | `{ count, results: { id, ok, code? }[] }` | `collections`, `collection:{slug}` |
+| `adminDeleteThemes` | `{ ids }` (non-published) | `{ count, results: { id, ok, code? }[] }` | affected theme/collection/creator tags |
 | `adminGenerateDrafts` | `{ aesthetic, count 1–24, seed? }` | `{ runId, created, skippedDuplicates, skippedQa }` | — |
 | `adminUpsertCollection` / `adminDeleteCollection` / `adminReorderCollection` / `adminSetPinned` | … | … | `collections`, `collection:{slug}` |
 | `adminUpsertTag` / `adminDeleteTag` / `adminMergeTags` | … | … | `taxonomy`, `themes` |
@@ -210,6 +210,16 @@ Notes: `saveRemix` and `updateRemix` reject `kind: 'image'` in either home or lo
 | `adminUpdateSetting` | `{ key, value }` (validated per key) | `{ ok }` | `settings` |
 
 Admin actions use `updateTag` for immediate consistency and write `audit_log`.
+
+Admin theme bulk inputs contain at most 100 UUIDs and deduplicate in first-occurrence order. Each item uses its own transaction with fresh database admin/ban checks and an atomic audit; `count` includes successful idempotent no-ops. Other items continue after a per-item failure. The shared state machine still enforces owner-only withdrawal/return to draft and prevents creator/remix drafts from bypassing review. Submission controls only apply to creator/remix sources. Admin edits and final tag sets require exactly one active aesthetic and up to 99 other active tags; editor dirty state compares tags as a set.
+
+Review-deck transitions include the captured `reviewVersion` precondition, an opaque lowercase 64-character SHA256 digest of canonical JSON `[status, revisionTime, specHash]`. A supplied version requires exactly one deduplicated ID; ordinary bulk transitions omit it. The guarded review query and locked mutation use the same raw PostgreSQL UTC revision timestamp with six fractional digits: pending submissions use `submitted_at` (falling back to `created_at` for legacy null values), while generated drafts use `updated_at`. The service compares the version after taking the theme row lock and before any transition, idempotent no-op or audit; a mismatch returns that item's `CONFLICT` without changing the theme. This prevents delayed approval/rejection from affecting a revised or resubmitted design. Pending-review featured/metadata toggles do not change submission identity. A generated-draft featured toggle changes its revision, so the deck fetches the complete fresh review item before enabling another decision; it does not acknowledge a new token over an old preview.
+
+An admin edit may retain or move existing home/lock photo keys on the loaded theme, including anonymous published designs whose owner was deleted. Newly introduced photo keys must be canonical ready wallpaper uploads owned by the theme's current owner or the acting admin; avatar and arbitrary other-user keys are refused. Admin theme writes hold the loaded owner's user lock before the theme lock, serializing changes with account deletion. Confirmed theme deletion schedules only generated `themes/{id}/` assets for removal, preserving upload originals.
+
+Admin reads are uncached and guarded independently of layouts. Theme lists use 50-row offset pages. Review uses 30-row keyset pages ordered by pending-review priority, then creation time and UUID ascending. The unsigned cursor contains exactly `{ k: 'admin-review', priority: 0|1, at: 'YYYY-MM-DDTHH:mm:ss.ffffffZ', id: uuid }`, encoded as canonical base64url JSON; PostgreSQL microseconds are preserved. Decisions cannot shift later pages past unseen rows. New arrivals before the cursor require an explicit queue refresh. Publish candidates use 50-row pages; dashboard time ranges and zero-filled daily series use UTC.
+
+`refreshAdminReview(query)` and `refreshAdminPublish(query)` are admin-guarded read actions in `server/actions/admin/queries.ts`; they return the same bounded page DTOs without cache invalidation. `refreshAdminReviewItem({ id })` returns the full current review item or null if it is no longer eligible. Admin editor JSON Apply uses an undoable validated replacement; ordinary Studio entry loading alone establishes a new Reset baseline. Review decisions retain their five-second undo deadline in the admin provider, and publication uses two simultaneous requests. Pause affects queued work; cancelling client waits cannot reverse a publication that already committed on the server. Provider state is cleared on account/session changes. Editor refresh is explicit to avoid overwriting unsaved changes when background jobs finish.
 
 ---
 

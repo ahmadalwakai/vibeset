@@ -48,11 +48,13 @@ export function StudioPanels({
   panel,
   onPanelChange,
   details,
+  detailsLabel,
   wallpaperTools,
 }: StudioPanelProps & {
   panel: StudioWorkspacePanel;
   onPanelChange: (panel: StudioWorkspacePanel) => void;
   details?: ReactNode;
+  detailsLabel?: string;
   wallpaperTools?: CreatorStudioOptions['wallpaperTools'];
 }): ReactElement {
   const t = useTranslations('studio.panels');
@@ -77,7 +79,7 @@ export function StudioPanels({
         ))}
         {details ? (
           <Tabs.Trigger value="details" minH="11" flexShrink="0" px="3">
-            {creator('detailsPanel')}
+            {detailsLabel ?? creator('detailsPanel')}
           </Tabs.Trigger>
         ) : null}
       </Tabs.List>

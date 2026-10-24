@@ -279,4 +279,15 @@ describe('history and reset', () => {
     state = edit(state, { type: 'setDecor', decor: [] });
     expect(edit(state, { type: 'reset' }).spec).toEqual(loaded);
   });
+
+  it('applies a JSON replacement as an undoable edit while retaining the original reset baseline', () => {
+    const original = initial();
+    const visual = edit(original, { type: 'setFont', role: 'display', font: 'pacifico' });
+    const replacement = { ...visual.spec, decor: ['flower'] };
+    const next = edit(visual, { type: 'replaceSpec', spec: replacement });
+    expect(next.past).toHaveLength(2);
+    expect(next.initialSpec).toEqual(original.spec);
+    expect(edit(next, { type: 'undo' }).spec).toEqual(visual.spec);
+    expect(edit(next, { type: 'reset' }).spec).toEqual(original.spec);
+  });
 });

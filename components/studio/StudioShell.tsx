@@ -105,7 +105,9 @@ export function StudioWorkspace({
     ? [...STUDIO_PANELS, 'details']
     : STUDIO_PANELS;
   const panelLabel = (value: StudioWorkspacePanel): string =>
-    value === 'details' ? creatorText('detailsPanel') : t(`panels.${value}`);
+    value === 'details'
+      ? (creator?.labels?.details ?? creatorText('detailsPanel'))
+      : t(`panels.${value}`);
   const mobile = useBreakpointValue({ base: true, lg: false }) ?? false;
   const [panelOpen, setPanelOpen] = useState(false);
   const [download, setDownload] = useState(false);
@@ -248,7 +250,7 @@ export function StudioWorkspace({
         onReset={() => setReset(true)}
         savePending={creator?.busy}
         saveDisabled={creator?.saveDisabled}
-        saveLabel={creator ? creatorText('save') : undefined}
+        saveLabel={creator ? (creator.labels?.save ?? creatorText('save')) : undefined}
       />
       {creator?.actions}
       {editor.error ? (
@@ -273,7 +275,7 @@ export function StudioWorkspace({
           py="4"
           scrollMarginTop="16"
         >
-          <StudioPreview spec={spec} />
+          <StudioPreview spec={spec} showIcons={creator?.showIcons} />
         </Box>
         {!mobile ? (
           <Box
@@ -290,6 +292,7 @@ export function StudioWorkspace({
               panel={panel}
               onPanelChange={setPanel}
               details={creator?.details}
+              detailsLabel={creator?.labels?.details}
               wallpaperTools={creator?.wallpaperTools}
             />
           </Box>
@@ -346,6 +349,7 @@ export function StudioWorkspace({
                 panel={panel}
                 onPanelChange={setPanel}
                 details={creator?.details}
+                detailsLabel={creator?.labels?.details}
                 wallpaperTools={creator?.wallpaperTools}
               />
             </Box>

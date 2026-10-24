@@ -20,6 +20,8 @@ export interface CreatorStudioOptions {
   onSave: () => void;
   busy: boolean;
   saveDisabled?: boolean;
+  labels?: { save: string; details: string };
+  showIcons?: boolean;
   actions?: ReactNode;
 }
 
@@ -49,7 +51,8 @@ export type EditorAction =
   | { type: 'setFont'; role: 'display' | 'body'; font: FontId }
   | { type: 'setDecor'; decor: string[] }
   | { type: 'undo' | 'redo' | 'reset' }
-  | { type: 'load'; spec: ThemeSpec };
+  | { type: 'load'; spec: ThemeSpec }
+  | { type: 'replaceSpec'; spec: ThemeSpec };
 
 export type TimedEditorAction = EditorAction & { at: number };
 export type EditorError = 'VALIDATION' | null;

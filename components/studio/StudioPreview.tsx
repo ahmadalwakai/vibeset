@@ -16,6 +16,7 @@ import { useTranslations } from 'next-intl';
 import { memo, useDeferredValue, useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { PhoneFrame } from '@/components/theme/PhoneFrame';
+import dynamic from 'next/dynamic';
 import { useAppCatalog } from '@/hooks/useAppCatalog';
 import type { AppDTO } from '@/lib/dto';
 import type { StudioWallpaperPreview } from '@/lib/client/studio-preview';
@@ -30,6 +31,10 @@ const fonts: Record<FontId, string> = {
   'el-messiri': 'var(--font-el-messiri)',
   'jetbrains-mono': 'var(--font-jetbrains-mono)',
 };
+const StudioIconPreview = dynamic(
+  () => import('./StudioIconPreview').then((module) => module.StudioIconPreview),
+  { loading: () => <Skeleton h="48" w="full" /> },
+);
 
 const WallpaperSurface = memo(
   function WallpaperSurface({
@@ -257,10 +262,17 @@ function DecorSymbols({ spec }: { spec: ThemeSpec }): ReactElement {
   );
 }
 
-export function StudioPreview({ spec }: { spec: ThemeSpec }): ReactElement {
+export function StudioPreview({
+  spec,
+  showIcons = false,
+}: {
+  spec: ThemeSpec;
+  showIcons?: boolean;
+}): ReactElement {
   const t = useTranslations('studio.preview');
+  const panels = useTranslations('studio.panels');
   const deferred = useDeferredValue(spec);
-  const [which, setWhich] = useState<'home' | 'lock'>('home');
+  const [which, setWhich] = useState<'home' | 'lock' | 'icons'>('home');
   const [foreground, setForeground] = useState(spec.palette.ink);
   const catalog = useAppCatalog();
   const wallpaper =
@@ -276,116 +288,133 @@ export function StudioPreview({ spec }: { spec: ThemeSpec }): ReactElement {
       <Tabs.Root
         value={which}
         onValueChange={({ value }) => {
-          if (value === 'home' || value === 'lock') setWhich(value);
+          if (value === 'home' || value === 'lock' || (showIcons && value === 'icons'))
+            setWhich(value);
         }}
         variant="enclosed"
         size="sm"
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        gap="4"
+        w="full"
       >
-        <Tabs.List>
+        <Tabs.List aria-label={t('label')}>
           <Tabs.Trigger minH="11" value="home">
             {t('home')}
           </Tabs.Trigger>
           <Tabs.Trigger minH="11" value="lock">
             {t('lock')}
           </Tabs.Trigger>
-        </Tabs.List>
-      </Tabs.Root>
-      <PhoneFrame label={t(which)}>
-        <WallpaperSurface
-          spec={deferred}
-          which={which}
-          cacheKey={wallpaperKey}
-          onForeground={setForeground}
-        />
-        <Box
-          position="absolute"
-          inset="0"
-          pointerEvents="none"
-          color={foreground}
-          fontFamily={fonts[deferred.type.body]}
-        >
-          {wallpaper.kind === 'pattern' ? (
-            <Box
-              position="absolute"
-              top="0"
-              w="full"
-              h="10%"
-              bg={foreground === '\u0023ffffff' ? 'blackAlpha.600' : 'whiteAlpha.700'}
-            />
+          {showIcons ? (
+            <Tabs.Trigger minH="11" value="icons">
+              {panels('icons')}
+            </Tabs.Trigger>
           ) : null}
-          <Flex
-            position="absolute"
-            top="3%"
-            insetStart="7%"
-            insetEnd="7%"
-            justify="space-between"
-            align="center"
-            fontSize="xs"
-            fontWeight="semibold"
-          >
-            <Text>{t('time')}</Text>
-            <Text aria-hidden>▴ ▰</Text>
-          </Flex>
-          {which === 'lock' ? (
-            <Stack
-              position="absolute"
-              top="15%"
-              w="full"
-              textAlign="center"
-              gap="0"
-              fontFamily={fonts[deferred.type.display]}
-            >
-              <Text fontSize="sm">{t('date')}</Text>
-              <Text fontSize="5xl" fontWeight="semibold" lineHeight="1.2">
-                {t('time')}
-              </Text>
-            </Stack>
+        </Tabs.List>
+        <Tabs.Content value={which}>
+          {which === 'icons' ? (
+            <StudioIconPreview spec={deferred} />
           ) : (
-            <>
-              <Stack
+            <PhoneFrame label={t(which)}>
+              <WallpaperSurface
+                spec={deferred}
+                which={which}
+                cacheKey={wallpaperKey}
+                onForeground={setForeground}
+              />
+              <Box
                 position="absolute"
-                top="13%"
-                insetStart="7%"
-                insetEnd="7%"
-                h="19%"
-                justify="center"
-                px="4"
-                rounded={`${deferred.widgets.radius * 100}%`}
-                bg={
-                  deferred.widgets.style === 'outline'
-                    ? 'transparent'
-                    : deferred.widgets.style === 'glass'
-                      ? `color-mix(in srgb, ${deferred.widgets.surface} 72%, transparent)`
-                      : deferred.widgets.surface
-                }
-                backgroundImage={
-                  deferred.widgets.style === 'paper'
-                    ? `repeating-linear-gradient(transparent 0 1rem, color-mix(in srgb, ${deferred.widgets.ink} 12%, transparent) 1rem 1.05rem)`
-                    : undefined
-                }
-                backdropFilter={deferred.widgets.style === 'glass' ? 'blur(8px)' : undefined}
-                borderWidth={deferred.widgets.style === 'outline' ? 'medium' : '0'}
-                borderColor={deferred.widgets.ink}
-                color={deferred.widgets.ink}
+                inset="0"
+                pointerEvents="none"
+                color={foreground}
+                fontFamily={fonts[deferred.type.body]}
               >
-                <DecorSymbols spec={deferred} />
-                <Text
-                  fontFamily={fonts[deferred.type.display]}
-                  fontSize="lg"
+                {wallpaper.kind === 'pattern' ? (
+                  <Box
+                    position="absolute"
+                    top="0"
+                    w="full"
+                    h="10%"
+                    bg={foreground === '\u0023ffffff' ? 'blackAlpha.600' : 'whiteAlpha.700'}
+                  />
+                ) : null}
+                <Flex
+                  position="absolute"
+                  top="3%"
+                  insetStart="7%"
+                  insetEnd="7%"
+                  justify="space-between"
+                  align="center"
+                  fontSize="xs"
                   fontWeight="semibold"
-                  lineClamp="1"
                 >
-                  {t('widgetTitle')}
-                </Text>
-                <Text fontSize="xs" color={deferred.widgets.accent} lineClamp="2">
-                  {t('widgetBody')}
-                </Text>
-              </Stack>
-              <IconGrid spec={deferred} apps={catalog.apps} cacheKey={iconKey} />
-            </>
+                  <Text>{t('time')}</Text>
+                  <Text aria-hidden>▴ ▰</Text>
+                </Flex>
+                {which === 'lock' ? (
+                  <Stack
+                    position="absolute"
+                    top="15%"
+                    w="full"
+                    textAlign="center"
+                    gap="0"
+                    fontFamily={fonts[deferred.type.display]}
+                  >
+                    <Text fontSize="sm">{t('date')}</Text>
+                    <Text fontSize="5xl" fontWeight="semibold" lineHeight="1.2">
+                      {t('time')}
+                    </Text>
+                  </Stack>
+                ) : (
+                  <>
+                    <Stack
+                      position="absolute"
+                      top="13%"
+                      insetStart="7%"
+                      insetEnd="7%"
+                      h="19%"
+                      justify="center"
+                      px="4"
+                      rounded={`${deferred.widgets.radius * 100}%`}
+                      bg={
+                        deferred.widgets.style === 'outline'
+                          ? 'transparent'
+                          : deferred.widgets.style === 'glass'
+                            ? `color-mix(in srgb, ${deferred.widgets.surface} 72%, transparent)`
+                            : deferred.widgets.surface
+                      }
+                      backgroundImage={
+                        deferred.widgets.style === 'paper'
+                          ? `repeating-linear-gradient(transparent 0 1rem, color-mix(in srgb, ${deferred.widgets.ink} 12%, transparent) 1rem 1.05rem)`
+                          : undefined
+                      }
+                      backdropFilter={deferred.widgets.style === 'glass' ? 'blur(8px)' : undefined}
+                      borderWidth={deferred.widgets.style === 'outline' ? 'medium' : '0'}
+                      borderColor={deferred.widgets.ink}
+                      color={deferred.widgets.ink}
+                    >
+                      <DecorSymbols spec={deferred} />
+                      <Text
+                        fontFamily={fonts[deferred.type.display]}
+                        fontSize="lg"
+                        fontWeight="semibold"
+                        lineClamp="1"
+                      >
+                        {t('widgetTitle')}
+                      </Text>
+                      <Text fontSize="xs" color={deferred.widgets.accent} lineClamp="2">
+                        {t('widgetBody')}
+                      </Text>
+                    </Stack>
+                    <IconGrid spec={deferred} apps={catalog.apps} cacheKey={iconKey} />
+                  </>
+                )}
+              </Box>
+            </PhoneFrame>
           )}
-        </Box>
-      </PhoneFrame>
+        </Tabs.Content>
+      </Tabs.Root>
       {catalog.error ? (
         <Button variant="ghost" minH="11" onClick={catalog.retry}>
           {t('retry')}

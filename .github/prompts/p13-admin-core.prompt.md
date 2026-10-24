@@ -20,7 +20,7 @@ The owner can review hundreds of themes quickly, fix them, and publish safely �
 3. **Themes table** — `admin/themes/page.tsx`:
    - Server-side pagination (50/page, offset), filters in the URL (status, source, aesthetic, colour, featured, stale, generation run, q), sort (updated, published, popularity, downloads).
    - `components/admin/DataTable.tsx` (generic, typed columns, row selection, card layout below md).
-   - Bulk actions via Chakra `ActionBar`: approve, reject (reason dialog with quick picks), archive, feature/unfeature, add/remove tags, add to collection, delete (typed confirm). Actions in `server/actions/admin/themes.ts` (`adminTransitionThemes`, `adminSetFeatured`, `adminTagThemes`, `adminAddToCollection`, `adminDeleteThemes`) — per-item results; the UI shows "18 updated, 2 failed (reason)".
+   - Bulk actions via Chakra `ActionBar`: approve, reject (reason dialog with quick picks), archive, feature/unfeature, add/remove tags, add to collection, delete (typed confirm). Actions in `server/actions/admin/themes.ts` (`adminTransitionThemes`, `adminSetFeatured`, `adminTagThemes`, `adminAddToCollection`, `adminDeleteThemes`) — per-item results; the UI shows "18 updated, 2 failed (reason)". Bulk results add `count` and `results`; each item has its own guarded/audited transaction.
 
 4. **Theme editor** — `admin/themes/[id]/page.tsx` (any status):
    - Live preview (client renderer) with Home/Lock/Icons tabs.
@@ -29,10 +29,10 @@ The owner can review hundreds of themes quickly, fix them, and publish safely �
    - `adminUpdateTheme` returns `{ stale }`; slug is read-only once published.
 
 5. **Review deck** — `admin/review/page.tsx` + `components/admin/ReviewDeck.tsx`:
-   - Queue: `pending_review` first (creator submissions), then generated `draft`s (filter by aesthetic and generation run). Loaded in pages of 30 (`server/admin-queries/review.ts`), prefetch next page.
+   - Queue: `pending_review` first (creator submissions), then generated `draft`s (filter by aesthetic and generation run). Loaded in keyset pages of 30 (`server/admin-queries/review.ts`), prefetch next page; preserve timestamp microseconds so decisions removing earlier items cannot skip later rows.
    - Card: large client-rendered Home + Lock previews and a row of 8 icons; name, aesthetic, source, creator; QA badges (min icon contrast via `qaSpec`; nearest duplicate distance computed server-side from `preview_hash` — "Looks like {name} (distance 5)").
    - Keyboard: **A** approve, **R** reject (opens quick reasons: low quality, duplicate, off-aesthetic, low contrast, inappropriate, other), **S** skip, **F** toggle featured, **←/→** navigate, **Z** undo the last decision within 5 s (decisions are sent after the undo window). Shortcuts shown with `Kbd`, `aria-keyshortcuts`; swipe gestures on mobile (right approve, left reject).
-   - "Approve & publish" option queues approved ids into the publish queue.
+   - "Approve & publish" option queues approved ids into the publish queue. Pending review decisions and their undo timers live in the authenticated admin provider, preserving staged decisions across admin navigation; changing account clears unsent work. Completed suppression and deduplication are scoped to `(theme id, reviewVersion)` from the guarded review query, so a revised/resubmitted theme is reviewable in the same admin session while stale snapshots of an already-reviewed submission remain hidden. Pending/sending work remains exclusive per theme; responses and retries address the exact version key. Single-item deck transitions send the captured version precondition; changed submissions fail with `CONFLICT` instead of applying an earlier review decision to an unseen design.
 
 6. **Publish queue** — `admin/publish/page.tsx` + `components/admin/PublishQueue.tsx`:
    - Lists approved (never published), stale published, archived-to-republish, failed (`publish_error` set).
