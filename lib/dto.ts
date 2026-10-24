@@ -47,6 +47,7 @@ export interface WallpaperDownloadDTO {
 export interface ThemeDetailDTO extends ThemeCardDTO {
   descriptionEn: string | null;
   descriptionAr: string | null;
+  updatedAt: string;
   spec: ThemeSpec;
   previewHomeUrl: string | null;
   previewLockUrl: string | null;

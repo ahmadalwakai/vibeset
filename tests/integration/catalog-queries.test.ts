@@ -385,6 +385,11 @@ describe.skipIf(!TEST_DATABASE_URL)(
     it('returns published details only and does not expose unpublished remix origins or unapproved creators', async () => {
       const first = await tq.getThemeDetail(slug(0));
       expect(first?.remixOf).toBeNull();
+      const [stored] = await database
+        .select({ updatedAt: themes.updatedAt })
+        .from(themes)
+        .where(eq(themes.id, ids[0] as string));
+      expect(first?.updatedAt).toBe(stored?.updatedAt.toISOString());
       expect(first?.creator?.handle).toBe(handle);
       expect(first?.wallpapers.map(({ size }) => size)).toEqual(['phone']);
       expect((await tq.getThemeDetail(slug(1)))?.remixOf?.slug).toBe(slug(0));

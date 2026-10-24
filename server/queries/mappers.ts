@@ -41,7 +41,7 @@ export type ThemeCardSource = Pick<
 >;
 export type ThemeCardRow = ThemeCardSource & { tags: TagRow[]; creator: CreatorMiniRow | null };
 export type ThemeDetailRow = ThemeCardRow &
-  Pick<ThemeRow, 'descriptionEn' | 'descriptionAr' | 'spec'> & {
+  Pick<ThemeRow, 'descriptionEn' | 'descriptionAr' | 'spec' | 'updatedAt'> & {
     remixOf: Pick<ThemeRow, 'slug' | 'nameEn' | 'nameAr'> | null;
   };
 export type CollectionCardRow = Pick<
@@ -113,6 +113,7 @@ export function toThemeDetail(row: ThemeDetailRow): ThemeDetailDTO {
     ...toThemeCard(row),
     descriptionEn: row.descriptionEn,
     descriptionAr: row.descriptionAr,
+    updatedAt: row.updatedAt.toISOString(),
     spec: themeSpecSchema.parse(row.spec),
     previewHomeUrl: assets ? cdnUrl(assets.previewHome) : null,
     previewLockUrl: assets ? cdnUrl(assets.previewLock) : null,

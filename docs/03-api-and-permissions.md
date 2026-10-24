@@ -104,6 +104,7 @@ export interface WallpaperDownloadDTO { size: 'phone' | 'tablet' | 'desktop'; ur
 
 export interface ThemeDetailDTO extends ThemeCardDTO {
   descriptionEn: string | null; descriptionAr: string | null;
+  updatedAt: string; // ISO timestamp for accurate detail metadata and dateModified
   spec: ThemeSpec;
   previewHomeUrl: string | null; previewLockUrl: string | null; ogUrl: string | null;
   wallpapers: WallpaperDownloadDTO[];

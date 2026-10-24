@@ -31,6 +31,7 @@ export async function getThemeDetail(slug: string): Promise<ThemeDetailDTO | nul
       descriptionAr: themes.descriptionAr,
       spec: themes.spec,
       remixOfId: themes.remixOfId,
+      updatedAt: themes.updatedAt,
     })
     .from(themes)
     .where(and(eq(themes.slug, validSlug), eq(themes.status, 'published')))

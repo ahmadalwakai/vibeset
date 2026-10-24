@@ -180,6 +180,92 @@
     "rail": {
       "previous": "Previous in {label}",
       "next": "Next in {label}"
+    },
+    "detail": {
+      "metadataTitle": "{name} · Vibeset",
+      "metadataDescription": "Give your phone a fresh look with {name}. Free matching wallpapers, icons and decorative widgets from Vibeset.",
+      "descriptionFallback": "A coordinated wallpaper, icon palette and decorative widgets for a fresh home screen.",
+      "creator": "Creator",
+      "by": "By",
+      "downloads": "Downloads",
+      "favorites": "Favourites",
+      "moreLikeThis": "More like this",
+      "remixOf": "Remixed from <link>{name}</link>",
+      "noRelated": "Your next look is out there.",
+      "noRelatedDescription": "Explore more aesthetics to find another theme you love.",
+      "explore": "Explore themes"
+    },
+    "preview": {
+      "label": "Theme previews",
+      "carousel": "carousel",
+      "home": "Home screen",
+      "lock": "Lock screen",
+      "homeAlt": "{name} — home screen preview",
+      "lockAlt": "{name} — lock screen preview",
+      "showHome": "Show home screen preview",
+      "showLock": "Show lock screen preview",
+      "position": "Preview {current} of {total}",
+      "loading": "Loading preview…",
+      "slide": "slide"
+    },
+    "actions": {
+      "label": "Theme actions",
+      "download": "Download",
+      "remix": "Remix",
+      "more": "More theme actions",
+      "share": "Share theme",
+      "copied": "Link copied",
+      "shared": "Theme shared",
+      "activationRequired": "Tap Share again to open the share sheet.",
+      "shareFailed": "Could not share this link. Please try again."
+    },
+    "inAppBrowser": {
+      "title": "Open in your browser",
+      "description": "For easier downloads, open this page in Safari or Chrome.",
+      "iosInstruction": "Tap the browser’s menu, then choose Open in Safari or Open in browser.",
+      "otherInstruction": "Tap the browser’s menu, then choose Open in Chrome or Open in browser.",
+      "menuLabel": "Browser menu",
+      "copyLink": "Copy link",
+      "copied": "Link copied. Paste it into your browser to continue.",
+      "copyFailed": "Select and copy the link below, then open it in your browser.",
+      "dismiss": "Dismiss browser tip"
+    },
+    "download": {
+      "title": "Save your wallpaper",
+      "description": "Choose a size, then save the full-resolution image.",
+      "sizeLabel": "Wallpaper size",
+      "phone": "Phone",
+      "tablet": "Tablet",
+      "desktop": "Desktop",
+      "dimensions": "{w} × {h}",
+      "fileSize": "{size}",
+      "preparing": "Preparing your wallpaper…",
+      "saveToPhotos": "Save to Photos",
+      "shareFile": "Share image",
+      "downloadFile": "Download image",
+      "retry": "Try again",
+      "savedTitle": "Now make it yours.",
+      "iosSteps": {
+        "open": "Open Photos and select the image you saved.",
+        "share": "Tap Share, then Use as Wallpaper.",
+        "apply": "Adjust the image, tap Add, then choose Set as Wallpaper Pair or Customize Home Screen."
+      },
+      "androidSteps": {
+        "open": "Open the image in Gallery or Downloads.",
+        "apply": "Choose Set as wallpaper and pick your home screen, lock screen or both."
+      },
+      "desktopSteps": {
+        "mac": "On Mac: System Settings → Wallpaper → Add Photo.",
+        "windows": "On Windows: right-click the saved image and choose Set as desktop background."
+      },
+      "iosSetupLink": "Set up matching icons on iPhone",
+      "close": "Close wallpaper download",
+      "noSizes": "No wallpaper files are available for this theme yet.",
+      "errors": {
+        "network": "We could not prepare this image. Check your connection and try again.",
+        "activation": "Tap Save again to open the share sheet.",
+        "save": "We could not save this image. Try again or choose another browser."
+      }
     }
   },
   "studio": {

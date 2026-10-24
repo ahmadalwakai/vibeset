@@ -13,12 +13,12 @@ A fast, beautiful theme page where anyone can save the wallpaper to their phone 
 
 ## Tasks
 
-1. **Client platform helpers** — `lib/client/platform.ts`, `lib/client/share.ts`, `lib/client/track.ts` exactly per `docs/06` §1, §2, §7 (`IOS_SHARE_BATCH = 20`, two-step share, error handling, `sendBeacon`). `hooks/usePlatform.ts` (resolves after mount to avoid hydration mismatch).
+1. **Client platform helpers** — `lib/client/platform.ts`, `lib/client/share.ts`, `lib/client/track.ts` exactly per `docs/06` §1, §2, §7 (`IOS_SHARE_BATCH = 20`, two-step share, error handling, credential-free keepalive fetch). `hooks/usePlatform.ts` (resolves after mount to avoid hydration mismatch).
 
-2. **Track endpoint** — `app/api/track/route.ts`: Zod body `{ themeId: uuid, event }`; rate limit `track:{ipHash}` 120/60 s (return 204 even when limited — don't leak); verify theme is published (cached lookup by id via a small cached query `getPublishedThemeIdSet()` or a direct indexed query); atomic upsert into `theme_stats_daily` (column by event); for `download` also `UPDATE themes SET download_count = download_count + 1`. Both statements in one `db.batch`. Respond 204, `Cache-Control: no-store`.
+2. **Track endpoint** — `app/api/track/route.ts`: bounded JSON and Zod body `{ themeId: uuid, event }`; rate limit `track:{ipHash}` 120/60 s (return 204 even when limited — don't leak). A single atomic SQL CTE locks the published theme row, upserts the UTC `theme_stats_daily` event delta, and increments `themes.download_count` only for downloads. This serializes eligibility with archival instead of trusting a stale cached lookup. Respond 204, `Cache-Control: no-store` for accepted, limited and unpublished events; never read cookies or sessions.
 
 3. **Page** — `app/[locale]/(site)/t/[slug]/page.tsx`:
-   - `generateStaticParams` → `getTopThemeSlugs(200)`; unknown/unpublished slug → `notFound()`.
+   - Omit DB-backed `generateStaticParams` to retain credential-free CI builds; render a static shell and load cached theme content after request-time `connection()` before the lazy query import. Unknown/unpublished slug → `notFound()`. Do not export an empty `generateStaticParams`, which Cache Components rejects.
    - `generateMetadata`: localized title/description, canonical, `alternates.languages`, Open Graph (`og.jpg`, 1200×630), Twitter `summary_large_image`, `robots` index.
    - JSON-LD `<script type="application/ld+json">` (`CreativeWork`: name, image (previewHome), keywords (tags), `isAccessibleForFree: true`, `dateModified`, `creator` when present). Serialise with `JSON.stringify` and escape `<` (prevent script breakout).
    - Layout per `docs/04` §7: `PreviewCarousel` (scroll-snap Home/Lock images, dots, swipe, RTL-safe; first image `fetchPriority="high"`), info block (name, creator link, tag chips → `/explore?tags=`, stats with `formatCompact`), `ThemeActionBar`, "More like this" `HorizontalRail` (Suspense + skeleton).
@@ -31,7 +31,7 @@ A fast, beautiful theme page where anyone can save the wallpaper to their phone 
    - After success: `track('download')` once, then platform-specific "Set it as wallpaper" steps (from `docs/06`), link to `/setup/ios` on iOS.
    - Errors: network → retry; share `NotAllowedError` → "Tap Save again"; `AbortError` → nothing.
 
-5. **In-app browser banner** — `components/common/InAppBrowserBanner.tsx`: shown on theme pages and Studio when `isInAppBrowser()`; copy link button + short instruction; dismissible for the session.
+5. **In-app browser banner** — `components/common/InAppBrowserBanner.tsx`: shown on theme pages and Studio when `isInAppBrowser()`; copy link button + short illustrated instruction; dismissible for the session. Recorded menu media is a P17 content task; do not reference nonexistent GIF assets.
 
 6. **View tracking** — `components/theme/TrackView.tsx` (client): once per session per theme (`sessionStorage` key) → `track('view')`.
 
@@ -43,7 +43,7 @@ A fast, beautiful theme page where anyone can save the wallpaper to their phone 
 
 - [ ] Real iPhone (Safari): Download → Save to Photos → image appears in Photos at full resolution.
 - [ ] Android Chrome: share or download works; desktop: file downloads with the right name.
-- [ ] Draft/archived slugs return 404; top themes are prerendered (`next build` output).
+- [ ] Draft/archived slugs render not-found/noindex; the API returns HTTP404. Static shells remain buildable without database credentials; cached theme content loads at request time. Next retains HTTP200 when runtime not-found happens after streaming begins (verified locally, including a blocking-metadata experiment).
 - [ ] Social preview validators show the OG image and title.
 - [ ] In-app browser (Instagram/TikTok) shows the banner.
 - [ ] `theme_stats_daily` increments for view/download; rate limit returns 204 silently.

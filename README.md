@@ -122,6 +122,14 @@ P07 verification passes typecheck, lint, all 1,232 tests (including isolated dat
 
 Streamed preview testing exposed Chakra's single-child aspect-ratio check; catalog previews now use CSS aspect ratios, and matching style-prop order avoids streamed hydration class differences. Lighthouse scores, real provider sign-in and live CDN/R2 verification remain pending; no performance score or live publication is claimed.
 
+## P08 theme detail and wallpaper download
+
+Published theme pages provide bilingual metadata, escaped CreativeWork structured data, home/lock previews, related themes and a responsive download/remix/share bar. The download sheet prepares a bounded CDN JPEG before the save tap, cancels stale preparation, handles share cancellation and expired activation, and shows platform setup steps after saving. Platform detection avoids hydration differences; in-app browser guidance and session view deduplication tolerate blocked browser storage.
+
+Anonymous tracking omits cookies, validates bounded requests and uses salted IP rate limits. A single SQL statement locks the published theme, upserts UTC daily event totals and increments download counters atomically, including archival races. Theme detail DTOs add an accurate ISO `updatedAt`; cards remain unchanged. Runtime database slug validation preserves credential-free static shells. Missing/draft pages render not-found with noindex; streamed responses can retain HTTP200, while the public API returns HTTP404.
+
+P08 local verification covers English/Arabic detail pages, preview switching, metadata/JSON-LD, the 360px bottom sheet and compact action bar, session view deduplication and real desktop download. The downloaded JPEG has the expected filename and 1080×2340 fixture dimensions; isolated counters recorded one view and one download. Browser fixtures were cleaned before the final generator suite because their deliberate visual duplicates affect generator eligibility. Typecheck, lint, all 1,338 tests and the final production build pass (119 static shells/paths), including concurrency, archival, download resource-lifecycle and share-outcome regressions. Real iPhone/Android sharing, social preview validators, live CDN/CORS and Lighthouse remain manual checks; no such result is claimed.
+
 ## Codemagic build
 
 The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the public `ahmadalwakai/vibeset` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.
@@ -133,6 +141,8 @@ The default Mac mini M2 runner produces `vibeset-web-darwin-arm64.tar.gz` plus a
 Codemagic must clone a committed remote revision; local changes cannot be built there until pushed. [Build #2](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adbd5834a72334e32e48be6) finished successfully for commit `5673651`: typecheck, lint, 155 passing unit tests, Next.js production build and standalone packaging. Seven database integration tests skipped because no isolated database was configured in CI. The 12.40 MB artifact bundle contains the server archive and JUnit report. The packaged server has not been started on a compatible host.
 
 [Build #3](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adbf1254a72334e32e4924a) successfully built P05 commit `175d93b` on Mac mini M2 in 1m 46s, including typecheck, lint, unit tests, production build and standalone packaging. Codemagic produced an 18.94 MB artifact bundle. It was not downloaded or started on a compatible host; this cloud result does not cover the later P06 changes.
+
+[Build #4](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc00e04a72334e32e49513) successfully built P07 commit `456e734` on Mac mini M2 in 2m 48s. Typecheck, lint, unit tests, the credential-free production build and standalone packaging passed; the artifact bundle is 23.06 MB. It has not been downloaded or started on a compatible host. This result covers P06/P07, while later work remains under local verification.
 
 ## Checks
 

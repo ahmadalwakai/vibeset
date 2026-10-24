@@ -246,7 +246,7 @@ iOS canvas limits: keep any canvas ≤ 16.7M pixels and release canvases after u
 | Theme detail | RSC (cached by slug) → pre-rendered previews; heavy client code (renderer, export) loaded only when a sheet opens |
 | Wallpaper download | pre-rendered: fetch CDN blob → Web Share (iOS) / `<a download>` (others). 4K/custom: dynamic import renderer → canvas → blob |
 | Icon export | dynamic import renderer + glyph weight JSON → chunked canvas render (progress, cancel) → iOS Web Share batches / ZIP |
-| Track | `navigator.sendBeacon('/api/track')` → rate-limited upsert into `theme_stats_daily` |
+| Track | credential-free `fetch('/api/track', { keepalive: true, credentials: 'omit' })` → rate-limited upsert into `theme_stats_daily` |
 | Favourite | optimistic UI → server action → `favorites` row; visitors: localStorage, merged on sign-in |
 | Remix save | Studio → `saveRemix` action → `themes` row (source `remix`, status `draft`, never public) |
 | Creator submit | upload (presign → PUT to R2 → finalize) → create draft → submit → `pending_review` |
@@ -270,6 +270,7 @@ iOS canvas limits: keep any canvas ≤ 16.7M pixels and release canvases after u
 6. Per-user data (session, favourites, collections, remixes, admin/creator data) is **never** cached in shared caches. Admin and creator reads live in `server/admin-queries/*` (no `'use cache'`).
 7. Public API responses set `Cache-Control: public, s-maxage=300, stale-while-revalidate=86400`. User endpoints set `Cache-Control: private, no-store`.
 8. R2 assets use versioned, immutable keys (`themes/{id}/v{n}/…`, `Cache-Control: public, max-age=31536000, immutable`); a re-render bumps `v{n}`.
+9. Credential-free CI builds use curated static params or static shells, never database-defined slug enumeration. Request data children and theme metadata call `connection()` before lazy query imports; cached functions remain independently shared. [Streamed `notFound()`](https://nextjs.org/docs/app/api-reference/file-conventions/not-found) renders not-found UI with `noindex` after headers have flushed, retaining HTTP200; `/api/v1` gives a strict HTTP404. Local theme checks confirmed this behavior even with blocking metadata, so retain default metadata streaming and do not claim strict page status codes for runtime-only database validation.
 
 ---
 

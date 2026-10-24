@@ -52,6 +52,7 @@ const card: ThemeCardDTO = {
 };
 const themeDetail: ThemeDetailDTO = {
   ...card,
+  updatedAt: '2026-10-24T12:00:00.000Z',
   descriptionEn: null,
   descriptionAr: null,
   spec: renderSampleSpec(playgroundStateSchema.parse({ kind: 'mesh', palette: 'lavender' })),

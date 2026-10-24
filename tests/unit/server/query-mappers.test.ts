@@ -28,6 +28,7 @@ function row(): ThemeDetailRow {
     downloadCount: 4,
     favoriteCount: 3,
     publishedAt: null,
+    updatedAt: new Date('2026-10-24T12:00:00Z'),
     tags: [{ slug: 'y2k', kind: 'aesthetic', nameEn: 'Y2K', nameAr: 'واي تو كي' }],
     creator: null,
     remixOf: null,
@@ -58,6 +59,7 @@ describe('public query DTO mappers', () => {
       previewLockUrl: null,
       ogUrl: null,
       publishedAt: null,
+      updatedAt: '2026-10-24T12:00:00.000Z',
       wallpapers: [],
     });
   });

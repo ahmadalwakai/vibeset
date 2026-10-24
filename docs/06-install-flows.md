@@ -14,7 +14,7 @@ isStandalone()     // matchMedia('(display-mode: standalone)') or navigator.stan
 canShareFiles(files: File[])  // !!navigator.canShare?.({ files })
 ```
 
-**In-app browsers** (most traffic from TikTok/Instagram lands here) often block downloads and file sharing. When `isInAppBrowser()`: show a sticky banner "For downloads, open in Safari/Chrome" with a copy-link button and a short GIF of the "⋯ → Open in browser" menu. Never let the user hit a silent failure.
+**In-app browsers** (most traffic from TikTok/Instagram lands here) often block downloads and file sharing. When `isInAppBrowser()`: show a sticky banner "For downloads, open in Safari/Chrome" with a copy-link button and a short illustrated "⋯ → Open in browser" instruction. Recorded menu media is a P17 content task; until it exists, use the instruction and Phosphor illustration without referencing missing GIF assets. Never let the user hit a silent failure.
 
 ## 2. Sharing & downloading files (`lib/client/share.ts`)
 
@@ -105,7 +105,7 @@ Export static decor images (`glyphBadge`, `ring`, `stickerCollage`, `photoFrame`
 | `remix` | Studio opened from a theme (`?from=`) and the user downloaded or saved |
 | `setup_complete` | iOS wizard finished for a theme |
 
-Sent with `navigator.sendBeacon` (fire-and-forget). No personal data, no cookies.
+Sent with `fetch('/api/track', { method: 'POST', keepalive: true, credentials: 'omit' })` (fire-and-forget). No personal data or cookies are sent. `sendBeacon` is deliberately not used because the [Beacon specification](https://www.w3.org/TR/beacon/) requires credentials to be included. The endpoint never reads authentication cookies or creates analytics cookies.
 
 ---
 

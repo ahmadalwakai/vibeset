@@ -30,4 +30,4 @@ Read `docs/01-architecture.md` §4 and `docs/05-content-pipeline.md` §3–§8 b
 
 - `rasterize.ts`: SVG string → `Blob('image/svg+xml')` → `HTMLImageElement.decode()` → `<canvas>` → draw photo background (`createImageBitmap` from a CORS fetch) → draw SVG → noise pattern (`globalCompositeOperation = 'soft-light'`) → `canvas.toBlob`. Max 16.7M pixels per canvas; after use set `canvas.width = canvas.height = 0` and revoke object URLs.
 - Chunk long jobs (6 items per chunk) and yield between chunks; support `AbortSignal`.
-- `share.ts`, `zip.ts`, `platform.ts`, `track.ts` follow `docs/06-install-flows.md` exactly (two-step share, batch size constant, in-app-browser detection, sendBeacon).
+- `share.ts`, `zip.ts`, `platform.ts`, `track.ts` follow `docs/06-install-flows.md` exactly (two-step share, batch size constant, in-app-browser detection, keepalive tracking requests with credentials omitted).
