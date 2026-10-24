@@ -67,15 +67,17 @@ Client-message tests exercise actual nested next-intl providers in both locales,
 
 ## 6. Release checklist (production)
 
-- [ ] Migrations reviewed; expand/contract respected; Neon branch tested by the preview deployment.
-- [ ] Env vars set in Vercel (Production + Preview) — compare against `.env.example`.
+On 24 October 2026, deployment `dpl_3hMi4UgeVM4sFfnaHiF13x32Uex9` became READY and was promoted to [vibeset-iota.vercel.app](https://vibeset-iota.vercel.app), which resolves to that exact deployment. Three reviewed migrations are applied on production Neon `main` (20 public tables; no themes, users, reports or uploads). Anonymous EN/AR support/privacy responses and all legal routes passed; sign-in correctly shows unavailable providers, malformed reports return 422 and unauthorized cron requests return 401. These are deployment/admission results, not proof of live media, valid report processing, a scheduled cron invocation or overall release readiness. See [the full receipt](09-testflight-handoff.md).
+
+- [ ] Migrations reviewed; expand/contract respected; Neon branch tested by the preview deployment. Production `main` has the three verified hashes/timestamps applied; Preview deployment verification remains separate.
+- [ ] Env vars set in Vercel (Production + Preview) — compare against `.env.example`. Production has nine configured variables (six secrets, three configuration values); optional providers and Preview configuration remain open.
 - [ ] Neon on the **Launch** plan (Free suspends compute when CU-hours run out).
 - [ ] R2: CORS, custom domain, lifecycle rule for `uploads/incoming/` verified.
 - [ ] Google OAuth redirect URIs and Resend domain (SPF/DKIM) verified.
-- [ ] Vercel Cron configured and `CRON_SECRET` set; first run checked in logs.
+- [ ] Vercel Cron configured and `CRON_SECRET` set; first run checked in logs. Production is scheduled for 03:17 UTC and rejects unauthenticated requests; no successful invocation is observed.
 - [ ] Sitemap and robots reachable; OG images render in a social debugger.
 - [ ] Manual device matrix from `docs/06` §8 passed.
-- [ ] Legal pages (terms, privacy, copyright) published in both languages.
+- [x] Legal pages (terms, privacy, copyright) published in both languages; public EN/AR routes verified. This does not complete qualified legal review.
 - [ ] Qualified legal review complete; public operator/contact, creator grant, retained-publication removal process, provider/transfer arrangements and retention practices verified.
 - [ ] Privacy control: views start off with no marker access/request; explicit enable survives reload; disable stops later views; corrupt/blocked storage fails safely and the current-tab fallback is explained. Actual action counters remain disclosed.
 - [ ] Backups: Neon restore window known; weekly `pg_dump` workflow green.
