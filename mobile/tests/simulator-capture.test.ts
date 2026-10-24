@@ -51,6 +51,7 @@ async function exercise(
     console: { log: (message: string) => messages.push(message) },
     mkdirSync: () => undefined,
     writeFileSync: (path: string, value: string) => files.set(path, value),
+    readFileSync: () => JSON.stringify([{ slug: 'published-theme' }]),
     delay: async (milliseconds: number) => expect(milliseconds).toBe(25_000),
     spawnSync: (command: string, args: readonly string[], options: { timeout: number }) => {
       expect(command).toBe('xcrun');
@@ -148,8 +149,15 @@ describe('actual Codemagic simulator capture orchestration', () => {
     ).toBe(true);
     expect(report.appInstallationVerified).toBe(true);
     expect(report.launchAccepted).toBe(true);
-    expect(report.screenshots).toHaveLength(3);
-    expect(calls.filter(({ operation }) => operation === 'io')).toHaveLength(3);
+    expect(report.screenshots).toHaveLength(6);
+    expect(calls.filter(({ operation }) => operation === 'io')).toHaveLength(6);
+    expect(
+      calls.filter(({ operation }) => operation === 'openurl').map(({ args }) => args.at(-1)),
+    ).toEqual(
+      ['wallpaper', 'icons', 'widget'].map(
+        (step) => `vibeset://setup/published-theme?step=${step}`,
+      ),
+    );
     expect(
       calls
         .filter(({ operation }) => operation === 'io')

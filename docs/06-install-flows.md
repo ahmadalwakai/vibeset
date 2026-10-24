@@ -2,6 +2,8 @@
 
 This is where users succeed or give up. Every flow below must be tested on a real iPhone (latest + previous iOS) and a real Android phone before release.
 
+Sections 1–3.4 describe the website. The native iPhone setup flow is specified separately in §3.5; a rendered phone preview is an illustration, not evidence that its icons, wallpaper or widgets have been installed.
+
 ---
 
 ## 1. Platform detection (`lib/client/platform.ts`)
@@ -59,17 +61,29 @@ For each selected app (card with the app's new icon):
 
 Finish screen: hide the original icons (long-press → Remove App → **Remove from Home Screen**; the app stays in the App Library), plus the wallpaper reminder.
 
-The Shortcuts URL, Open App action and custom Home Screen icon flow follow Apple's [URL scheme](https://support.apple.com/en-euro/guide/shortcuts/apda283236d7/ios), [creation guide](https://support.apple.com/guide/shortcuts/create-a-custom-shortcut-apd84c576f8c/ios) and [Home Screen instructions](https://support.apple.com/en-euro/guide/shortcuts/apd735880972/9.0/ios/26). The readable Home Screen guide is versioned iOS26; verify current device labels before release instead of promising exact control positions.
+The Shortcuts URL, Open App action and custom Home Screen icon flow follow Apple's [URL scheme](https://support.apple.com/en-euro/guide/shortcuts/apda283236d7/ios), [creation guide](https://support.apple.com/guide/shortcuts/create-a-custom-shortcut-apd84c576f8c/ios) and [current Home Screen instructions](https://support.apple.com/guide/shortcuts/add-a-shortcut-to-the-home-screen-apd735880972/ios), checked with the iOS 27 guide on 24 October 2026. Verify actual device labels before release instead of promising exact control positions.
 
 Each step has a 3–6 s silent looping MP4 (our own screen recordings, < 600 KB, `playsInline muted loop`) stored in R2. Step labels in Shortcuts change between iOS versions: re-verify text and recordings at every major iOS release (checklist in `docs/08`).
 
-FAQ section: "Why does a banner appear when I open an app?" → iOS behaviour when launching through Shortcuts; we can't change it. "Can Vibeset do this automatically?" → No app can; iOS doesn't allow it.
+FAQ section: "Why does a banner appear when I open an app?" → iOS behaviour when launching through Shortcuts; we can't change it. "Can Vibeset install the icons automatically?" → Vibeset exports the images and guides setup; the user adds each Home Screen shortcut in Apple's Shortcuts app. Apple's alternate-icon API changes an app's own icon, not other apps' icons.
 
 Track `setup_complete` once when every selected app is ticked.
 
 ### 3.4 Decor widgets (optional)
 
 Export static decor images (`glyphBadge`, `ring`, `stickerCollage`, `photoFrame`) → save to Photos → add them with a compatible photo widget. Widget setup varies by device; do not promise current album-selection controls until verified on that device. Copy must be honest: "static decorative widgets — live widgets are coming in the Vibeset app".
+
+### 3.5 Native iPhone setup (`mobile/`)
+
+The 24 October follow-up adds a visible **Get theme** entry on cards and theme details, followed by three usable steps. This source change is separate from the already distributed **0.1.0 (12)**; do not describe that installed build as containing the new icon exporter until an updated native build is verified and distributed.
+
+1. **Wallpaper:** save the actual published phone home-wallpaper JPEG with add-only Photos permission. Then show **Settings → Wallpaper → Add New Wallpaper → Photos → select the saved image → Add**, with Apple's Wallpaper Pair / Customize Home Screen choice. Saving an image is not setting the wallpaper. Lock-screen preview images remain previews; this flow does not offer a separate full-resolution lock export. See [Apple's wallpaper guide](https://support.apple.com/en-gb/102638).
+2. **Matching icons:** fetch the additive published-theme icon-pack endpoint `/api/v1/themes/[slug]/icons`. A validated manifest binds the theme ID, slug and current `specHash` to up to 125 opaque 512 × 512 PNGs, ordered by app rank and slug; the app also checks it against the loaded detail spec before setup. Select apps, save their actual images to Photos sequentially with progress/cancellation, then use the per-app Shortcuts checklist above. Automatic save progress advances after a successful Photos write and persistence attempt; a failed progress write stops the batch and offers recovery. Retry resumes unfinished items. A separate share action is available, but closing its sheet does not prove a save; the user can explicitly confirm installation after completing the manual steps. Opening `shortcuts://create-shortcut` creates an empty editor, so the user still chooses **Open App**, its destination app, the saved icon and the Home Screen name. Generic glyph artwork does not imply trademark ownership or automatic replacement of an app's icon. No configuration profiles, MDM, private APIs or generated `.shortcut` files are used.
+3. **Live calendar/time widget:** prepare the selected Vibeset widget style, then explain **touch and hold Home Screen → Edit → Add Widget → Vibeset → choose size → Add Widget**. The app writes theme tokens to its App Group and requests a timeline reload; this does not place the widget. The separate native widget renders live dates/time; the phone preview and decorative image examples do not become live widgets. See [Apple's widget instructions](https://support.apple.com/en-gb/118610) and [Expo's widget timeline API](https://docs.expo.dev/versions/latest/sdk/widgets/).
+
+Per-theme setup progress is device-local, versioned and bound to the icon pack's current spec hash; an unread preference must be recovered before it can be overwritten. Native Photos writes and the user's explicit wallpaper/shortcut/widget checkmarks are different evidence: manual confirmation can record a share-based setup without requiring add-only Photos permission. Vibeset cannot infer that those external installation steps were completed. The native flow sends no automatic setup/view statistics. A full native Studio, custom-glyph editor and account-synced progress are separate work.
+
+Keep the complete LTR phone artwork visible in cards and details rather than cropping its top/bottom. Real-device acceptance must cover denied Photos access, interrupted/retried batches without duplicate successful saves, relaunch/storage recovery, EN/AR and larger text, Shortcuts navigation/back, actual widget placement/refresh and manual wallpaper setting. Test both the latest and previous supported iOS; source tests and a successful upload do not establish these results.
 
 ---
 

@@ -2,7 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactElement } from 'react';
-import { Alert, AppState, Image, Pressable, StatusBar, View, useColorScheme } from 'react-native';
+import {
+  Alert,
+  AppState,
+  Image,
+  Linking,
+  Pressable,
+  StatusBar,
+  View,
+  useColorScheme,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Catalog } from './components/Catalog';
 import { Detail } from './components/Detail';
@@ -17,6 +26,8 @@ import { applyThemeWidget, clearThemeWidget, refreshThemeWidget } from './lib/wi
 import { buildCalendarWidgetProps } from './widgets/model';
 import { hideContentOnDevice } from './lib/content-safety';
 import { isThemeHidden } from './lib/creator-blocks';
+import { parseNativeDeepLink } from './lib/navigation';
+import type { NativeSetupStep } from './lib/navigation';
 
 type Tab = 'explore' | 'saved' | 'widgets' | 'settings';
 const tabs = [
@@ -38,6 +49,33 @@ export default function NativeApp(): ReactElement {
   const row = locale === 'ar' ? 'row-reverse' : 'row';
   const [tab, setTab] = useState<Tab>('explore');
   const [slug, setSlug] = useState<string | null>(null);
+  const [setupStep, setSetupStep] = useState<NativeSetupStep | null>(null);
+  const [navigationRevision, setNavigationRevision] = useState(0);
+  useEffect(() => {
+    let listening = true;
+    let receivedEvent = false;
+    const open = (url: unknown): void => {
+      const target = parseNativeDeepLink(url);
+      if (!listening || !target) return;
+      setTab('explore');
+      setSlug(target.slug);
+      setSetupStep(target.kind === 'setup' ? target.step : null);
+      setNavigationRevision((value) => value + 1);
+    };
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      receivedEvent = true;
+      open(url);
+    });
+    void Linking.getInitialURL()
+      .then((url) => {
+        if (!receivedEvent) open(url);
+      })
+      .catch(() => {});
+    return () => {
+      listening = false;
+      subscription.remove();
+    };
+  }, []);
   const widgetQueue = useRef(Promise.resolve());
   const refreshFlight = useRef<Promise<void> | null>(null);
   const mounted = useRef(true);
@@ -168,6 +206,7 @@ export default function NativeApp(): ReactElement {
   };
   const navigate = (value: Tab): void => {
     setSlug(null);
+    setSetupStep(null);
     setTab(value);
   };
   return (
@@ -264,7 +303,10 @@ export default function NativeApp(): ReactElement {
                     blockedCreators={preferences.blockedCreators}
                     hiddenThemeIds={preferences.hiddenThemeIds}
                     onFavorite={favorite}
-                    onOpen={setSlug}
+                    onOpen={(value, setup) => {
+                      setSetupStep(setup ? 'wallpaper' : null);
+                      setSlug(value);
+                    }}
                   />
                 ) : tab === 'widgets' ? (
                   <Widgets
@@ -280,11 +322,13 @@ export default function NativeApp(): ReactElement {
               </View>
               {slug ? (
                 <Detail
-                  key={slug}
+                  key={`${slug}:${setupStep ?? 'detail'}:${navigationRevision}`}
                   slug={slug}
                   favoriteIds={preferences.favoriteIds}
                   onFavorite={favorite}
                   onApply={apply}
+                  widgetThemeId={preferences.widgetSelection?.id ?? null}
+                  initialSetupStep={setupStep ?? undefined}
                   blockedCreators={preferences.blockedCreators}
                   hiddenThemeIds={preferences.hiddenThemeIds}
                   onHide={hide}

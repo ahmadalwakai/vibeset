@@ -27,11 +27,13 @@ function Card({
   favorite,
   onOpen,
   onFavorite,
+  onSetup,
 }: {
   theme: ThemeCardDTO;
   favorite: boolean;
   onOpen: () => void;
   onFavorite: () => void;
+  onSetup: () => void;
 }): ReactElement {
   const { colors, locale, row, t } = useUi();
   const [thumbnail, thumbnailEvent] = useReducer(thumbnailReducer, {
@@ -61,7 +63,7 @@ function Card({
       >
         <View
           style={{
-            aspectRatio: 0.65,
+            aspectRatio: 1080 / 2340,
             backgroundColor: theme.dominantColor ?? colors.muted,
             direction: 'ltr',
           }}
@@ -69,7 +71,7 @@ function Card({
           {theme.thumbUrl && !broken ? (
             <Image
               source={{ uri: theme.thumbUrl }}
-              resizeMode="cover"
+              resizeMode="contain"
               accessibilityLabel={name}
               onError={() => {
                 if (theme.thumbUrl) thumbnailEvent({ kind: 'failure', url: theme.thumbUrl });
@@ -96,6 +98,7 @@ function Card({
         <Copy numberOfLines={2} style={{ fontSize: 14, lineHeight: 22 }}>
           {name}
         </Copy>
+        <Button label={t('getTheme')} onPress={onSetup} style={{ paddingHorizontal: 8 }} />
         <View style={{ flexDirection: row, justifyContent: 'space-between', alignItems: 'center' }}>
           <Copy style={{ fontSize: 11, color: colors.secondary }}>
             {theme.isFeatured ? t('featured') : `${formatNumber(locale, theme.downloadCount)} ↓`}
@@ -134,7 +137,7 @@ export function Catalog({
   blockedCreators: readonly BlockedCreator[];
   hiddenThemeIds: readonly string[];
   onFavorite: (id: string) => void;
-  onOpen: (slug: string) => void;
+  onOpen: (slug: string, setup?: boolean) => void;
 }): ReactElement {
   const { t, colors, locale, row } = useUi();
   const { width } = useWindowDimensions();
@@ -337,6 +340,7 @@ export function Catalog({
           theme={item}
           favorite={favoriteIds.includes(item.id)}
           onOpen={() => onOpen(item.slug)}
+          onSetup={() => onOpen(item.slug, true)}
           onFavorite={() => onFavorite(item.id)}
         />
       )}

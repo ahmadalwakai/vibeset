@@ -20,6 +20,7 @@ import {
   buildCalendarTimeline,
   buildCalendarWidgetProps,
   calendarWidgetPropsSchema,
+  calendarAccentInk,
   emptyCalendarWidgetProps,
 } from '../widgets/model';
 
@@ -66,6 +67,17 @@ beforeEach(() => {
 });
 
 describe('native calendar data from real theme tokens', () => {
+  it('uses the same readable accent-day foreground for restored and fresh theme previews', () => {
+    const source = theme();
+    source.spec.widgets.ink = '#ffffff';
+    source.spec.widgets.accent = '#ffffff';
+    expect(calendarAccentInk('#ffffff', '#ffffff')).toBe('#000000');
+    expect(calendarAccentInk('#ffffff', '#000000')).toBe('#ffffff');
+    expect(buildCalendarWidgetProps(source, 'en').accentInk).toBe(
+      calendarAccentInk('#ffffff', '#ffffff'),
+    );
+    expect(() => calendarAccentInk('transparent', '#ffffff')).toThrow();
+  });
   it('retains selected identity and widget styling without copying API/photo/account data', () => {
     const source = theme();
     source.spec.widgets.style = 'solid';

@@ -4,10 +4,14 @@ import { Alert, ScrollView, View } from 'react-native';
 import type { WidgetSelection } from '../lib/preferences';
 import { PreferenceReadError } from '../lib/preferences';
 import { localizedName } from '../lib/i18n';
-import { buildCalendarDateFields } from '../widgets/model';
+import { buildCalendarDateFields, calendarAccentInk } from '../widgets/model';
 import { Button, Copy, Panel, styles, useUi } from './Ui';
 
-function Calendar({ selection }: { selection: WidgetSelection }): ReactElement {
+export function CalendarPreview({
+  selection,
+}: {
+  selection: WidgetSelection & { accentInk?: string };
+}): ReactElement {
   const { locale, t } = useUi();
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -16,6 +20,7 @@ function Calendar({ selection }: { selection: WidgetSelection }): ReactElement {
   }, []);
   const appliedLocale = selection.appliedLocale === 'ar' ? 'ar-u-nu-latn' : 'en-GB';
   const fields = buildCalendarDateFields(now, selection.appliedLocale);
+  const accentInk = calendarAccentInk(selection.accentInk ?? selection.ink, selection.accent);
   return (
     <View
       accessibilityLabel={t('widgetPreview')}
@@ -67,13 +72,14 @@ function Calendar({ selection }: { selection: WidgetSelection }): ReactElement {
                 minHeight: 32,
                 alignItems: 'center',
                 justifyContent: 'center',
+                backgroundColor: day.today ? selection.accent : 'transparent',
+                borderRadius: 8,
               }}
             >
               <Copy
                 style={{
-                  color: selection.ink,
+                  color: day.today ? accentInk : selection.ink,
                   fontSize: 12,
-                  textDecorationLine: day.today ? 'underline' : 'none',
                   fontWeight: day.today ? '700' : '400',
                 }}
               >
@@ -145,7 +151,7 @@ export function Widgets({
       ) : null}
       {selection ? (
         <>
-          <Calendar selection={selection} />
+          <CalendarPreview selection={selection} />
           <Copy style={{ color: colors.secondary, fontSize: 12 }}>{t('previewOnly')}</Copy>
           <Panel>
             <Copy>

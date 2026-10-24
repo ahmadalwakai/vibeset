@@ -250,10 +250,11 @@ export function PrivacyEn({
         <p>
           This section describes the initial iPhone implementation; it does not announce a public
           beta. It uses the public catalogue without in-app sign-in or account sync. Requests to the
-          public API and image CDN include search terms, filters or theme identifiers needed to
-          retrieve your choices, including saved themes. They omit account credentials, but hosting
-          and delivery providers still receive IP addresses and request details. Opening a website
-          link uses your browser, with its separate cookies and preferences.
+          public API and image CDN include search terms, filters or theme identifiers and chosen
+          icon files needed to retrieve your choices, including saved themes. They omit account
+          credentials, but hosting and delivery providers still receive IP addresses and request
+          details. Opening a website link uses your browser, with its separate cookies and
+          preferences.
         </p>
         <p>
           The app saves language, light/dark/system appearance, up to 500 favourite theme IDs,
@@ -266,6 +267,15 @@ export function PrivacyEn({
           uploaded as account changes or synced across devices. The current app does not send the
           website’s view, download, export, remix or setup-completion tracking events; the optional
           browser view-statistics control applies to the website.
+        </p>
+        <p>
+          Updated builds also save your selected app identifiers, confirmed image saves and manual
+          wallpaper, shortcut and widget checkmarks locally for each theme under{' '}
+          <code>vibeset:native-setup:v1:</code> followed by its public theme identifier. This setup
+          progress is tied to the current design version and is not uploaded or synced to an
+          account. A checkmark records your confirmation; it does not let Vibeset inspect your Home
+          Screen or installed apps. Reinstalling the app or clearing its data may remove this
+          progress.
         </p>
         <p>
           When you explicitly submit a report, the app sends the theme identifier, your selected
@@ -285,13 +295,13 @@ export function PrivacyEn({
           Device backups, removal and restoration follow iOS settings and behaviour.
         </p>
         <p>
-          Only when you choose to save a wallpaper does the app request permission to add an image
-          to Photos. The current save feature does not read your existing photo library. Native
-          sharing opens only after you choose Share; you decide the destination, whose own terms and
-          data handling apply. A temporary image is downloaded to the app cache for saving or
-          sharing, and the app attempts to remove that copy afterwards. Saved Photos, backups and
-          copies sent elsewhere follow your device and destination settings; clearing app
-          preferences does not recall them.
+          Only when you choose to save a wallpaper or individual icon images does the app request
+          permission to add an image to Photos. The current save feature does not read your existing
+          photo library. Native sharing opens only after you choose Share; you decide the
+          destination, whose own terms and data handling apply. A temporary image is downloaded to
+          the app cache for saving or sharing, and the app attempts to remove that copy afterwards.
+          Saved Photos, backups and copies sent elsewhere follow your device and destination
+          settings; clearing app preferences does not recall them.
         </p>
       </section>
       <section aria-labelledby="privacy-providers">

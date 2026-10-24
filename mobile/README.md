@@ -1,6 +1,6 @@
 # Vibeset for iPhone
 
-تطبيق iPhone أصلي باستخدام React Native، مع شاشات عربية وإنجليزية وودجت WidgetKit وإبلاغ وحظر محلي منفّذة في المصدر. نجح البناء والتشغيل الأولي على المحاكي، ونُشرت صفحات الدعم والخصوصية العامة؛ ويبقى إعداد الصور والخدمات والتوقيع واختبار الجهاز. لم تُرفع نسخة TestFlight.
+تطبيق iPhone أصلي باستخدام React Native، مع شاشات عربية وإنجليزية وودجت WidgetKit وإبلاغ وحظر محلي. النسخة 0.1.0 (12) متاحة للاختبار الداخلي عبر TestFlight؛ تحديث إعداد الخلفية والأيقونات والودجت منفصل عنها، ولا تُنسب ميزاته إلى النسخة الموزعة قبل التحقق من بناء محدّث وتوزيعه. تجربة التثبيت على جهاز فعلي ما زالت تحتاج إلى التحقق.
 
 ## Implemented source
 
@@ -10,7 +10,8 @@
 - Actual published **phone home-wallpaper JPEG** saving to Photos with add-only permission, or the native share sheet. Lock previews are labelled previews rather than full-resolution lock downloads. Downloads are cancellable/bounded, use the configured CDN only and clean up owned temporary files.
 - Native Settings, support/privacy links and EN/AR copy, logical layout, accessible controls and the existing branded icon.
 - Small/medium themed calendar/time widgets. Expo UI supplies isolated SwiftUI layouts; a config plugin checks the generated source before replacing only the calendar provider with a WidgetKit provider that derives fresh local dates and requests its own next-day refresh. OS refresh delivery remains discretionary. App resume also requests a reload.
-- No native account creation, synced favourites, Studio or icon-pack exporter is claimed in this first slice. Those need further native implementation; browser canvas code is not a native exporter. The app does not send automatic view statistics or embed server/storage credentials.
+- The follow-up native **Get theme** flow guides wallpaper, matching-icon and live-widget setup. Its additive icon-pack manifest supplies actual opaque 512 × 512 PNGs for up to 125 catalogue apps; selected icons save sequentially to Photos with per-item progress, then a local checklist guides Apple's Shortcuts setup. Wallpaper setting, Home Screen shortcut creation and widget placement remain explicit user actions. A preview image is not an installed theme. See [the native install contract](../docs/06-install-flows.md#35-native-iphone-setup-mobile).
+- No native account creation, synced favourites, Studio or custom-glyph editor is claimed. The app does not send automatic view/setup statistics or embed server/storage credentials. The new setup/export source is not yet claimed as part of distributed build 12.
 
 ## Local checks
 

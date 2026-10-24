@@ -4,6 +4,7 @@ import type { ThemeSpec } from './render/spec';
 import type { Settings } from './settings';
 
 export type { Locale } from 'next-intl';
+export type { NativeIconPack, NativeIconAsset } from './validation/native-icon-pack';
 export type { ColorFamily } from './catalog';
 export type ThemeSort = 'trending' | 'new' | 'popular';
 export type TagKind = TaxonomyType;

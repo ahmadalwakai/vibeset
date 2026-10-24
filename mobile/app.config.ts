@@ -68,7 +68,8 @@ export default function appConfig(): ExpoConfig {
         'expo-media-library',
         {
           photosPermission: false,
-          savePhotosPermission: 'Save the wallpapers you choose to your Photos library.',
+          savePhotosPermission:
+            'Save the wallpapers and app icons you choose to your Photos library.',
         },
       ],
       [

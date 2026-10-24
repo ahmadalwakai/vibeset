@@ -12,6 +12,8 @@ import { Button, Copy, Feedback, Loading, Panel, styles, useUi } from './Ui';
 import { isThemeHidden } from '../lib/creator-blocks';
 import type { BlockedCreator } from '../lib/creator-blocks';
 import { ReportTheme } from './ReportTheme';
+import { ThemeSetup } from './ThemeSetup';
+import type { NativeSetupStep } from '../lib/navigation';
 
 export function Detail({
   slug,
@@ -21,6 +23,8 @@ export function Detail({
   blockedCreators,
   hiddenThemeIds,
   onHide,
+  widgetThemeId,
+  initialSetupStep,
 }: {
   slug: string;
   favoriteIds: readonly string[];
@@ -29,6 +33,8 @@ export function Detail({
   blockedCreators: readonly BlockedCreator[];
   hiddenThemeIds: readonly string[];
   onHide: (theme: ThemeDetailDTO, kind: 'theme' | 'creator') => Promise<void>;
+  widgetThemeId: string | null;
+  initialSetupStep?: NativeSetupStep;
 }): ReactElement {
   const { t, colors, locale, row } = useUi();
   const [theme, setTheme] = useState<ThemeDetailDTO | null>(null);
@@ -37,6 +43,7 @@ export function Detail({
   const [busy, setBusy] = useState<'save' | 'share' | 'widget' | null>(null);
   const [broken, setBroken] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(initialSetupStep !== undefined);
   const active = useRef(true);
   const operation = useRef<AbortController | null>(null);
   const performing = useRef(false);
@@ -146,12 +153,31 @@ export function Detail({
   const description =
     locale === 'ar' && theme.descriptionAr ? theme.descriptionAr : theme.descriptionEn;
   const favorite = favoriteIds.includes(theme.id);
+  if (setupOpen)
+    return (
+      <ThemeSetup
+        theme={theme}
+        widgetThemeId={widgetThemeId}
+        initialStep={initialSetupStep}
+        onApply={onApply}
+        onClose={() => setSetupOpen(false)}
+        onReload={() => {
+          setTheme(null);
+          setFailure(null);
+          setRetry((value) => value + 1);
+        }}
+      />
+    );
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <Copy heading accessibilityRole="header">
         {name}
       </Copy>
       {description ? <Copy style={{ color: colors.secondary }}>{description}</Copy> : null}
+      <Panel>
+        <Copy>{t('themeContents')}</Copy>
+        <Button label={t('getTheme')} onPress={() => setSetupOpen(true)} />
+      </Panel>
       <View
         style={{
           width: '76%',
@@ -187,6 +213,7 @@ export function Detail({
           </View>
         )}
       </View>
+      <Copy style={{ fontSize: 13, color: colors.secondary }}>{t('previewLabel')}</Copy>
       <View style={{ flexDirection: row, justifyContent: 'space-around', gap: 12 }}>
         <Copy style={{ color: colors.secondary, fontSize: 13 }}>
           {t('downloads')} · {formatNumber(locale, theme.downloadCount)}

@@ -4,6 +4,8 @@ import { serializeThemeListQuery } from '../../lib/validation/theme-query';
 import { themeDetailResponseSchema } from '../../lib/validation/theme-detail';
 import { themePageResponseSchema } from '../../lib/validation/themes';
 import { exportSlugSchema } from '../../lib/validation/icon-export';
+import { nativeIconPackResponseSchema } from '../../lib/validation/native-icon-pack';
+import type { NativeIconPack } from '../../lib/validation/native-icon-pack';
 
 export type { Paginated, ThemeCardDTO, ThemeDetailDTO, ThemeListQuery } from '../../lib/dto';
 
@@ -185,6 +187,21 @@ export async function fetchTheme(slug: string, signal?: AbortSignal): Promise<Th
     await request(
       `/api/v1/themes/${encodeURIComponent(parsed.data)}`,
       themeDetailResponseSchema,
+      signal,
+    )
+  ).data;
+}
+
+export async function fetchThemeIconPack(
+  slug: string,
+  signal?: AbortSignal,
+): Promise<NativeIconPack> {
+  const parsed = exportSlugSchema.safeParse(slug);
+  if (!parsed.success) throw new NativeServiceError('HTTP', 422);
+  return (
+    await request(
+      `/api/v1/themes/${encodeURIComponent(parsed.data)}/icons`,
+      nativeIconPackResponseSchema,
       signal,
     )
   ).data;

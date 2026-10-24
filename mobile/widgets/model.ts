@@ -65,6 +65,10 @@ function readableInk(ink: string, surface: string): string {
   if (contrast(ink, surface) >= 4.5) return ink;
   return contrast('#000000', surface) >= contrast('#ffffff', surface) ? '#000000' : '#ffffff';
 }
+/** Matches the native calendar's highlighted-day foreground, including older saved selections. */
+export function calendarAccentInk(ink: string, accent: string): string {
+  return readableInk(Hex.parse(ink), Hex.parse(accent));
+}
 function validDate(now: Date): Date {
   return z
     .date()
@@ -145,7 +149,7 @@ export function buildCalendarWidgetProps(
     surface,
     ink: readableInk(widgets.ink, surface),
     accent: widgets.accent,
-    accentInk: readableInk(widgets.ink, widgets.accent),
+    accentInk: calendarAccentInk(widgets.ink, widgets.accent),
     radius: widgets.radius,
     // System designs remain readable before custom fonts are bundled into the extension.
     fontDesign:
