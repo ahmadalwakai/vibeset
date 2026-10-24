@@ -23,8 +23,15 @@ Format: roles are curated by hand; `inkMuted` is derived (`mix(ink, bg, 0.38)` i
 
 ```ts
 export interface CuratedPalette {
-  id: string; nameEn: string; nameAr: string; mode: 'light' | 'dark';
-  bg: string; surface: string; primary: string; accent: string; ink: string;
+  id: string;
+  nameEn: string;
+  nameAr: string;
+  mode: 'light' | 'dark';
+  bg: string;
+  surface: string;
+  primary: string;
+  accent: string;
+  ink: string;
 }
 ```
 
@@ -52,7 +59,7 @@ export interface CuratedPalette {
 | bubblegum | Bubblegum | علكة | light | #ffe3f4 | #fff5fb | #ff8fcf | #7fd3ff | #4a1238 |
 | pistachio | Pistachio | فستق | light | #edf5e1 | #fafdf5 | #b5d99c | #f2c6de | #2d3d1c |
 | ocean-breeze | Ocean Breeze | نسيم المحيط | light | #e4f1fb | #f5fafe | #6fb1e0 | #ffe08a | #12324d |
-| rose-gold | Rose Gold | ذهبي وردي | light | #f8e8e3 | #fff7f4 | #e3a99b | #c9a27e | #4a2b26 |
+| rose-gold | Rose Gold | ذهبي وردي | light | #f8e8e3 | #fff7f4 | #e3a99b | #c8a27d | #4a2b26 |
 | ramadan-cream | Ramadan Cream | رمضان كريمي | light | #fbf3e4 | #fffaf1 | #c9a24d | #2f6b5e | #2b2416 |
 | retro-groovy | Retro Groovy | ريترو | light | #fff1d6 | #fff9ec | #f28c28 | #2a9d8f | #3b2412 |
 | citrus-pop | Citrus Pop | حمضيات | light | #fff8e1 | #fffdf5 | #ff9f1c | #2ec4b6 | #2b2b2b |
@@ -82,18 +89,34 @@ export interface CuratedPalette {
 
 ```ts
 export interface AestheticRecipe {
-  slug: string; nameEn: string; nameAr: string; shortEn: string;   // shortEn is used in generated names
-  descriptionEn: string; descriptionAr: string;
-  palettes: string[];                                              // palette ids
-  wallpapers: { kind: WallpaperKind; weight: number; params?: Record<string, [number, number] | unknown> }[];
+  slug: string;
+  nameEn: string;
+  nameAr: string;
+  shortEn: string; // shortEn is used in generated names
+  descriptionEn: string;
+  descriptionAr: string;
+  palettes: string[]; // palette ids
+  wallpapers: {
+    kind: WallpaperKind;
+    weight: number;
+    params?: Record<string, [number, number] | unknown>;
+  }[];
   lockWallpaper: 'same' | 'variant';
-  icons: { fills: IconFill[]; weights: GlyphWeight[]; scale: [number, number];
-           borderChance: number; stickerChance: number; shadowChance: number };
+  icons: {
+    fills: IconFill[];
+    weights: GlyphWeight[];
+    scale: [number, number];
+    borderChance: number;
+    stickerChance: number;
+    shadowChance: number;
+  };
   widgets: { styles: ('glass' | 'solid' | 'outline' | 'paper')[]; radius: [number, number] };
   fonts: { display: FontId[]; body: FontId[] };
-  decor: string[];                                                 // Phosphor glyph names (validated)
-  moods: string[]; styles: string[]; season?: string;
-  variants: number;                                                // published target, default 10
+  decor: string[]; // Phosphor glyph names (validated)
+  moods: string[];
+  styles: string[];
+  season?: string;
+  variants: number; // published target, default 10
 }
 ```
 
@@ -142,25 +165,29 @@ export interface AestheticRecipe {
 
 Body font for all recipes: `readex-pro`. No sports-club, brand, film, anime or celebrity references — ever.
 
+The executable shared contracts live in `lib/generator.ts`. Wallpaper choices use a discriminated, readonly per-kind parameter type: numbers or numeric ranges, plus explicit enum/boolean options. Generated recipes exclude photo wallpapers. Palette selection cycles uniformly through the listed ids by candidate index; no palette weights are defined by this table. Rose Gold's accent was adjusted by one red and one blue channel step so its primary/accent OKLab distance is 0.06105, above the 0.06 QA minimum.
+
 ---
 
 ## 3. Wallpaper generators (`lib/render/wallpaper/*.ts`)
 
 All draw into a `viewBox="0 0 {w} {h}"` so they scale to any resolution. Colours come from `spec.wallpaper.colors ?? derive(palette)`. All sizes are relative to `w`/`h`.
 
-| Kind | Algorithm | Notes |
-|---|---|---|
-| `mesh` | bg rect + `points` radial gradients at PRNG positions (radius 0.6–1.1 × max(w,h), stop opacity 1 → 0) + one `feGaussianBlur` on the group (σ = softness × 0.08 w) | Smooth "mesh gradient" look |
-| `blobs` | `count` closed shapes from 6–9 polar points with radius jitter → Catmull-Rom → cubic Bézier; size 0.3–0.7 w; blur σ = blur × 0.06 w; base = linear gradient bg → surface | — |
-| `waves` | `layers` bands from bottom; each top edge = sum of 2 sines (amplitude × 0.08 h, 1–3 cycles per width × frequency, PRNG phase); colours interpolated primary → accent | Calm top area for the clock |
-| `pattern` | SVG `<pattern>` tile = scale × 0.12 w, `patternTransform` rotation. `checker`, `gingham` (two translucent stripe sets), `dots` (offset rows), `stripes`, `grid` (hairlines), `y2k-grid` (perspective grid on a gradient sky: horizon + converging lines + horizontals with growing spacing), `hearts`/`stars` (decor glyph tiles), `bows` (our own bow path in `lib/render/shapes/bow.ts`), `leopard` (irregular spots with partial darker rims, Poisson-distributed) | Original artwork only |
-| `scatter` | gradient base; Poisson-disk positions (min distance from size); glyph per point from `glyphs`, size `sizeMin..sizeMax × w`, ±25° rotation if `rotate`, colour from primary/accent/surface at 0.7–1 opacity; `density` → 8–60 points | Keep the top 22% calmer (clock area): lower density there |
-| `aurora` | dark base; `bands` thick curved strokes along Bézier paths with gradient strokes; heavy blur (σ 0.05–0.1 w); faint stars when palette is dark | — |
-| `sky` | `day`: vertical gradient; `sunset`: accent → primary → bg; `night`: deep gradient + Poisson stars (radius variance) + crescent moon (circle masked by offset circle). Clouds = clusters of blurred ellipses | — |
-| `shapes` | 3 × 6 grid; each cell a primitive (circle, half/quarter circle, rect, triangle, arch) rotated by multiples of 90°, palette colours; `density` = fill ratio | Bauhaus |
-| `image` | photo drawn by the rasterizer; SVG holds only dim + overlays | see `docs/01` §4.2 |
+| Kind      | Algorithm                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Notes                                                                                                    |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `mesh`    | bg rect + `points` radial gradients at PRNG positions (radius 0.6–1.1 × max(w,h), stop opacity 1 → 0) + one `feGaussianBlur` on the group (σ = softness × 0.08 w)                                                                                                                                                                                                                                                                                                     | Smooth "mesh gradient" look                                                                              |
+| `blobs`   | `count` closed shapes from 6–9 polar points with radius jitter → Catmull-Rom → cubic Bézier; size 0.3–0.7 w; blur σ = blur × 0.06 w; base = linear gradient bg → surface                                                                                                                                                                                                                                                                                              | —                                                                                                        |
+| `waves`   | `layers` bands from bottom; each top edge = sum of 2 sines (amplitude × 0.08 h, 1–3 cycles per width × frequency, PRNG phase); colours interpolated primary → accent                                                                                                                                                                                                                                                                                                  | Calm top area for the clock                                                                              |
+| `pattern` | SVG `<pattern>` tile = scale × 0.12 w, `patternTransform` rotation. `checker`, `gingham` (two translucent stripe sets), `dots` (offset rows), `stripes`, `grid` (hairlines), `y2k-grid` (perspective grid on a gradient sky: horizon + converging lines + horizontals with growing spacing), `hearts`/`stars` (decor glyph tiles), `bows` (our own bow path in `lib/render/shapes/bow.ts`), `leopard` (irregular spots with partial darker rims, Poisson-distributed) | Original artwork only                                                                                    |
+| `scatter` | gradient base; Poisson-disk positions (min distance from size); glyph per point from `glyphs`, size `sizeMin..sizeMax × w`, ±25° rotation if `rotate`, colour from primary/accent/surface at 0.7–1 opacity; `density` → 8–60 points                                                                                                                                                                                                                                   | Keep rotated glyph bounds out of the top 8% status band; lower density throughout the top 22% clock area |
+| `aurora`  | dark base; `bands` thick curved strokes along Bézier paths with gradient strokes; heavy blur (σ 0.05–0.1 w); faint stars when palette is dark                                                                                                                                                                                                                                                                                                                         | —                                                                                                        |
+| `sky`     | `day`: vertical gradient; `sunset`: accent → primary → bg; `night`: deep gradient + Poisson stars (radius variance) + crescent moon (circle masked by offset circle). Clouds = clusters of blurred ellipses                                                                                                                                                                                                                                                           | —                                                                                                        |
+| `shapes`  | 3 × 6 grid; each cell a primitive (circle, half/quarter circle, rect, triangle, arch) rotated by multiples of 90°, palette colours; `density` = fill ratio                                                                                                                                                                                                                                                                                                            | Bauhaus                                                                                                  |
+| `image`   | photo drawn by the rasterizer; SVG holds only dim + overlays                                                                                                                                                                                                                                                                                                                                                                                                          | see `docs/01` §4.2                                                                                       |
 
-`lockWallpaper = 'variant'` → same kind, `seed + 1`, density/amplitude × 0.7 for a calmer clock area.
+`lockWallpaper = 'variant'` → same kind, bounded `seed + 1` where present, and density/amplitude × 0.7 where supported. Sky variants reduce cloud/star density. Patterns have no seed: their variant enlarges the tile scale × 1.2 (within schema bounds) and reduces rotation × 0.7 for a calmer layout. Empty decor lists produce no icon sticker.
+
+Coquette bow patterns use tile scale 2.1–2.8, giving the repeated ribbons room between icon rows. Other pattern choices keep their own recipe ranges.
 
 Grain: post-process (seeded noise tile), `0` = off. Recipes use 0.04–0.14.
 
@@ -172,7 +199,7 @@ Grain: post-process (seeded noise tile), `0` = off. Recipes use 0.04–0.14.
 
 - **iOS**: opaque, full-bleed square (iOS applies its own mask; transparent pixels render black). `shape` is ignored.
 - **Shaped** (Android/desktop): composition clipped to `squircle` (superellipse n = 5, 64 points), `circle`, `rounded` (r = 22%) or `square`; outside transparent.
-- Fills: `solid` (bg) · `gradient` (bg → bg2, 135°) · `glass` (mix(primary, surface, 0.6) + top white highlight 18% + inner 1px light border) · `outline` (palette bg + inset stroke 8% in border/primary colour) · `pattern` (surface + mini dots/checker in accent at 18%) · `wallpaper` (scaled crop of the wallpaper + 25% dim, glyph shadow forced on).
+- Fills: `solid` (bg) · `gradient` (bg → bg2, 135°) · `glass` (mix(primary, surface, 0.6) + top white highlight 18% + inner 1px light border) · `outline` (palette bg + inset stroke 8% in border/primary colour) · `pattern` (surface + mini dots/checker in accent at 18%) · `wallpaper` (scaled crop of the wallpaper + 25% dim, with an opaque rounded `palette.primary` badge behind the glyph and its forced shadow). The badge is centred, 1.2 × the glyph size, bounded to 84% of the icon size, and leaves the wallpaper visible around it. Generated and photo wallpapers use the same contrast surface; iOS opacity and shaped clipping remain unchanged.
 - Glyph: Phosphor markup (viewBox 0 0 256 256) inside `<g color="{glyphColor}" fill="currentColor" transform=…>` centred at `glyphScale`. Optional `feDropShadow` when `shadow`.
 - Border ring: `border.width × size`. Sticker: small circle (22% size) at `corner` with a decor glyph.
 
@@ -183,7 +210,8 @@ Used in previews and as static decor exports (no text in exports): `glyphBadge` 
 ## 6. Previews (`lib/render/preview.ts`)
 
 - `renderHomePreview(spec, glyphs, apps, { w, h, prefix? })`: generic phone silhouette, status bar (digits + cell/wifi/battery glyphs), one medium widget, 4 × 4 icons from the 16 top-ranked catalogue apps, dock with 4 icons on a glass panel. Apps are explicit ranked catalog input; labels are rounded pills (no words).
-- `renderLockPreview(spec, glyphs, { w, h, prefix? })`: big time "10:24" in the display font, two small widgets, lock wallpaper. Time colour = white or ink, whichever contrasts better with the top-area colour estimate.
+- `renderLockPreview(spec, glyphs, { w, h, prefix? })`: big time "10:24" in the display font, two small widgets, lock wallpaper. Time colour follows the selected wallpaper's top-area contrast estimate.
+- Sky previews choose clock/status foreground from black, white and palette ink against the actual selected home/lock sky's top gradient colour, respecting sky mode and explicit wallpaper colours. Pattern previews use a screen-clipped palette-background status scrim, opaque through the top 6% and fading to transparent by 10%, with status foreground chosen against that background. The scrim is preview-only and does not affect wallpaper downloads or fingerprints. Other wallpapers retain the palette-based foreground estimate.
 - Clocks use generated font outlines from `content/clock-outlines.json`, rather than SVG text needing external fonts. Both functions return `RenderResult`, preserving image placement, deterministic noise and warnings.
 
 ---
@@ -197,6 +225,8 @@ buildSpec(recipe, palette, rng):
   lock       = recipe.lockWallpaper === 'same' ? null : variantOf(wallpaper, rng)
   fill       = pick(recipe.icons.fills)
   colours    = resolveIconColours(fill, p)          // candidates ranked by WCAG contrast; null if none ≥ 3:1
+  // On null, deterministically try the remaining allowed fills. If all fail,
+  // return a schema-valid candidate whose low contrast is reported by qaSpec.
   icons      = { shape: pick([squircle×3, rounded, circle]), fill, …colours, glyphWeight: pick(weights),
                  glyphScale: range(scale), border: chance ? { width: 0.03, color: p.primary } : null,
                  sticker: chance ? { glyph: pick(decor), color: p.accent, corner: pick(['tr','tl']) } : null,
@@ -207,30 +237,31 @@ buildSpec(recipe, palette, rng):
   return themeSpecSchema.parse({ v: 1, palette: p, wallpaper, lockWallpaper: lock, icons, widgets, type, decor })
 ```
 
-Icon colour candidates: `solid` → (primary / surface|ink), (surface / primary|ink), (accent / ink). `gradient` → (primary→accent / surface|ink), contrast = min over both stops. `glass` → glyph ink|primary. `outline` → glyph primary|ink on bg. `pattern` → glyph ink|primary on surface. `wallpaper` → glyph surface with shadow, contrast vs palette.primary.
+Icon colour candidates: `solid` → (primary / surface|ink), (surface / primary|ink), (accent / ink). `gradient` → (primary→accent / surface|ink), contrast = min over both stops. `glass` → glyph ink|primary. `outline` → glyph primary|ink on bg. `pattern` → glyph ink|primary on surface. `wallpaper` → glyph surface with shadow, contrast vs the opaque palette.primary badge.
 
 ---
 
 ## 8. Automated QA (generator rejects silently, counts in `generation_runs.skipped_qa`)
 
 1. `themeSpecSchema` valid.
-2. Icon glyph contrast ≥ 3:1 against its background (gradient: both stops).
+2. Icon glyph contrast ≥ 3:1 against its background (gradient: both stops; wallpaper: the opaque palette.primary badge, independent of the generated or photo crop underneath).
 3. Visible palette: OKLab ΔE(bg, primary) ≥ 0.08 and ΔE(primary, accent) ≥ 0.06.
 4. All glyph names exist in the manifest.
-5. **Duplicate check**: render a 72 × 156 thumbnail (resvg), dHash (sharp: greyscale → 9 × 8 → 64 bits). Hamming distance ≤ 6 against any existing theme (draft/pending/approved/published) or earlier candidate in the same run → skip (`skipped_duplicates`).
+5. **Duplicate check**: render the home wallpaper alone at 72 × 156 (resvg), dHash (sharp: greyscale → 9 × 8 → 64 bits), and persist this fingerprint as `preview_hash` on accepted drafts. Exclude the preview's fixed app grid and widgets: their repeated structure otherwise overwhelms wallpaper differences. Publishing uses the same fingerprint renderer, including the focal crop for photos, so draft and published hashes remain comparable. Hamming distance ≤ 6 against any existing theme except rejected (including archived), or an earlier candidate in the same run, skips the candidate (`skipped_duplicates`). Refresh and recheck duplicate/name decisions inside a short transaction under a global generator advisory lock before insertion, so concurrent runs cannot insert duplicates. Rendering stays outside that transaction.
 6. At publish: phone JPEG ≤ 3,000,000 bytes (else re-encode at q88), thumb ≤ 80,000 bytes. Thumbnails start at WebP q80; bounded lower-quality retries use the original resized preview, then publication fails if the size still exceeds the budget.
 
-Oversample: generate `count × 3` candidates to hit `count` accepted drafts; stop early when reached.
+Oversample: generate `count × 3` candidates to hit `count` accepted drafts; stop early when reached. A seeded batch is identified by `(aesthetic, seed, count)`: its target is `count` non-rejected themes across its runs, including archived themes. Repeating a completed batch creates no additional themes; retrying a failed or interrupted batch fills only its remaining target. Check this target under the same generator lock as duplicate checks, so simultaneous retries cannot exceed it. Use a new seed for another batch.
 
 ---
 
 ## 9. Names, descriptions, tags
 
 - EN name: `${palette.nameEn} ${recipe.shortEn}` → "Lavender Haze Y2K". Collision → append " II", " III"…
-- AR name: `${recipe.nameAr}: ${palette.nameAr}` → "واي تو كي: ضباب اللافندر". Collision → append " 2", " 3"… (this form avoids Arabic adjective-agreement mistakes).
+- AR name: `${recipe.nameAr}: ${palette.nameAr}` → "واي تو كي: ضباب اللافندر". When both normalized names are identical, use the name once. Collision → append " 2", " 3"… (this form avoids Arabic adjective-agreement mistakes).
 - Slug: `slugify(nameEn)` + `-` + 4 base36 chars → `lavender-haze-y2k-k3f9`. Immutable after first publish.
 - Descriptions: recipe descriptions (EN/AR). Admin can edit.
-- Tags: the aesthetic tag; recipe moods (≤ 3); style tags derived from wallpaper kind (`mesh|blobs|aurora → gradient`, `pattern → pattern`, `scatter → illustrated`, `sky → illustrated`, `shapes → pattern`, `image → photo`, glass fill → `glass`, neon palettes → `neon`, noir/grunge → `monochrome`, light pastel palettes → `pastel`); season tag when present. `tags_text` = every tag's EN + AR names joined by spaces.
+- Tags: the aesthetic tag; recipe moods (≤ 3); style tags derived from wallpaper kind (`mesh|blobs|aurora|waves → gradient`, `pattern → pattern`, `scatter → illustrated`, `sky → illustrated`, `shapes → pattern`, `image → photo`, glass fill → `glass`, neon palettes → `neon`, noir/grunge → `monochrome`, light pastel palettes → `pastel`); season tag when present. `tags_text` = every tag's EN + AR names joined by spaces.
+- `deriveStyleTags(spec, palette)` receives the curated palette explicitly: neon ids are `cyber-neon`/`vaporwave`, monochrome ids are `noir`/`grunge`; pastel means light mode, background OKLab lightness > 0.88, primary lightness > 0.68 and primary chroma < 0.14. Recipe `styles` may add valid curated style slugs; the initial table needs no extra overrides.
 - `color_family`: provisional from palette (primary/bg) at generation; final from the rendered preview's dominant colour at publish (OKLCH buckets: chroma < 0.04 → black (L < 0.25) / white (L > 0.85) / gray; else hue: red 345–20, orange 20–55, yellow 55–100, green 100–160, teal 160–200, blue 200–260, purple 260–300, pink 300–345; orange/red/yellow with L < 0.5 and C < 0.12 → brown; ≥ 3 families among the top-3 palette colours → multi).
 
 ## 10. Tag seed (`scripts/seed-taxonomy.ts`)
@@ -238,6 +269,7 @@ Oversample: generate `count × 3` candidates to hit `count` accepted drafts; sto
 - **aesthetic**: the 40 recipes above.
 - **mood**: cute لطيف · calm هادئ · dreamy حالم · bold جريء · dark داكن · cozy دافئ · elegant أنيق · playful مرح · minimal بسيط · retro ريترو · edgy متمرّد · romantic رومانسي · fresh منعش · mysterious غامض.
 - **season**: spring الربيع · summer الصيف · autumn الخريف · winter الشتاء · ramadan رمضان · eid العيد · halloween الهالوين · christmas الكريسماس · valentine عيد الحب · back-to-school العودة إلى المدرسة.
+- Stored season tag slugs are always `season-{id}` (for example `season-halloween`), avoiding the globally unique `tags.slug` collision with aesthetic slugs. Recipe `season` values keep the unprefixed ids; the generator resolves them through taxonomy metadata.
 - **style**: pastel باستيل · gradient تدرّج · pattern نقشة · glass زجاجي · neon نيون · photo صورة · illustrated مرسوم · monochrome أحادي اللون.
 
 ## 11. Workflow & commands

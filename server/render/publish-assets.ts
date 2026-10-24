@@ -12,7 +12,7 @@ import type { ThemeAssets, WallpaperSize } from '../../lib/theme-assets';
 import { themeAssetKey } from '../storage/keys';
 import type { ObjectStorage } from '../storage/r2';
 import { loadServerGlyphs } from './glyphs';
-import { dHash } from './hash';
+import { fingerprintWallpaper } from './duplicate';
 import { renderOg } from './og';
 import { rasterize } from './rasterize';
 
@@ -125,6 +125,6 @@ export async function renderPublishAssets(input: {
     files,
     dominantColor,
     colorFamily: colorFamilyOf(dominantColor),
-    previewHash: await dHash(thumb),
+    previewHash: await fingerprintWallpaper(spec, glyphs, homePhoto),
   };
 }

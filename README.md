@@ -1,6 +1,6 @@
 # Vibeset
 
-P00–P05 foundations: Next.js 16 with Cache Components, React 19.2, Chakra UI v3, an English/Arabic site shell and sign-in screens, Neon/Drizzle schema, guarded Better Auth endpoints, a deterministic theme renderer and versioned publishing services. Catalog and Studio arrive in later phases.
+P00–P06 foundations: Next.js 16 with Cache Components, React 19.2, Chakra UI v3, an English/Arabic site shell and sign-in screens, Neon/Drizzle schema, guarded Better Auth endpoints, a deterministic theme renderer, versioned publishing services and a curated theme generator. Catalog and Studio arrive in later phases.
 
 ## Local development
 
@@ -96,6 +96,24 @@ P05 local verification passes: typecheck, lint, all 777 tests (including the iso
 
 Live R2 upload/CDN cache headers, bucket CORS/lifecycle settings and Google/Resend sign-in remain unverified while credentials are being configured. The development sample remains approved for that live check; no R2 publication is claimed. Local implementation continues with those checks pending.
 
+## P06 curated content and generation
+
+The generator includes 45 palettes, 40 bilingual aesthetic recipes and 72 taxonomy tags. Shared pure helpers build deterministic specs, resolve icon contrast, validate glyphs and palette separation, name themes and derive styles. Generation and publishing share a 72×156 wallpaper fingerprint, excluding the fixed preview app grid. The short insertion transaction locks generation globally, rechecks duplicates and seeded-batch limits, allocates names/slugs, and commits drafts, tags and progress together.
+
+```sh
+npm run db:seed
+npm run themes:generate -- --all --count=12 --seed=20261024 --dry-run
+npm run themes:generate -- --all --count=12 --seed=20261024
+# Explicit development shortcut; production refuses before attempting a transaction.
+npm run themes:generate -- --aesthetic=y2k --count=12 --seed=20261024 --auto-approve
+```
+
+Seeds preserve activation flags, verified app schemes and existing settings. Repeating all seeds reports zero changed rows. A seeded batch is identified by aesthetic, seed and requested count; repeated runs create no additional completed-batch themes, while interrupted or failed runs fill only the remaining target. Lost commit acknowledgements cannot erase persisted progress, and development approval retries catch up committed drafts.
+
+The dry run and development database each contain 473 candidates: 39 aesthetics with 12, and Gamer RGB with five distinct outputs after duplicate checks. There were 255 duplicate skips and zero automated QA failures. Repeating the full batch created zero new themes. Read-only verification confirmed unique bilingual names/slugs, valid specs/hashes, exactly one matching aesthetic tag per theme, and no published assets. The 12 Y2K themes are development-approved; 461 remain drafts. The [visual review](docs/content-review-2026-10-24.md) records all 40 aesthetics, including a human-curation hold on Noir Mono's colored variants.
+
+Visual corrections reserve a clear scatter status band, space coquette bows, adapt sky preview contrast, provide patterned preview status scrims, and add a primary-color glyph badge to wallpaper-filled icons. The preview scrims and icon badges leave wallpaper fingerprints unchanged. Final P06 checks pass: typecheck, lint, all 1,141 tests (including isolated live database suites) and production build. One earlier test run hit the auth module's setup timeout during concurrent image rendering; its isolated rerun and the subsequent full run passed. Local implementation continues while live R2/CDN and provider sign-in checks await credentials; no R2 publication is claimed.
+
 ## Codemagic build
 
 The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the public `ahmadalwakai/vibeset` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.
@@ -105,6 +123,8 @@ The default Mac mini M2 runner produces `vibeset-web-darwin-arm64.tar.gz` plus a
 `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_CDN_URL` default to the planned production origins in the YAML. Change them before building for another environment because Next.js embeds public variables into the bundle. This P02 shell needs no database or provider secrets to build. Unit tests run in CI; the seven database integration tests require a deliberately configured isolated `TEST_DATABASE_URL`. The workflow never runs migrations, enables test auth, skips environment validation or includes `.env*` files in its artifact.
 
 Codemagic must clone a committed remote revision; local changes cannot be built there until pushed. [Build #2](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adbd5834a72334e32e48be6) finished successfully for commit `5673651`: typecheck, lint, 155 passing unit tests, Next.js production build and standalone packaging. Seven database integration tests skipped because no isolated database was configured in CI. The 12.40 MB artifact bundle contains the server archive and JUnit report. The packaged server has not been started on a compatible host.
+
+[Build #3](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adbf1254a72334e32e4924a) successfully built P05 commit `175d93b` on Mac mini M2 in 1m 46s, including typecheck, lint, unit tests, production build and standalone packaging. Codemagic produced an 18.94 MB artifact bundle. It was not downloaded or started on a compatible host; this cloud result does not cover the later P06 changes.
 
 ## Checks
 

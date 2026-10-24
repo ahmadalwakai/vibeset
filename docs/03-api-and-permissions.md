@@ -279,7 +279,9 @@ Rules: slugs are **immutable after first publish** (admin can rename display nam
 
 ## 8. Audit events (`server/audit.ts`)
 
-`theme.status.{to}`, `theme.updated`, `theme.published`, `theme.publish_failed`, `theme.deleted`, `theme.featured`, `theme.tagged`, `collection.{created|updated|deleted|reordered}`, `tag.{created|updated|merged|deleted}`, `app.{created|updated|deleted}`, `report.resolved`, `user.role.set`, `user.banned`, `user.unbanned`, `creator.{approved|rejected|suspended}`, `settings.updated`, `generator.run`.
+`theme.status.{to}`, `theme.updated`, `theme.published`, `theme.publish_failed`, `theme.deleted`, `theme.featured`, `theme.tagged`, `collection.{created|updated|deleted|reordered}`, `tag.{created|updated|merged|deleted}`, `app.{created|updated|deleted}`, `report.resolved`, `user.role.set`, `user.banned`, `user.unbanned`, `creator.{approved|rejected|suspended}`, `settings.updated`, `generator.run`, `taxonomy.seeded`, `apps.seeded`, `settings.seeded`.
+
+Seed events include changed row identifiers and counts, and occur atomically only when seed data changes. Repeated seed runs still return cache tags for recovery after an unavailable revalidation endpoint. `generator.run` records start and finish stages, seeded batch identity, counts and final status; system actors are identified by their label in metadata. Draft insertions and tag associations are atomic under the global generator lock; development approval uses the normal audited status transition.
 
 `meta` holds before/after for changed fields (never secrets or emails of other users).
 

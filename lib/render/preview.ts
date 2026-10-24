@@ -1,14 +1,16 @@
 import { z } from 'zod';
 import clockData from '../../content/clock-outlines.json';
 import type { CatalogApp, ClockOutline, ClockText } from '../catalog';
-import { themeSpecSchema, type ThemeSpec } from './spec';
+import { themeSpecSchema, type ThemeSpec, type WallpaperSpec } from './spec';
 import type { FontId, GlyphSource, RenderDimensions, RenderLayer, RenderResult } from './types';
 import { composeLayers } from './composition';
 import { contrast, mixOklab } from './color';
 import { placeGlyph, resolveGlyph } from './glyphs';
 import { renderIcon } from './icon';
-import { fmt, svgDocument, svgInner } from './svg';
+import { deriveWallpaperColors } from './palette';
+import { fmt, idFactory, svgDocument, svgInner } from './svg';
 import { renderWallpaper } from './wallpaper';
+import { colorAt } from './wallpaper/context';
 import { renderWidget } from './widgets';
 
 const clocks: Record<FontId, Record<ClockText, ClockOutline>> = clockData;
@@ -41,8 +43,33 @@ function clock(
   return `<svg x="${fmt(x)}" y="${fmt(y)}" width="${fmt(width)}" height="${fmt(height)}" viewBox="0 0 ${fmt(outline.width)} ${fmt(outline.height)}" color="${color}">${svgInner(outline.svg)}</svg>`;
 }
 
+function previewForeground(spec: ThemeSpec, wallpaper: WallpaperSpec): string {
+  if (wallpaper.kind === 'pattern')
+    return ['#000000', '#ffffff', spec.palette.ink].reduce((best, candidate) =>
+      contrast(candidate, spec.palette.bg) > contrast(best, spec.palette.bg) ? candidate : best,
+    );
+  if (wallpaper.kind !== 'sky') {
+    const estimate = mixOklab(spec.palette.bg, spec.palette.primary, 0.25);
+    return contrast('#ffffff', estimate) > contrast(spec.palette.ink, estimate)
+      ? '#ffffff'
+      : spec.palette.ink;
+  }
+  const colors = wallpaper.colors ?? deriveWallpaperColors(spec.palette, wallpaper.kind);
+  // Match renderSky's top gradient stop, including wrapped explicit color arrays.
+  const top =
+    wallpaper.mode === 'night'
+      ? mixOklab(colorAt(colors, 0), '#081128', 0.88)
+      : wallpaper.mode === 'sunset'
+        ? colorAt(colors, 2)
+        : mixOklab(colorAt(colors, 1), colorAt(colors, 3), 0.15);
+  return ['#000000', '#ffffff', spec.palette.ink].reduce((best, candidate) =>
+    contrast(candidate, top) > contrast(best, top) ? candidate : best,
+  );
+}
+
 function frame(
   spec: ThemeSpec,
+  which: 'home' | 'lock',
   w: number,
   h: number,
 ): {
@@ -52,6 +79,7 @@ function frame(
   sh: number;
   radius: number;
   foreground: string;
+  statusBand: boolean;
   base: RenderResult;
 } {
   const x = w * 0.045;
@@ -59,17 +87,39 @@ function frame(
   const sw = w - x * 2;
   const sh = h - y * 2;
   const radius = sw * 0.105;
-  const estimate = mixOklab(spec.palette.bg, spec.palette.primary, 0.25);
-  const foreground =
-    contrast('#ffffff', estimate) > contrast(spec.palette.ink, estimate)
-      ? '#ffffff'
-      : spec.palette.ink;
+  const wallpaper = which === 'lock' ? (spec.lockWallpaper ?? spec.wallpaper) : spec.wallpaper;
+  const foreground = previewForeground(spec, wallpaper);
   const base = vector(
     w,
     h,
     `<rect width="${fmt(w)}" height="${fmt(h)}" fill="${mixOklab(spec.palette.bg, spec.palette.surface, 0.35)}"/><rect x="${fmt(x - w * 0.012)}" y="${fmt(y - w * 0.012)}" width="${fmt(sw + w * 0.024)}" height="${fmt(sh + w * 0.024)}" rx="${fmt(radius + w * 0.012)}" fill="#17151c"/>`,
   );
-  return { x, y, sw, sh, radius, foreground, base };
+  return { x, y, sw, sh, radius, foreground, statusBand: wallpaper.kind === 'pattern', base };
+}
+
+function statusScrim(
+  color: string,
+  screen: ReturnType<typeof frame>,
+  prefix: string,
+): RenderLayer[] {
+  if (!screen.statusBand) return [];
+  const { x, y, sw, sh, radius } = screen;
+  const gradient = idFactory(prefix)('status-scrim');
+  return [
+    {
+      result: vector(
+        sw,
+        sh,
+        `<defs><linearGradient id="${gradient}" x2="0" y2="1"><stop stop-color="${color}"/><stop offset="0.6" stop-color="${color}"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><rect width="${fmt(sw)}" height="${fmt(sh * 0.1)}" fill="url(#${gradient})"/>`,
+      ),
+      x,
+      y,
+      w: sw,
+      h: sh,
+      shape: 'rounded',
+      radius,
+    },
+  ];
 }
 
 function chrome(
@@ -103,7 +153,7 @@ export function renderHomePreview(
   const theme = themeSpecSchema.parse(spec);
   const { w, h } = dimensions.parse(options);
   const prefix = options.prefix ?? 'home-preview';
-  const screen = frame(theme, w, h);
+  const screen = frame(theme, 'home', w, h);
   const { x, y, sw, sh, radius } = screen;
   const wallpaper = renderWallpaper(
     theme,
@@ -179,6 +229,7 @@ export function renderHomePreview(
     });
   });
   layers.push({ result: vector(w, h, labels), x: 0, y: 0, w, h });
+  layers.push(...statusScrim(theme.palette.bg, screen, prefix));
   layers.push({ result: chrome(glyphs, w, h, screen), x: 0, y: 0, w, h });
   return composeLayers(w, h, layers, prefix);
 }
@@ -191,7 +242,7 @@ export function renderLockPreview(
   const theme = themeSpecSchema.parse(spec);
   const { w, h } = dimensions.parse(options);
   const prefix = options.prefix ?? 'lock-preview';
-  const screen = frame(theme, w, h);
+  const screen = frame(theme, 'lock', w, h);
   const { x, y, sw, sh, radius, foreground } = screen;
   const wallpaper = renderWallpaper(
     theme,
@@ -227,6 +278,7 @@ export function renderLockPreview(
       w: sw * 0.35,
       h: sw * 0.35,
     },
+    ...statusScrim(theme.palette.bg, screen, prefix),
     { result: chrome(glyphs, w, h, screen), x: 0, y: 0, w, h },
   ];
   return composeLayers(w, h, layers, prefix);

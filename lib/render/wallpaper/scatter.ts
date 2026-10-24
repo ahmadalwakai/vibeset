@@ -25,6 +25,8 @@ export function renderScatter(
   for (const point of positions) {
     if (point.y < h * 0.22 && rng.chance(0.72)) continue;
     const size = rng.range(minimum, maximum) * w;
+    // A rotated square fits within this circle; keep the whole glyph below the status bar.
+    if (point.y - size / Math.SQRT2 < h * 0.08) continue;
     const name = spec.glyphs.length ? rng.pick(spec.glyphs) : 'circle';
     const markup = resolveGlyph(ctx.glyphs, name, spec.weight, ctx.warnings);
     symbols += `<g opacity="${fmt(rng.range(0.7, 1))}">${placeGlyph({ markup, x: point.x - size / 2, y: point.y - size / 2, size, color: colorAt(ctx.colors, rng.int(1, Math.max(1, ctx.colors.length - 1))), rotate: spec.rotate ? rng.range(-25, 25) : 0 })}</g>`;

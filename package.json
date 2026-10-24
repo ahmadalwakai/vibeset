@@ -22,7 +22,12 @@
     "fonts:fetch": "tsx scripts/fetch-fonts.ts",
     "render:sample": "tsx --conditions=react-server scripts/render-sample.ts",
     "themes:publish": "dotenv -e .env.local -- tsx --conditions=react-server scripts/publish-themes.ts",
-    "themes:sample": "dotenv -e .env.local -- tsx --conditions=react-server scripts/dev-sample-theme.ts"
+    "themes:sample": "dotenv -e .env.local -- tsx --conditions=react-server scripts/dev-sample-theme.ts",
+    "db:seed:taxonomy": "dotenv -e .env.local -- tsx --conditions=react-server scripts/seed-taxonomy.ts",
+    "db:seed:apps": "dotenv -e .env.local -- tsx --conditions=react-server scripts/seed-apps.ts",
+    "db:seed:settings": "dotenv -e .env.local -- tsx --conditions=react-server scripts/seed-settings.ts",
+    "db:seed": "npm run db:seed:taxonomy && npm run db:seed:apps && npm run db:seed:settings",
+    "themes:generate": "dotenv -e .env.local -- tsx --conditions=react-server scripts/generate-themes.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

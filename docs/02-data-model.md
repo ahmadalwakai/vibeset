@@ -86,7 +86,7 @@ export const themes = pgTable(
     assetsSpecHash: text('assets_spec_hash'),           // specHash the assets were rendered from
     dominantColor: text('dominant_color'),
     colorFamily: colorFamily('color_family'),
-    previewHash: text('preview_hash'),                  // 64-bit dHash (16 hex chars) for duplicate detection
+    previewHash: text('preview_hash'),                  // 64-bit dHash of the 72×156 home wallpaper (16 hex chars), docs/05 §8
 
     tagsText: text('tags_text').notNull().default(''),  // "y2k Y2K واي تو كي pastel …" — maintained by services
     searchVector: tsvector('search_vector').generatedAlwaysAs(

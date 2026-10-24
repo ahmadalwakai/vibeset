@@ -13,3 +13,8 @@ export * from './icon';
 export * from './widgets';
 export * from './preview';
 export * from './hash';
+export * from './build-spec';
+export * from './icon-colors';
+export * from './qa';
+export * from './style-tags';
+export * from './naming';

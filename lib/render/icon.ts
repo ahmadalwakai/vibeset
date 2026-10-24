@@ -73,6 +73,12 @@ export function renderIcon(
   }
 
   const glyphSize = size * icon.glyphScale;
+  const badgeSize = Math.min(glyphSize * 1.2, size * 0.84);
+  const badgeInset = (size - badgeSize) / 2;
+  const glyphBadge =
+    icon.fill === 'wallpaper'
+      ? `<path d="${roundedRectPath(badgeInset, badgeInset, badgeSize, badgeSize, badgeSize * 0.22)}" fill="${palette.primary}"/>`
+      : '';
   const glyph = glyphMarkup ?? '<circle cx="128" cy="128" r="72"/>';
   if (!glyphMarkup) warnings.push('Missing icon glyph');
   let glyphBody = placeGlyph({
@@ -111,7 +117,7 @@ export function renderIcon(
       w: size,
       h: size,
       defs: `<clipPath id="${clip}"><path d="${shapePath(photo ? 'square' : shape, size)}"/></clipPath>${defs}`,
-      body: `<g clip-path="url(#${clip})">${background}${glyphBody}${details}</g>`,
+      body: `<g clip-path="url(#${clip})">${background}${glyphBadge}${glyphBody}${details}</g>`,
     }),
     width: size,
     height: size,

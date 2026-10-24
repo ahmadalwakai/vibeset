@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { playgroundStateSchema, renderSampleSpec } from '../../../content/render-sample';
 import type { ObjectStorage } from '../../../server/storage/r2';
 import { renderPublishAssets } from '../../../server/render/publish-assets';
+import { fingerprintWallpaper } from '../../../server/render/duplicate';
+import { loadServerGlyphs } from '../../../server/render/glyphs';
 
 vi.mock('server-only', () => ({}));
 
@@ -57,6 +59,9 @@ describe('published asset byte budgets', () => {
     });
     expect(output.assets.wallpapers.phone?.bytes).toBeLessThanOrEqual(3_000_000);
     expect(output.previewHash).toMatch(/^[a-f0-9]{16}$/);
+    expect(output.previewHash).toBe(
+      await fingerprintWallpaper(spec, await loadServerGlyphs(), photo),
+    );
     expect(output.dominantColor).toMatch(/^#[a-f0-9]{6}$/);
     expect(getBytes).toHaveBeenCalledExactlyOnceWith(spec.wallpaper.assetKey);
     expect(storage.put).not.toHaveBeenCalled();
