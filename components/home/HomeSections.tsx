@@ -12,16 +12,14 @@ import { CollectionCard } from '@/components/theme/CollectionCard';
 import { HorizontalRail } from '@/components/theme/HorizontalRail';
 import { ThemeCard } from '@/components/theme/ThemeCard';
 import { Link } from '@/i18n/navigation';
-import type {
-  CollectionCardDTO,
-  CollectionDetailDTO,
-  Paginated,
-  TagDTO,
-  ThemeCardDTO,
-  ThemeSort,
-} from '@/lib/dto';
+import type { CollectionCardDTO, Paginated, TagDTO, ThemeCardDTO, ThemeSort } from '@/lib/dto';
 import { ThemePreviewImage } from '@/components/theme/ThemePreviewImage';
 import { localized } from '@/lib/utils/localized';
+import {
+  selectHomeCollections,
+  selectHomeHero,
+  type HomeCollectionCandidate,
+} from '@/lib/collection-window';
 import { BrandHero } from './BrandHero';
 
 function HomeCardRailSkeleton({ ratio }: { ratio: number }): ReactElement {
@@ -71,14 +69,16 @@ export function HomeAestheticsSkeleton(): ReactElement {
 
 export async function HomeHero(): Promise<ReactElement> {
   await connection();
-  let collection: CollectionDetailDTO | null = null;
+  let collection: HomeCollectionCandidate | null = null;
   try {
     const { getPublicSettings } = await import('@/server/queries/settings');
     const { heroCollectionSlug } = await getPublicSettings();
-    if (heroCollectionSlug) {
-      const { getCollection } = await import('@/server/queries/collections');
-      collection = await getCollection(heroCollectionSlug);
-    }
+    const { getHomeCollectionCandidates } = await import('@/server/queries/collections');
+    collection = selectHomeHero(
+      await getHomeCollectionCandidates(),
+      heroCollectionSlug,
+      new Date().getTime(),
+    );
   } catch (error) {
     unstable_rethrow(error);
     console.error({ scope: 'home.hero', err: error });
@@ -240,8 +240,8 @@ export async function HomeCollections(): Promise<ReactElement> {
   const title = t('sections.collections');
   let collections: CollectionCardDTO[] | null = null;
   try {
-    const { getHomeCollections } = await import('@/server/queries/collections');
-    collections = await getHomeCollections();
+    const { getHomeCollectionCandidates } = await import('@/server/queries/collections');
+    collections = selectHomeCollections(await getHomeCollectionCandidates(), new Date().getTime());
   } catch (error) {
     unstable_rethrow(error);
     console.error({ scope: 'home.collections', err: error });

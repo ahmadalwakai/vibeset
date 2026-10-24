@@ -5,6 +5,11 @@ import { apiErrorSchema } from '../validation/themes';
 
 let pending: Promise<readonly AppDTO[]> | undefined;
 
+export function invalidateAppCatalog(): void {
+  pending = undefined;
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('vibeset:app-catalog-changed'));
+}
+
 export class AppCatalogError extends Error {
   constructor(public readonly code: ErrorMessageCode) {
     super('App catalogue could not be loaded');

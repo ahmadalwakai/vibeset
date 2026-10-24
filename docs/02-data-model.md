@@ -489,7 +489,7 @@ export interface ThemeAssets {
 
 ## 6. Site settings (`site_settings.key`)
 
-Each key has a Zod schema in `server/services/settings.ts`; reads fall back to defaults.
+Each key has a shared Zod schema in `lib/settings.ts`, used by forms and `server/services/settings.ts`; reads fall back to defaults.
 
 | Key | Value | Default |
 |---|---|---|
@@ -498,6 +498,8 @@ Each key has a Zod schema in `server/services/settings.ts`; reads fall back to d
 | `features` | `{ creatorApplicationsOpen: boolean; uploadsEnabled: boolean; reportsEnabled: boolean }` | all `true` |
 
 Announcement links accept safe app-relative paths or HTTP(S) URLs; protocol-relative paths, backslashes, control characters and URL credentials are rejected. Missing or invalid stored settings fall back to their complete per-key defaults.
+
+Home hero collections must be public editorial/seasonal collections. Home applies seasonal windows to both explicit and pinned choices. A null, missing or currently ineligible selection falls back to the first eligible pinned collection, then the brand hero when none exists. Renaming a selected collection rewrites `home.hero.collectionSlug` atomically; deleting it clears the selection. These changes audit and invalidate both collection and settings data. Settings updates select and lock referenced collections before the settings row.
 
 ---
 

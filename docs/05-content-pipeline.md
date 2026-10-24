@@ -272,6 +272,8 @@ Oversample: generate `count × 3` candidates to hit `count` accepted drafts; sto
 - Stored season tag slugs are always `season-{id}` (for example `season-halloween`), avoiding the globally unique `tags.slug` collision with aesthetic slugs. Recipe `season` values keep the unprefixed ids; the generator resolves them through taxonomy metadata.
 - **style**: pastel باستيل · gradient تدرّج · pattern نقشة · glass زجاجي · neon نيون · photo صورة · illustrated مرسوم · monochrome أحادي اللون.
 
+The seeded taxonomy slugs and kinds are recipe identities. Admin may edit their names, descriptions, order and activation, but cannot rename, delete, change kind or merge them away. Custom tags remain editable and mergeable. Merges require the same kind and an active target; removing a used aesthetic requires a merge so themes retain exactly one aesthetic. Used custom tags cannot change kind. Membership writers and taxonomy changes share a transaction-level taxonomy lock, preventing a merge/delete from racing a new assignment; affected `tags_text` values are rebuilt with the mutation and audit. Rerunning the taxonomy seed restores curated labels, descriptions and order, preserves activation, and rebuilds search text for affected themes.
+
 ## 11. Workflow & commands
 
 ```bash

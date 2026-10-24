@@ -39,6 +39,8 @@ import { AppError } from '../errors';
 import { incomingUploadKey, themePrefix, wallpaperUploadKeys } from '../storage/keys';
 import { defaultStorage, type ObjectStorage } from '../storage/r2';
 import { getThemeCacheTags, transitionStatements } from './theme-status';
+import { lockTaxonomy } from './taxonomy-lock';
+import { MAX_ADMIN_COLLECTION_ITEMS } from '../../lib/admin-content';
 
 type Transaction = Parameters<Parameters<typeof dbPool.transaction>[0]>[0];
 type Theme = typeof themes.$inferSelect;
@@ -202,6 +204,7 @@ export async function adminUpdateTheme(
   const value = parse(adminUpdateThemeSchema, input),
     who = identity(actor);
   return dbPool.transaction(async (tx) => {
+    await lockTaxonomy(tx, 'shared');
     const admin = await principal(tx, who),
       row = await lockedTheme(tx, value.id, admin.userId),
       spec = value.spec ?? parse(themeSpecSchema, row.spec),
@@ -278,9 +281,10 @@ async function bulk(
     cleanup: string[] = [];
   for (const id of ids) {
     try {
-      const result = await dbPool.transaction(async (tx) =>
-        operation(tx, id, await principal(tx, who)),
-      );
+      const result = await dbPool.transaction(async (tx) => {
+        await lockTaxonomy(tx, 'shared');
+        return operation(tx, id, await principal(tx, who));
+      });
       data.count += 1;
       data.results.push({ id, ok: true });
       for (const tag of result.tags) invalidation.add(tag);
@@ -411,6 +415,12 @@ export async function adminAddToCollection(
       .from(collectionItems)
       .where(and(eq(collectionItems.collectionId, collection.id), eq(collectionItems.themeId, id)));
     if (existing) return { tags: invalidation };
+    const [size] = await tx
+      .select({ total: sql<number>`count(*)::int` })
+      .from(collectionItems)
+      .where(eq(collectionItems.collectionId, collection.id));
+    if ((size?.total ?? 0) >= MAX_ADMIN_COLLECTION_ITEMS)
+      throw new AppError('VALIDATION', 'Collection limit reached', { limit: ['items'] });
     const [position] = await tx
       .select({ next: sql<number>`coalesce(max(${collectionItems.position}),-1)::int+1` })
       .from(collectionItems)

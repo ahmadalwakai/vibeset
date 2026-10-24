@@ -26,6 +26,7 @@ import {
   type CreatorPrincipal,
 } from './creator-access';
 import { transitionStatements } from './theme-status';
+import { lockTaxonomy } from './taxonomy-lock';
 
 function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
@@ -100,26 +101,25 @@ export async function createCreatorTheme(
   const value = parse(createCreatorThemeSchema, input),
     hash = await specHash(value.spec);
   return dbPool.transaction(async (tx) => {
+    await lockTaxonomy(tx, 'shared');
     const principal = await requireCreatorPrincipal(tx, actor);
     await authorizeWallpaperPhotos(tx, principal.id, value.spec);
     const selected = await authorTags(tx, value.tagSlugs);
     const id = randomUUID();
-    await tx
-      .insert(themes)
-      .values({
-        id,
-        slug: `creator-${id}`,
-        ownerId: principal.id,
-        source: 'creator',
-        status: 'draft',
-        nameEn: value.nameEn,
-        nameAr: value.nameAr || null,
-        descriptionEn: value.descriptionEn || null,
-        descriptionAr: value.descriptionAr || null,
-        spec: value.spec,
-        specHash: hash,
-        tagsText: selected.map((tag) => `${tag.slug} ${tag.nameEn} ${tag.nameAr}`).join(' '),
-      });
+    await tx.insert(themes).values({
+      id,
+      slug: `creator-${id}`,
+      ownerId: principal.id,
+      source: 'creator',
+      status: 'draft',
+      nameEn: value.nameEn,
+      nameAr: value.nameAr || null,
+      descriptionEn: value.descriptionEn || null,
+      descriptionAr: value.descriptionAr || null,
+      spec: value.spec,
+      specHash: hash,
+      tagsText: selected.map((tag) => `${tag.slug} ${tag.nameEn} ${tag.nameAr}`).join(' '),
+    });
     await tx.insert(themeTags).values(selected.map((tag) => ({ themeId: id, tagId: tag.id })));
     await tx.execute(
       auditInsert({
@@ -141,6 +141,7 @@ export async function updateCreatorTheme(
   const value = parse(updateCreatorThemeSchema, input),
     hash = await specHash(value.spec);
   return dbPool.transaction(async (tx) => {
+    await lockTaxonomy(tx, 'shared');
     const principal = await requireCreatorPrincipal(tx, actor),
       row = await ownTheme(tx, value.id, principal.id);
     editable(row);
@@ -204,6 +205,7 @@ export async function submitTheme(
 ): Promise<{ data: { status: ThemeStatus }; tags: string[] }> {
   const value = parse(creatorThemeIdSchema, input);
   return dbPool.transaction(async (tx) => {
+    await lockTaxonomy(tx, 'shared');
     const principal = await requireCreatorPrincipal(tx, actor, { requireApproved: true }),
       row = await ownTheme(tx, value.id, principal.id);
     if (row.status !== 'draft') throw new AppError('INVALID_STATE');
@@ -228,6 +230,7 @@ export async function withdrawTheme(
 ): Promise<{ data: { status: ThemeStatus }; tags: string[] }> {
   const value = parse(creatorThemeIdSchema, input);
   return dbPool.transaction(async (tx) => {
+    await lockTaxonomy(tx, 'shared');
     const principal = await requireCreatorPrincipal(tx, actor),
       row = await ownTheme(tx, value.id, principal.id);
     if (row.status !== 'pending_review') throw new AppError('INVALID_STATE');
@@ -242,6 +245,7 @@ export async function deleteCreatorTheme(
 ): Promise<{ data: { id: string }; tags: string[] }> {
   const value = parse(creatorThemeIdSchema, input);
   return dbPool.transaction(async (tx) => {
+    await lockTaxonomy(tx, 'shared');
     const principal = await requireCreatorPrincipal(tx, actor),
       row = await ownTheme(tx, value.id, principal.id);
     editable(row);

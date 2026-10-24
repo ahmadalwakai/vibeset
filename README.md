@@ -172,6 +172,16 @@ Browser checks cover English/Arabic dashboards and editors, mobile filters/cards
 
 Typecheck, lint, all 1,907 tests (one existing skipped test, 140 files) and the production build (176 static shells/paths) pass. Integration tests cover guarded reads/actions, partial bulk results, audit rollback, photo ownership/deletion races, raw-microsecond review pagination and real creator resubmission conflicts. Physical mobile swipe and a live 20-theme R2 publish/re-render run remain release checks while provider credentials are configured; no live publication is claimed.
 
+## P14 admin operations
+
+Admin operations now cover generation and run history, editorial/seasonal collections, taxonomy, the app catalogue, reports, users, creator applications, site settings and filtered audit history. Collection edits preserve hidden memberships during reordering, validate published covers and keep hero references consistent on rename/deletion. Seasonal Home sections evaluate their window at request time. Taxonomy changes rebuild search text atomically; seeded recipe identities remain fixed, and used custom aesthetics merge into an active tag of the same kind. App edits validate glyphs and platform identifiers and refresh open catalogue consumers.
+
+Moderation rechecks locked database authority, protects the last unbanned admin, revokes affected sessions and commits optional theme archival together with report resolution and audit records. Setting writes validate each key and retain actor provenance. All new private pages guard their own reads, defer runtime configuration until requests and include English/Arabic messages.
+
+Typecheck, lint, all 2,013 passing tests (two skipped, 155 files) and the production build (206 static shells/paths) pass. The focused moderation suite separately passes its last-admin protections without other parallel fixture admins; the full suite can skip that case while another suite owns temporary admins. Integration checks cover tag/search consistency, hidden collection memberships, atomic hero references, app ordering, settings rollback, moderation/session authority and concurrent writes. Temporary fixtures are cleaned after each suite.
+
+P14 browser checks are pending because the Chrome extension connection stopped responding. Live provider sign-in, R2 publication and physical-device checks also remain pending while credentials are configured. No P14 browser result or live publication is claimed; the isolated transaction tests exercise the data and authorization paths.
+
 ## Codemagic build
 
 The root `codemagic.yaml` defines the manual `web-production` workflow: Node 24, clean dependency installation (including development tools and native optional packages), Chakra type generation, typecheck, lint, unit tests, Next.js production build and standalone server packaging. Start it from the public `ahmadalwakai/vibeset` repository after connecting it to Codemagic. No push triggers or publishing steps are configured.
@@ -185,6 +195,8 @@ Codemagic must clone a committed remote revision; local changes cannot be built 
 [Build #3](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adbf1254a72334e32e4924a) successfully built P05 commit `175d93b` on Mac mini M2 in 1m 46s, including typecheck, lint, unit tests, production build and standalone packaging. Codemagic produced an 18.94 MB artifact bundle. It was not downloaded or started on a compatible host; this cloud result does not cover the later P06 changes.
 
 [Build #4](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc00e04a72334e32e49513) successfully built P07 commit `456e734` on Mac mini M2 in 2m 48s. Typecheck, lint, unit tests, the credential-free production build and standalone packaging passed; the artifact bundle is 23.06 MB. It has not been downloaded or started on a compatible host. This result covers P06/P07, while later work remains under local verification.
+
+[Build #5](https://codemagic.io/app/6adbd483898c462c5009d7a6/build/6adc34a04a72334e32e49d6b) successfully built P13 commit `11e1bcc` on Mac mini M2 in 2m 17s, covering P08–P13. Typecheck, lint, unit tests, production build and standalone packaging passed. The artifact bundle is 30.66 MB; it has not been downloaded or started on a compatible host. P14 work is undergoing local verification.
 
 ## Checks
 

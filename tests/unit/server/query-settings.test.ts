@@ -56,10 +56,10 @@ describe('cached public settings projection', () => {
     expect((await getPublicSettings()).announcement).toBeNull();
   });
 
-  it('rejects malformed stored links instead of rendering executable URLs', async () => {
+  it('falls back malformed stored announcement keys instead of rendering executable URLs', async () => {
     mocks.rows.mockResolvedValue([
       { key: 'home.announcement', value: { ...announcement, href: 'javascript:alert(1)' } },
     ]);
-    await expect(getPublicSettings()).rejects.toThrow();
+    expect(await getPublicSettings()).toEqual({ announcement: null, heroCollectionSlug: null });
   });
 });

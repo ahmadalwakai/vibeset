@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { collections, collectionItems } from '../../db/schema/collections';
 import { themes } from '../../db/schema/themes';
 import type { CollectionCardDTO, CollectionDetailDTO } from '../../lib/dto';
+import type { HomeCollectionCandidate } from '../../lib/collection-window';
 import { decodeCollectionCursor, encodeCollectionCursor } from '../../lib/utils/cursor';
 import { CacheTags, cacheLife, cacheTag } from '../cache';
 import { toCollectionCard } from './mappers';
@@ -32,6 +33,34 @@ function activeSeason(now: Date): SQL | undefined {
     or(isNull(collections.startsAt), lte(collections.startsAt, now)),
     or(isNull(collections.endsAt), gt(collections.endsAt, now)),
   );
+}
+
+/** Cache public content, then evaluate the schedule at request time in the Home server leaf. */
+export async function getHomeCollectionCandidates(): Promise<HomeCollectionCandidate[]> {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CacheTags.collections, CacheTags.themes);
+  const { db } = await import('../../db/index');
+  const rows = await db
+    .select({
+      ...columns,
+      descriptionEn: collections.descriptionEn,
+      descriptionAr: collections.descriptionAr,
+      isPinned: collections.isPinned,
+      startsAt: collections.startsAt,
+      endsAt: collections.endsAt,
+    })
+    .from(collections)
+    .where(publicCollection)
+    .orderBy(asc(collections.sortOrder), asc(collections.id));
+  return rows.map((row) => ({
+    ...toCollectionCard(row),
+    descriptionEn: row.descriptionEn,
+    descriptionAr: row.descriptionAr,
+    isPinned: row.isPinned,
+    startsAt: row.startsAt?.toISOString() ?? null,
+    endsAt: row.endsAt?.toISOString() ?? null,
+  }));
 }
 
 export async function listPublicCollections(): Promise<CollectionCardDTO[]> {

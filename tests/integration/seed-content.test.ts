@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { neon } from '@neondatabase/serverless';
+import { neon, type PoolClient } from '@neondatabase/serverless';
 import { and, eq, inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -24,13 +24,18 @@ describe.skipIf(!TEST_DATABASE_URL)('atomic, idempotent content seeds', () => {
   let seedApps: typeof appsSeeder;
   let seedTaxonomy: typeof taxonomySeeder;
   let seedSettings: typeof settingsSeeder;
+  let settingLock: PoolClient | undefined;
   const ownedApps = new Set<string>();
   const ownedTags = new Set<string>();
   const ownedAudit = new Set<string>();
   const ownedSettings = new Set<string>();
 
   beforeAll(async () => {
+    expect(process.env.VERCEL_ENV).not.toBe('production');
     const url = z.url({ protocol: /^postgres(?:ql)?$/ }).parse(TEST_DATABASE_URL);
+    const host = (value: string) => new URL(value).hostname.replace(/-pooler(?=\.)/, '');
+    for (const ordinary of [process.env.DATABASE_URL, process.env.DATABASE_URL_UNPOOLED])
+      if (ordinary) expect(host(url)).not.toBe(host(ordinary));
     database = drizzle({ client: neon(url) });
     for (const [key, value] of Object.entries({
       DATABASE_URL: url,
@@ -49,18 +54,32 @@ describe.skipIf(!TEST_DATABASE_URL)('atomic, idempotent content seeds', () => {
     ({ seedApps, seedTaxonomy, seedSettings } = await import('../../server/services/seed-content'));
   });
   afterEach(async () => {
-    if (ownedApps.size) await database.delete(apps).where(inArray(apps.slug, [...ownedApps]));
-    if (ownedTags.size) await database.delete(tags).where(inArray(tags.slug, [...ownedTags]));
-    if (ownedSettings.size)
-      await database.delete(siteSettings).where(inArray(siteSettings.key, [...ownedSettings]));
-    if (ownedAudit.size)
-      await database.delete(auditLog).where(inArray(auditLog.id, [...ownedAudit]));
-    ownedApps.clear();
-    ownedTags.clear();
-    ownedSettings.clear();
-    ownedAudit.clear();
+    try {
+      if (ownedApps.size) await database.delete(apps).where(inArray(apps.slug, [...ownedApps]));
+      if (ownedTags.size) await database.delete(tags).where(inArray(tags.slug, [...ownedTags]));
+      if (ownedSettings.size)
+        await database.delete(siteSettings).where(inArray(siteSettings.key, [...ownedSettings]));
+      if (ownedAudit.size)
+        await database.delete(auditLog).where(inArray(auditLog.id, [...ownedAudit]));
+      ownedApps.clear();
+      ownedTags.clear();
+      ownedSettings.clear();
+      ownedAudit.clear();
+    } finally {
+      if (settingLock) {
+        await settingLock.query('SELECT pg_advisory_unlock(914014,1)');
+        settingLock.release();
+        settingLock = undefined;
+      }
+    }
   });
-  afterAll(() => vi.unstubAllEnvs());
+  afterAll(async () => {
+    try {
+      if (database) await (await import('../../db/pool')).pool.end();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 
   function own(result: SeedResult): SeedResult {
     if (result.data.auditId) ownedAudit.add(result.data.auditId);
@@ -174,6 +193,8 @@ describe.skipIf(!TEST_DATABASE_URL)('atomic, idempotent content seeds', () => {
   }, 30_000);
 
   it('only inserts missing settings and keeps any administrator value intact', async () => {
+    settingLock = await (await import('../../db/pool')).pool.connect();
+    await settingLock.query('SELECT pg_advisory_lock(914014,1)');
     const key = 'home.announcement';
     const [existing] = await database.select().from(siteSettings).where(eq(siteSettings.key, key));
     const inserted = own(await seedSettings({ actor, keys: [key] }));
@@ -211,5 +232,5 @@ describe.skipIf(!TEST_DATABASE_URL)('atomic, idempotent content seeds', () => {
             and(eq(auditLog.id, inserted.data.auditId), eq(auditLog.action, 'settings.seeded')),
           ),
       ).toHaveLength(1);
-  }, 30_000);
+  }, 60_000);
 });

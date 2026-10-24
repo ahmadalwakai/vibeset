@@ -1,12 +1,15 @@
 import { SQL, sql } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { session } from '../../../db/schema/auth';
 
 const mocks = vi.hoisted(() => ({
   transaction: vi.fn(),
   execute: vi.fn(),
   select: vi.fn(),
   update: vi.fn(),
+  delete: vi.fn(),
+  deletedWhere: vi.fn(),
   list: vi.fn(),
   auditInsert: vi.fn(),
 }));
@@ -16,17 +19,32 @@ vi.mock('../../../db/pool', () => ({
   dbPool: { transaction: mocks.transaction, select: mocks.list },
 }));
 vi.mock('../../../server/audit', () => ({ auditInsert: mocks.auditInsert }));
+// CLI role changes never archive themes; avoid initializing that unrelated DB client.
+vi.mock('../../../server/services/theme-status', () => ({ transitionStatements: vi.fn() }));
 
 import { listAdmins, setRoleByEmail } from '../../../server/services/users';
 
 const target = { id: 'selected-user', email: 'selected@example.com', role: 'user' };
-const tx = { execute: mocks.execute, select: mocks.select, update: mocks.update };
+const tx = {
+  execute: mocks.execute,
+  select: mocks.select,
+  update: mocks.update,
+  delete: mocks.delete,
+};
 
-function selection(rows: { id: string; email?: string; role?: string | null }[]) {
+function selection(
+  rows: { id: string; email?: string; role?: string | null; banned?: boolean | null }[],
+) {
   return {
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
     for: vi.fn().mockResolvedValue(rows),
+    then(
+      resolve: (value: typeof rows) => unknown,
+      reject?: (reason: unknown) => unknown,
+    ): Promise<unknown> {
+      return Promise.resolve(rows).then(resolve, reject);
+    },
   };
 }
 
@@ -39,9 +57,10 @@ beforeEach(() => {
   mocks.auditInsert.mockReturnValue(sql`INSERT INTO audit_log DEFAULT VALUES`);
   mocks.update.mockReturnValue({
     set: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    returning: vi.fn().mockResolvedValue([{ id: target.id, email: target.email }]),
+    where: vi.fn().mockResolvedValue(undefined),
   });
+  mocks.deletedWhere.mockResolvedValue(undefined);
+  mocks.delete.mockReturnValue({ where: mocks.deletedWhere });
 });
 
 describe('system role service', () => {
@@ -87,6 +106,10 @@ describe('system role service', () => {
     });
     expect(mocks.execute).toHaveBeenCalledTimes(2);
     expect(mocks.execute).toHaveBeenLastCalledWith(mocks.auditInsert.mock.results[0]?.value);
+    expect(mocks.delete).toHaveBeenCalledExactlyOnceWith(session);
+    const revoked: unknown = mocks.deletedWhere.mock.calls[0]?.[0];
+    if (!(revoked instanceof SQL)) throw new Error('Expected a scoped session revocation');
+    expect(new PgDialect().sqlToQuery(revoked).params).toEqual([target.id]);
   });
 
   it('fails for an unknown user without creating an account or an audit event', async () => {
@@ -96,6 +119,7 @@ describe('system role service', () => {
       code: 'NOT_FOUND',
     });
     expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.delete).not.toHaveBeenCalled();
     expect(mocks.auditInsert).not.toHaveBeenCalled();
   });
 
@@ -107,25 +131,33 @@ describe('system role service', () => {
       tags: [],
     });
     expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.delete).not.toHaveBeenCalled();
     expect(mocks.auditInsert).not.toHaveBeenCalled();
   });
 
-  it('refuses to demote the last admin without updating or auditing', async () => {
+  it('refuses to demote the last unbanned admin without updating, revoking or auditing', async () => {
+    const available = selection([{ id: target.id }]);
     mocks.select
-      .mockReturnValueOnce(selection([{ ...target, role: 'admin' }]))
-      .mockReturnValueOnce(selection([{ id: target.id }]));
+      .mockReturnValueOnce(selection([{ ...target, role: 'admin', banned: false }]))
+      .mockReturnValueOnce(available);
 
     await expect(setRoleByEmail(target.email, 'user', 'system')).rejects.toMatchObject({
       code: 'CONFLICT',
-      message: 'The last admin cannot be demoted',
     });
+    const predicate: unknown = available.where.mock.calls[0]?.[0];
+    if (!(predicate instanceof SQL)) throw new Error('Expected the usable-admin predicate');
+    const compiled = new PgDialect().sqlToQuery(predicate);
+    expect(compiled.sql).toContain('"user"."banned"');
+    expect(compiled.sql).toContain('is null');
+    expect(compiled.params).toEqual(['admin', false]);
     expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.delete).not.toHaveBeenCalled();
     expect(mocks.auditInsert).not.toHaveBeenCalled();
   });
 
-  it('allows a demotion when another locked admin remains', async () => {
+  it('allows a demotion when another usable admin remains under the global role lock', async () => {
     mocks.select
-      .mockReturnValueOnce(selection([{ ...target, role: 'admin' }]))
+      .mockReturnValueOnce(selection([{ ...target, role: 'admin', banned: false }]))
       .mockReturnValueOnce(selection([{ id: target.id }, { id: 'remaining-admin' }]));
 
     await expect(setRoleByEmail(target.email, 'user', 'system')).resolves.toEqual({
@@ -137,6 +169,14 @@ describe('system role service', () => {
         meta: { actor: 'system', before: { role: 'admin' }, after: { role: 'user' } },
       }),
     );
+    expect(mocks.delete).toHaveBeenCalledExactlyOnceWith(session);
+  });
+
+  it('may demote an already banned admin without reducing the usable-admin pool', async () => {
+    mocks.select.mockReturnValueOnce(selection([{ ...target, role: 'admin', banned: true }]));
+    expect((await setRoleByEmail(target.email, 'user', 'system')).data.changed).toBe(true);
+    expect(mocks.select).toHaveBeenCalledOnce();
+    expect(mocks.delete).toHaveBeenCalledExactlyOnceWith(session);
   });
 
   it('propagates an audit failure so the transaction cannot commit a role without its audit', async () => {

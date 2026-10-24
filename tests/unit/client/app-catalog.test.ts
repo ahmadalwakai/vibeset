@@ -14,6 +14,47 @@ beforeEach(() => vi.resetModules());
 afterEach(() => vi.unstubAllGlobals());
 
 describe('shared app catalogue loader', () => {
+  it('invalidates resolved catalogues and notifies mounted consumers after an admin edit', async () => {
+    const events = new EventTarget(),
+      changed = vi.fn();
+    events.addEventListener('vibeset:app-catalog-changed', changed);
+    vi.stubGlobal('window', events);
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(response([app]))
+      .mockResolvedValueOnce(response([{ ...app, name: 'Updated' }]));
+    vi.stubGlobal('fetch', fetcher);
+    const { loadAppCatalog, invalidateAppCatalog } =
+      await import('../../../lib/client/app-catalog');
+    expect((await loadAppCatalog())[0]?.name).toBe('Notes');
+    invalidateAppCatalog();
+    expect(changed).toHaveBeenCalledOnce();
+    expect((await loadAppCatalog())[0]?.name).toBe('Updated');
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+  it('does not let a superseded in-flight request overwrite the new catalogue cache', async () => {
+    let finish: (value: Response) => void = () => {
+      throw new Error('Not started');
+    };
+    const fetcher = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((resolve) => {
+            finish = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(response([{ ...app, name: 'Current' }]));
+    vi.stubGlobal('fetch', fetcher);
+    const { loadAppCatalog, invalidateAppCatalog } =
+      await import('../../../lib/client/app-catalog');
+    const old = loadAppCatalog();
+    invalidateAppCatalog();
+    const current = await loadAppCatalog();
+    finish(response([app]));
+    expect((await old)[0]?.name).toBe('Notes');
+    expect(await loadAppCatalog()).toBe(current);
+  });
   it('deduplicates concurrent requests, omits credentials, and deeply freezes its result', async () => {
     const fetcher = vi.fn().mockResolvedValue(response([app]));
     vi.stubGlobal('fetch', fetcher);

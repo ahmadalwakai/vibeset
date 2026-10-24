@@ -4,6 +4,17 @@ import { seedApps, seedSettings, seedTaxonomy } from '../../../server/services/s
 const { execute } = vi.hoisted(() => ({ execute: vi.fn() }));
 vi.mock('server-only', () => ({}));
 vi.mock('../../../db/index', () => ({ db: { execute } }));
+vi.mock('../../../db/pool', () => ({
+  dbPool: {
+    transaction: async (fn: (tx: { execute: typeof execute }) => Promise<unknown>) =>
+      fn({ execute }),
+  },
+}));
+vi.mock('../../../server/services/taxonomy-lock', () => ({ lockTaxonomy: vi.fn() }));
+vi.mock('../../../server/services/app-catalog-lock', () => ({
+  lockAppCatalog: vi.fn(),
+  assertAppCatalogCapacity: vi.fn(),
+}));
 const actor = { kind: 'system', label: 'seed-test' } as const;
 const tag = {
   id: 'fixture',

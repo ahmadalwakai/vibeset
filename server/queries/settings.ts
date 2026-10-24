@@ -5,7 +5,7 @@ import { inArray } from 'drizzle-orm';
 import { siteSettings } from '../../db/schema/system';
 import type { PublicSettingsDTO } from '../../lib/dto';
 import { canonicalJson } from '../../lib/render/hash';
-import { defaultSettings, settingSchemas } from '../../lib/settings';
+import { parseStoredSetting } from '../../lib/settings';
 import { CacheTags, cacheLife, cacheTag } from '../cache';
 
 export async function getPublicSettings(): Promise<PublicSettingsDTO> {
@@ -18,14 +18,8 @@ export async function getPublicSettings(): Promise<PublicSettingsDTO> {
     .from(siteSettings)
     .where(inArray(siteSettings.key, ['home.hero', 'home.announcement']));
   const values = new Map(rows.map(({ key, value }) => [key, value]));
-  const hero = settingSchemas['home.hero'].parse(
-    values.has('home.hero') ? values.get('home.hero') : defaultSettings['home.hero'],
-  );
-  const announcement = settingSchemas['home.announcement'].parse(
-    values.has('home.announcement')
-      ? values.get('home.announcement')
-      : defaultSettings['home.announcement'],
-  );
+  const hero = parseStoredSetting('home.hero', values.get('home.hero'));
+  const announcement = parseStoredSetting('home.announcement', values.get('home.announcement'));
   return {
     heroCollectionSlug: hero.collectionSlug,
     announcement: announcement.enabled

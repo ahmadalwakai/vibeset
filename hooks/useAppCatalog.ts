@@ -43,5 +43,9 @@ export function useAppCatalog(): AppCatalogResult {
     setState((previous) => ({ ...previous, loading: true, error: null }));
     setAttempt((value) => value + 1);
   }, []);
+  useEffect(() => {
+    window.addEventListener('vibeset:app-catalog-changed', retry);
+    return () => window.removeEventListener('vibeset:app-catalog-changed', retry);
+  }, [retry]);
   return { ...state, retry };
 }

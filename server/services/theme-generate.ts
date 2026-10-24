@@ -24,6 +24,8 @@ import { AppError } from '../errors';
 import { loadGeneratorManifest, renderGeneratorPreview } from '../render/generator-preview';
 import { hamming } from '../render/hash';
 import { transitionThemeStatus } from './theme-status';
+import { requireAdminPrincipal } from './admin-access';
+import { lockTaxonomy } from './taxonomy-lock';
 
 const generationInputSchema = z.strictObject({
   aesthetic: z.string().regex(/^[a-z0-9-]{2,40}$/),
@@ -103,6 +105,7 @@ export async function generateDrafts(input: GenerateDraftsInput): Promise<{
   const actorMeta = value.actor.kind === 'system' ? { actor: value.actor } : {};
   const identity = { aesthetic: value.aesthetic, seed: value.seed, requested: value.count };
   const run = await dbPool.transaction(async (tx) => {
+    if (value.actor.kind === 'user') await requireAdminPrincipal(tx, value.actor);
     const [row] = await tx
       .insert(generationRuns)
       .values({ ...identity, actorId })
@@ -185,6 +188,8 @@ export async function generateDrafts(input: GenerateDraftsInput): Promise<{
         ];
         const names = baseNames(recipe, palette);
         const outcome = await dbPool.transaction(async (tx) => {
+          await lockTaxonomy(tx, 'shared');
+          if (value.actor.kind === 'user') await requireAdminPrincipal(tx, value.actor);
           // Separate statement: subsequent READ COMMITTED queries see commits made while waiting.
           await tx.execute(sql`SELECT pg_advisory_xact_lock(812706, 1)`);
           if ((await batchSize(tx, value)) >= value.count) return { kind: 'full' } as const;

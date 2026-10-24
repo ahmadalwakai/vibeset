@@ -20,6 +20,9 @@ import {
 } from '../../lib/settings';
 import { actorSchema, type Actor } from '../../lib/theme-status';
 import { AppError } from '../errors';
+import { lockTaxonomy } from './taxonomy-lock';
+import { rebuildTaxonomyText } from './taxonomy-text';
+import { lockAppCatalog, assertAppCatalogCapacity } from './app-catalog-lock';
 
 const slug = z
   .string()
@@ -98,8 +101,9 @@ async function commitSeed(
   kind: 'taxonomy' | 'apps' | 'settings',
   actor: Extract<Actor, { kind: 'system' }>,
   cacheTags: string[],
+  database: { execute: (statement: SQL) => PromiseLike<{ rows: unknown[] }> } = db,
 ): Promise<SeedResult> {
-  const result = await db.execute(sql`
+  const result = await database.execute(sql`
     WITH changed AS (${statement}), summary AS (
       SELECT count(*)::int AS changed, coalesce(jsonb_agg(identifier ORDER BY identifier), '[]'::jsonb) AS identifiers FROM changed
     ), audited AS (
@@ -142,7 +146,38 @@ export async function seedTaxonomy(input: {
       IS DISTINCT FROM (EXCLUDED.kind, EXCLUDED.name_en, EXCLUDED.name_ar, EXCLUDED.description_en, EXCLUDED.description_ar, EXCLUDED.sort_order)
     RETURNING slug AS identifier
   `;
-  return commitSeed(statement, 'taxonomy', actor, [CacheTags.taxonomy, CacheTags.themes]);
+  const { dbPool } = await import('../../db/pool');
+  return dbPool.transaction(async (tx) => {
+    await lockTaxonomy(tx, 'exclusive');
+    const result = await commitSeed(
+      statement,
+      'taxonomy',
+      actor,
+      [CacheTags.taxonomy, CacheTags.themes],
+      tx,
+    );
+    if (result.data.changed) {
+      const affected = await tx.execute(
+        sql`SELECT DISTINCT tt.theme_id AS id FROM theme_tags tt JOIN tags t ON t.id=tt.tag_id WHERE t.slug IN (${sql.join(
+          result.data.identifiers.map((slug) => sql`${slug}`),
+          sql`,`,
+        )}) ORDER BY tt.theme_id`,
+      );
+      const ids = z
+        .array(z.object({ id: z.uuid() }))
+        .parse(affected.rows)
+        .map((row) => row.id);
+      if (ids.length)
+        await tx.execute(
+          sql`SELECT id FROM themes WHERE id IN (${sql.join(
+            ids.map((id) => sql`${id}::uuid`),
+            sql`,`,
+          )}) ORDER BY id FOR UPDATE`,
+        );
+      await rebuildTaxonomyText(tx, ids);
+    }
+    return result;
+  });
 }
 
 export async function seedApps(input: {
@@ -170,7 +205,15 @@ export async function seedApps(input: {
       IS DISTINCT FROM (EXCLUDED.name, EXCLUDED.aliases, EXCLUDED.category, EXCLUDED.glyph, EXCLUDED.rank)
     RETURNING slug AS identifier
   `;
-  return commitSeed(statement, 'apps', actor, [CacheTags.apps]);
+  const { dbPool } = await import('../../db/pool');
+  return dbPool.transaction(async (tx) => {
+    await lockAppCatalog(tx);
+    await assertAppCatalogCapacity(
+      tx,
+      rows.map((row) => row.slug),
+    );
+    return commitSeed(statement, 'apps', actor, [CacheTags.apps], tx);
+  });
 }
 
 export async function seedSettings(input: {

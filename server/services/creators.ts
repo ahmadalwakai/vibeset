@@ -12,7 +12,6 @@ import { actorSchema, type Actor } from '../../lib/theme-status';
 import {
   applyForCreatorSchema,
   checkHandleSchema,
-  reviewCreatorSchema,
   updateCreatorProfileSchema,
 } from '../../lib/validation/creator';
 import type {
@@ -25,6 +24,10 @@ import { AppError } from '../errors';
 import { cdnUrl } from '../storage/urls';
 import type { CreatorTransaction } from './creator-access';
 import { getFeatures } from './settings';
+import { adminReviewCreatorSchema } from '../../lib/validation/admin-moderation';
+import type { CreatorReviewResult } from '../../lib/admin-moderation';
+import { requireAdminPrincipal } from './admin-access';
+import { archiveOwnedThemes, moderationLock, moderationUser } from './moderation';
 
 function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   const parsed = schema.safeParse(value);
@@ -200,13 +203,14 @@ export async function updateCreatorProfile(
 }
 
 export async function reviewCreator(
-  input: ReviewCreatorInput,
+  input: ReviewCreatorInput & { archiveThemes?: boolean },
   actor: Actor,
-): Promise<{ data: { status: CreatorStatus }; tags: string[] }> {
-  const value = parse(reviewCreatorSchema, input);
+): Promise<{ data: CreatorReviewResult; tags: string[] }> {
+  const value = parse(adminReviewCreatorSchema, input);
   return dbPool.transaction(async (tx) => {
-    const principal = await requireUserPrincipal(tx, actor);
-    if (principal.role !== 'admin') throw new AppError('FORBIDDEN');
+    await moderationLock(tx);
+    const principal = await requireAdminPrincipal(tx, actor);
+    await moderationUser(tx, value.userId);
     const [profile] = await tx
       .select()
       .from(creatorProfiles)
@@ -232,12 +236,12 @@ export async function reviewCreator(
         status,
         rejectionReason: value.decision === 'approve' ? null : value.reason,
         reviewedAt: new Date(),
-        reviewedBy: principal.id,
+        reviewedBy: principal.userId,
       })
       .where(eq(creatorProfiles.userId, value.userId));
     await tx.execute(
       auditInsert({
-        actorId: principal.id,
+        actorId: principal.userId,
         action: `creator.${status}`,
         entityType: 'creator',
         entityId: value.userId,
@@ -248,7 +252,13 @@ export async function reviewCreator(
         },
       }),
     );
-    return { data: { status }, tags: invalidation(profile.handle) };
+    const archived = value.archiveThemes
+      ? await archiveOwnedThemes(tx, value.userId, principal)
+      : { archived: 0, tags: [] };
+    return {
+      data: { status, archived: archived.archived },
+      tags: [...new Set([...invalidation(profile.handle), ...archived.tags])],
+    };
   });
 }
 

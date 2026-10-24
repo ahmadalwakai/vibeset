@@ -84,6 +84,13 @@ describe.skipIf(!TEST_DATABASE_URL)(
       review: typeof ReviewQueries;
     beforeAll(async () => {
       const url = z.url({ protocol: /^postgres(?:ql)?$/ }).parse(TEST_DATABASE_URL);
+      const host = (value: string) => new URL(value).hostname.replace(/-pooler(?=\.)/, '');
+      for (const ordinary of [process.env.DATABASE_URL, process.env.DATABASE_URL_UNPOOLED])
+        if (ordinary) expect(host(url)).not.toBe(host(ordinary));
+      vi.stubEnv('DATABASE_URL', url);
+      vi.stubEnv('DATABASE_URL_UNPOOLED', url);
+      vi.stubEnv('NODE_ENV', 'test');
+      vi.stubEnv('VERCEL_ENV', undefined);
       database = drizzle({ client: neon(url) });
       pool = new Pool({ connectionString: url, max: 6, application_name: `p13-admin-${token}` });
       holder.database = database;
@@ -169,6 +176,9 @@ describe.skipIf(!TEST_DATABASE_URL)(
         }
       } finally {
         await pool?.end();
+        const runtime = await import('../../db/pool');
+        if ('pool' in runtime && runtime.pool !== pool) await runtime.pool.end();
+        vi.unstubAllEnvs();
         holder.database = undefined;
         holder.pooled = undefined;
       }
