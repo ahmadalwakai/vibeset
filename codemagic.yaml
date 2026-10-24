@@ -50,6 +50,115 @@ workflows:
             build/vibeset-unsigned-ios-app.zip
     artifacts:
       - mobile/build/vibeset-unsigned-ios-app.zip
+  ios-native-simulator:
+    name: Vibeset native iPhone simulator diagnostics
+    working_directory: mobile
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      node: 24
+      xcode: '27.1'
+      cocoapods: default
+      vars:
+        VIBESET_NATIVE_GENERATE: compile
+        VIBESET_IOS_BUNDLE_ID: com.ahmadalwakai.vibeset
+        VIBESET_IOS_WIDGET_BUNDLE_ID: com.ahmadalwakai.vibeset.calendar
+        VIBESET_IOS_APP_GROUP: group.com.ahmadalwakai.vibeset
+        CI: '1'
+        EXPO_NO_TELEMETRY: '1'
+    cache:
+      cache_paths:
+        - $HOME/.npm
+    scripts:
+      - name: Install shared contract dependencies
+        script: npm ci --prefix .. --include=dev --include=optional
+      - name: Install native app dependencies
+        script: npm ci --include=dev --include=optional
+      - name: Check explicit compile-only native configuration
+        script: npm run check:native:compile
+      - name: Check native dependency compatibility
+        script: npm run check:expo
+      - name: Native TypeScript and lint
+        script: npm run typecheck && npm run lint
+      - name: Native contract tests
+        script: npm test
+      - name: Generate compile-only iOS application and widget extension
+        script: npm run prebuild:ios:compile
+      - name: Install iOS pods
+        script: |
+          set -euo pipefail
+          cd ios
+          pod install
+      - name: Compile self-contained simulator application and widgets
+        script: |
+          set -euo pipefail
+          test -d ios/Vibeset.xcworkspace
+          mkdir -p build
+          xcodebuild -workspace ios/Vibeset.xcworkspace -scheme Vibeset \
+            -configuration Release -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' -arch arm64 \
+            -derivedDataPath build/simulator CODE_SIGN_IDENTITY='' \
+            CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO build \
+            2>&1 | tee build/simulator-xcodebuild.log
+          test -s build/simulator/Build/Products/Release-iphonesimulator/Vibeset.app/main.jsbundle
+          test -d build/simulator/Build/Products/Release-iphonesimulator/Vibeset.app/PlugIns/ExpoWidgetsTarget.appex
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/simulator/Build/Products/Release-iphonesimulator/Vibeset.app \
+            build/vibeset-simulator-ios-app.zip
+      - name: Capture actual simulator launch diagnostics
+        script: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          import { mkdirSync, writeFileSync } from 'node:fs';
+          import { setTimeout as delay } from 'node:timers/promises';
+
+          const output = 'build/simulator-diagnostics';
+          const app = 'build/simulator/Build/Products/Release-iphonesimulator/Vibeset.app';
+          const bundleId = process.env.VIBESET_IOS_BUNDLE_ID;
+          if (!bundleId) throw new Error('The validated native app identifier is required.');
+          const simctl = (args, timeout = 60_000) =>
+            execFileSync('xcrun', ['simctl', ...args], { encoding: 'utf8', timeout });
+          const inventory = JSON.parse(simctl(['list', '--json']));
+          const runtime = inventory.runtimes.find(
+            (item) => item.identifier === 'com.apple.CoreSimulator.SimRuntime.iOS-27-0' && item.isAvailable,
+          );
+          const device = inventory.devicetypes.find(
+            (item) => item.identifier === 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro',
+          );
+          if (!runtime || !device) throw new Error('The pinned iPhone 17 Pro / iOS 27.0 simulator is unavailable.');
+          mkdirSync(output, { recursive: true });
+          const udid = simctl(['create', 'Vibeset diagnostic iPhone', device.identifier, runtime.identifier]).trim();
+          try {
+            simctl(['boot', udid]);
+            simctl(['bootstatus', udid, '-b'], 180_000);
+            simctl(['ui', udid, 'appearance', 'light']);
+            simctl(['status_bar', udid, 'override', '--time', '9:41', '--batteryState', 'charged', '--batteryLevel', '100']);
+            simctl(['install', udid, app]);
+            const launch = simctl(['launch', udid, bundleId, '-AppleLanguages', '(en)', '-AppleLocale', 'en_GB']);
+            simctl(['io', udid, 'screenshot', `${output}/launch.png`]);
+            // A bounded diagnostic sample after the API's 20-second timeout; this is not a UI-ready assertion.
+            await delay(25_000);
+            simctl(['io', udid, 'screenshot', `${output}/launch-after-25s.png`]);
+            writeFileSync(`${output}/capture.json`, JSON.stringify({
+              purpose: 'diagnostic-only',
+              device: device.name,
+              runtime: runtime.version,
+              appearance: 'light',
+              launchAccepted: /^.+: \d+\s*$/.test(launch),
+              apiReachabilityVerified: false,
+              uiReadinessVerified: false,
+              widgetPlacementVerified: false,
+              testFlightUpload: false,
+            }, null, 2));
+          } finally {
+            try { simctl(['shutdown', udid]); } finally { simctl(['delete', udid]); }
+          }
+          NODE
+    artifacts:
+      - mobile/build/vibeset-simulator-ios-app.zip
+      - mobile/build/simulator-xcodebuild.log
+      - mobile/build/simulator-diagnostics/**
   web-production:
     name: Vibeset web production build
     instance_type: mac_mini_m2

@@ -1,12 +1,18 @@
 import 'tsx/cjs';
 import type { ExpoConfig } from 'expo/config';
-import { assertNativeBuildEnvironment, readNativeIdentifiers } from './lib/build-config';
+import {
+  assertNativeBuildEnvironment,
+  assertNativeCompileEnvironment,
+  readNativeIdentifiers,
+} from './lib/build-config';
 
 export default function appConfig(): ExpoConfig {
   const ids =
-    process.env.VIBESET_NATIVE_GENERATE === '1'
-      ? assertNativeBuildEnvironment(process.env)
-      : readNativeIdentifiers(process.env);
+    process.env.VIBESET_NATIVE_GENERATE === 'compile'
+      ? assertNativeCompileEnvironment(process.env)
+      : process.env.VIBESET_NATIVE_GENERATE === '1'
+        ? assertNativeBuildEnvironment(process.env)
+        : readNativeIdentifiers(process.env);
   const widgets: NonNullable<ExpoConfig['plugins']> = ids
     ? [
         [

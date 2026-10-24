@@ -13,7 +13,7 @@ const identifiers = z.object({
 });
 const publicOrigin = z
   .string()
-  .refine((value) => value === value.trim() && !/[?#]/.test(value))
+  .refine((value) => value === value.trim() && !/[\s\u0000-\u001f\u007f?#]/.test(value))
   .pipe(z.url({ protocol: /^https$/ }))
   .refine((value) => {
     const url = new URL(value);
@@ -58,4 +58,17 @@ export function assertNativeBuildEnvironment(
   )
     throw new Error('Configure verified HTTPS API and CDN origins before building an iOS beta.');
   return ids;
+}
+
+export function assertNativeCompileEnvironment(
+  environment: Readonly<Record<string, string | undefined>>,
+): NativeIdentifiers {
+  const ids = readNativeIdentifiers(environment, true);
+  if (!ids) throw new Error('Native identifiers are missing.');
+  if (
+    environment.EXPO_PUBLIC_API_URL === undefined &&
+    environment.EXPO_PUBLIC_CDN_URL === undefined
+  )
+    return ids;
+  return assertNativeBuildEnvironment(environment);
 }

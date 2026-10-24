@@ -12,7 +12,9 @@
     "export:ios": "expo export --platform ios",
     "check:expo": "expo install --check",
     "prebuild:ios": "npm run check:native && expo prebuild --platform ios --no-install",
-    "check:native": "node --env-file-if-exists=.env.local --import tsx scripts/check-native-environment.ts"
+    "prebuild:ios:compile": "node --env-file-if-exists=.env.local --import tsx scripts/check-native-environment.ts --compile-only --prebuild",
+    "check:native": "node --env-file-if-exists=.env.local --import tsx scripts/check-native-environment.ts",
+    "check:native:compile": "node --env-file-if-exists=.env.local --import tsx scripts/check-native-environment.ts --compile-only"
   },
   "dependencies": {
     "@expo/ui": "~58.0.23",

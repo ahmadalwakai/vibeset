@@ -14,10 +14,10 @@ Phase 1 (web) cannot put live widgets on a home screen — no web app can. Phase
 
 ## 2. Widgets
 
-| Platform | Approach | Notes |
-|---|---|---|
-| iOS | **`expo-widgets`** — widgets written in TypeScript with Expo UI SwiftUI components and a config plugin | Verify required families/timelines on a real device; fallback: a Swift WidgetKit target via config plugin |
-| Android | Evaluate SDK 58 `expo-widgets` with Expo UI Jetpack Compose first | Android is opt-in with a smaller supported component/feature set; compare a native Glance module or maintained alternative only if needed |
+| Platform | Approach                                                                                               | Notes                                                                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| iOS      | **`expo-widgets`** — widgets written in TypeScript with Expo UI SwiftUI components and a config plugin | Verify required families/timelines on a real device; fallback: a Swift WidgetKit target via config plugin                                 |
+| Android  | Evaluate SDK 58 `expo-widgets` with Expo UI Jetpack Compose first                                      | Android is opt-in with a smaller supported component/feature set; compare a native Glance module or maintained alternative only if needed |
 
 **Status checked 24 October 2026:** the [SDK 55 reference](https://docs.expo.dev/versions/v55.0.0/sdk/widgets/) labels widgets alpha; the [SDK 58 reference](https://docs.expo.dev/versions/v58.0.0/sdk/widgets/) no longer carries that warning and recommends `expo-widgets ~58.0.23`. It supports Android and iOS, requires a development build rather than Expo Go, and runs widget code separately without React hooks, app state or asynchronous work. This is a documentation-status update, not a claim of proven Vibeset compatibility or production stability; recheck the selected SDK patch before implementation.
 
@@ -43,26 +43,26 @@ widgets read tokens + render natively (works offline, no server calls from widge
 
 ## 5. Store risks & mitigations
 
-| Risk | Mitigation |
-|---|---|
+| Risk                                                                                                             | Mitigation                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | App Store 4.3 (spam / saturated category) and 4.2 (minimum functionality) — common rejections for wallpaper apps | Lead with live widgets + Studio, original generated content, no copycat metadata or screenshots |
-| Privacy review | No tracking, no ads SDKs, minimal data; same privacy policy as web |
-| Trademark | Same rules: generic glyphs, no brand logos |
-| Tips/donations | Digital tips inside iOS apps must use In-App Purchase |
+| Privacy review                                                                                                   | No tracking, no ads SDKs, minimal data; same privacy policy as web                              |
+| Trademark                                                                                                        | Same rules: generic glyphs, no brand logos                                                      |
+| Tips/donations                                                                                                   | Digital tips inside iOS apps must use In-App Purchase                                           |
 
 ## 6. Effort estimate (solo developer with Copilot)
 
-| Work | Estimate |
-|---|---|
+| Work                                      | Estimate    |
+| ----------------------------------------- | ----------- |
 | Expo app shell, API client, browse/detail | 1–1.5 weeks |
-| iOS widgets (4–6 types) | 1.5–2 weeks |
-| Android widgets | 1.5–2 weeks |
-| Icon exporter (native share) | 0.5 week |
-| Store assets, review cycles | 1 week |
+| iOS widgets (4–6 types)                   | 1.5–2 weeks |
+| Android widgets                           | 1.5–2 weeks |
+| Icon exporter (native share)              | 0.5 week    |
+| Store assets, review cycles               | 1 week      |
 
 ## 7. First TestFlight readiness — 24 October 2026
 
-**Implement and test the native iPhone app now through a dedicated Codemagic workflow.** This supersedes the earlier web-first implementation order; pending provider and native distribution gates remain explicit. The repository now contains native Expo source in `mobile/`: real catalogue/detail screens, local favourites, Photos/share adapters, bilingual settings and a calendar/time widget with a native-refresh provider plugin. Windows verification covers TypeScript/tests and the iOS Metro/Hermes bundle only. A generated iOS/Xcode project, compiled extension, signing configuration and IPA remain unverified. No Apple team, registered app record or TestFlight upload has been verified. The existing `web-production` Codemagic archive is a web server artifact.
+**Implement and test the native iPhone app now through a dedicated Codemagic workflow.** This supersedes the earlier web-first implementation order; pending provider and native distribution gates remain explicit. The repository now contains native Expo source in `mobile/`: real catalogue/detail screens, local favourites, Photos/share adapters, bilingual settings and a calendar/time widget with a native-refresh provider plugin. Windows verification covers TypeScript/tests and the iOS Metro/Hermes bundle only. A generated iOS/Xcode project, compiled extension, signing configuration and IPA remain unverified. Browser verification confirmed active individual Apple Developer membership and created Vibeset's App Store Connect record **6826572844**, main ID `com.ahmadalwakai.vibeset`, widget ID `com.ahmadalwakai.vibeset.calendar` and App Group `group.com.ahmadalwakai.vibeset`. Registration does not establish signed entitlements, a native build or TestFlight upload. The existing `web-production` Codemagic archive is a web server artifact.
 
 Reuse `public/brand/app-icon-1024.png`, `app-icon.svg`, `logo-mark.svg`, the licensed fonts and generic glyph assets in the eventual native catalogue. Approved public operator/contact metadata is **Ahmad Alwakai — ahmadalwakai@gmx.com** (`lib/legal.ts`). It does not establish Apple membership, legal seller identity, mailbox verification or ownership of a `gmx` Bundle ID namespace.
 
@@ -77,3 +77,5 @@ Before the first beta:
 5. **Beta outcome:** upload, wait for Apple processing/compliance, assign an internal tester group and verify an actual installation. Internal testers are eligible App Store Connect users; external invitations require beta metadata and first-build Beta App Review. Builds expire after 90 days. Upload, processing, review approval and successful installation are separate milestones; no Apple acceptance/date is guaranteed. [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/).
 
 The native implementation and its commands are documented in `mobile/README.md`. It does not register Apple identifiers, confirm accounts or submit a build. The separate `ios-native-unsigned` Codemagic workflow compiles an unsigned app/extension on macOS only after verified identifiers and public origins are supplied; it performs no signing or publishing.
+
+**Compile-only simulator exception:** `ios-native-simulator` explicitly uses `VIBESET_NATIVE_GENERATE=compile` and the intended public identifiers, without a provider environment group or service defaults. `assertNativeCompileEnvironment` still requires complete, structurally valid app/extension/App Group identifiers. It accepts both public origins being absent together; if either is provided, both must pass the strict HTTPS-origin rules. Empty, partial or malformed values fail. This enables real macOS/Swift compilation and labelled simulator launch diagnostics while services are being configured; the app shows its actual retryable configuration error when origins are absent. It proves no Apple registration/association, signing, service reachability, populated screenshot, widget placement or TestFlight readiness. Ordinary `check:native`, `prebuild:ios`, `ios` and mode `1` retain the strict beta guard. The compile-only prebuild script sets mode only for its Expo child process; this exception is never a beta/signing fallback.
