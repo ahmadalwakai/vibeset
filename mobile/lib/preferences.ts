@@ -1,4 +1,6 @@
 import * as z from 'zod/mini';
+import { blockedCreatorsSchema, publicCreatorHandleSchema } from './creator-blocks';
+import type { BlockedCreator } from './creator-blocks';
 
 export const PREFERENCES_KEY = 'vibeset:native-preferences:v1';
 export const MAX_FAVORITES = 500;
@@ -20,6 +22,7 @@ export const widgetSelectionSchema = z.strictObject({
   ink: color,
   accent: color,
   appliedLocale: localeSchema,
+  creatorHandle: z._default(z.nullable(publicCreatorHandleSchema), null),
 });
 export const preferencesSchema = z.strictObject({
   v: z.literal(1),
@@ -30,14 +33,24 @@ export const preferencesSchema = z.strictObject({
     z.transform((ids: string[]) => [...new Set(ids)]),
   ),
   widgetSelection: z.nullable(widgetSelectionSchema),
+  blockedCreators: z._default(blockedCreatorsSchema, []),
+  hiddenThemeIds: z._default(
+    z.pipe(
+      z.array(uuid).check(z.maxLength(500)),
+      z.transform((ids: string[]) => [...new Set(ids)]),
+    ),
+    [],
+  ),
 });
 export type NativeLocale = z.infer<typeof localeSchema>;
 export type WidgetSelection = Readonly<z.infer<typeof widgetSelectionSchema>>;
 type Values = z.infer<typeof preferencesSchema>;
 export type NativePreferences = Readonly<
-  Omit<Values, 'favoriteIds' | 'widgetSelection'> & {
+  Omit<Values, 'favoriteIds' | 'widgetSelection' | 'blockedCreators' | 'hiddenThemeIds'> & {
     favoriteIds: readonly string[];
     widgetSelection: WidgetSelection | null;
+    blockedCreators: readonly BlockedCreator[];
+    hiddenThemeIds: readonly string[];
   }
 >;
 export interface PreferenceStorage {
@@ -64,6 +77,8 @@ function immutable(value: unknown): NativePreferences {
   return Object.freeze({
     ...parsed,
     favoriteIds: Object.freeze([...parsed.favoriteIds]),
+    blockedCreators: Object.freeze(parsed.blockedCreators.map((value) => Object.freeze(value))),
+    hiddenThemeIds: Object.freeze([...parsed.hiddenThemeIds]),
     widgetSelection: parsed.widgetSelection ? Object.freeze({ ...parsed.widgetSelection }) : null,
   });
 }

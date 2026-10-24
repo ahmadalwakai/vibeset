@@ -28,7 +28,8 @@ export function TermsEn({
           .
         </p>
         <p>
-          These terms cover the Vibeset website, its theme downloads and its design tools. Our{' '}
+          These terms cover the Vibeset website, its theme downloads and design tools, and the
+          iPhone companion where available. Our{' '}
           <Link href="/legal/privacy" locale="en">
             privacy notice
           </Link>{' '}
@@ -159,10 +160,18 @@ export function TermsEn({
       <section aria-labelledby="terms-tools">
         <h2 id="terms-tools">Downloads and setup</h2>
         <p>
-          Vibeset supplies wallpaper files, icon images and static decorative widget images. It does
-          not automatically replace installed apps or install a live native widget. Setup depends on
+          The website supplies wallpaper files, icon images, browser previews and static decorative
+          widget images. Those web previews and images are not live home-screen widgets. Vibeset
+          does not automatically replace installed apps or apply your wallpaper. Setup depends on
           your operating system and any compatible app you choose to use. We are not affiliated with
           Apple, Google or the apps named in the catalogue.
+        </p>
+        <p>
+          The iPhone companion includes a WidgetKit calendar/time implementation using your selected
+          theme. You choose whether to add its widget through iOS controls; iOS controls refresh
+          timing. Native features require a compatible app build. Describing them here does not
+          announce TestFlight or public-beta availability. The initial companion’s saved favourites
+          are local to the app and do not sync with website account favourites.
         </p>
         <p>
           Browser memory, file limits, sharing support and device settings can affect exports. Icon

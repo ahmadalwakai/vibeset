@@ -3,6 +3,7 @@ import type { ThemeDetailDTO } from '../../lib/dto';
 import { Hex, themeSpecSchema } from '../../lib/render/spec';
 import ar from '../messages/ar.json';
 import en from '../messages/en.json';
+import { initialCalendarWidgetProps } from './initial-props';
 
 const localeSchema = z.enum(['en', 'ar']);
 const themeInputSchema = z.object({
@@ -198,20 +199,8 @@ export function emptyCalendarWidgetProps(
   now = new Date(),
 ): CalendarWidgetProps {
   const language = localeSchema.parse(locale);
-  const copy = (language === 'ar' ? ar : en).widgets.native;
   return calendarWidgetPropsSchema.parse({
-    active: false,
-    themeId: null,
-    themeName: '',
-    locale: language,
-    surface: '#f8f5fb',
-    ink: '#241b2f',
-    accent: '#b44bd0',
-    accentInk: '#ffffff',
-    radius: 0.25,
-    fontDesign: 'rounded',
+    ...initialCalendarWidgetProps(language),
     ...buildCalendarDateFields(now, language),
-    emptyTitle: copy.emptyTitle,
-    emptyDescription: copy.emptyDescription,
   });
 }

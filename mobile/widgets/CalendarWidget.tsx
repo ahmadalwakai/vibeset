@@ -15,7 +15,7 @@ import {
 import { createWidget } from 'expo-widgets';
 import type { WidgetEnvironment } from 'expo-widgets';
 import type { ReactElement } from 'react';
-import { emptyCalendarWidgetProps } from './model';
+import { initialCalendarWidgetProps } from './initial-props';
 import type { CalendarWidgetProps } from './model';
 
 function CalendarLayout(props: CalendarWidgetProps, context: WidgetEnvironment): ReactElement {
@@ -156,5 +156,5 @@ function CalendarLayout(props: CalendarWidgetProps, context: WidgetEnvironment):
 export default createWidget<CalendarWidgetProps>(
   'VibesetCalendar',
   CalendarLayout,
-  emptyCalendarWidgetProps(),
+  initialCalendarWidgetProps(),
 );

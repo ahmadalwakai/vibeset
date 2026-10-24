@@ -243,6 +243,7 @@ Admin reads are uncached and guarded independently of layouts. Theme lists use 5
 | `GET /api/v1/collections/[slug]` | `CollectionDetailDTO` (`?cursor`) | public | same | — |
 | `GET /api/v1/tags` | `TagDTO[]` (`?kind`) | public | same | — |
 | `GET /api/v1/apps` | `AppDTO[]` | public | same | — |
+| `POST /api/v1/reports` | `{ themeId, reason, details? }` → `{ data: { id } }` | public; optional session checked | `private, no-store` | 5/hour/user-or-ipHash, shared with web `submitReport` |
 | `GET /api/me/favorites` | `{ themeIds: string[] }` | user (401 otherwise) | `private, no-store` | — |
 | `POST /api/track` | `{ themeId, event: 'view'\|'download'\|'icon_export'\|'remix'\|'setup_complete' }` → 204 | public | no-store | 120/min/ipHash |
 | `GET /api/me/remixes?cursor=` | Paged owned private draft remixes (48 per page; specs) | user | private, no-store | — |
@@ -255,6 +256,8 @@ Admin reads are uncached and guarded independently of layouts. Theme lists use 5
 Error body for every handler: `{ "error": { "code": ErrorCode, "message": string } }` with `HTTP_STATUS[code]`. Validation of query/body with Zod; unknown query params ignored.
 
 The `/api/v1` contract is consumed by the Phase 2 native app — **never make breaking changes**; add fields or create `/api/v2`.
+
+`POST /api/v1/reports` provides in-app reporting without account creation. It accepts only `application/json` (8 KiB body limit) and the canonical strict `submitReportSchema`: a theme UUID, `copyright | inappropriate | broken | spam | other`, and optional normalized details up to 1,000 characters. Caller-supplied reporter identity or moderation fields are rejected. The route delegates to the existing public `submitReport` admission/action and transactional service: `reportsEnabled`, fresh optional session/ban checks, salted IP identity for visitors, the shared five-per-hour bucket and published-target validation all apply. A supplied browser `Origin` must match the request origin; native requests can omit it. A successful new or already-open deduplicated report returns HTTP 200 with the same `reportResponseSchema` envelope. Errors use the standard HTTP status/code envelope with generic messages and no private service details. Reports enter the existing administrator queue; this endpoint does not promise an outcome or moderation response time.
 
 `POST /api/track` retains its public permission, validation, atomic counters and rate limit. The web client sends automatic `view` events only after an explicit opt-in using the public Privacy/Account control; while off or unresolved it does not access view-session markers. Disabling attempts to abort an active optional request and stops later views, without erasing existing totals. Download, icon-export, remix and setup-completion counters still follow actual feature use. This browser choice is not a server authorization boundary or a promise that third-party callers send events; the service must continue validating/rate-limiting every request.
 

@@ -21,6 +21,8 @@ export const submitReportSchema = z.strictObject({
   details: reportDetailsSchema.optional(),
 });
 export const reportDataSchema = z.strictObject({ id: themeIdSchema });
+export const reportResponseSchema = z.strictObject({ data: reportDataSchema });
+export { apiErrorSchema as reportErrorResponseSchema } from './themes';
 
 /** Identity comes only from the guarded action context, never from form input. */
 export const reportReporterSchema = z.discriminatedUnion('kind', [

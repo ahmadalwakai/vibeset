@@ -21,10 +21,12 @@ export function PrivacyEn({
       <section aria-labelledby="privacy-summary">
         <h2 id="privacy-summary">The short version</h2>
         <p>
-          You can browse and download public themes without an account. Signing in lets you save
-          favourites, collections and remixes to your account. Some preferences and unfinished work
-          are saved in your browser instead. Approved creators can publish a profile and submit
-          designs for review. Please avoid putting private information in public designs or reports.
+          You can browse and download public themes without an account. On the website, signing in
+          lets you save favourites, collections and remixes to your account. Some preferences and
+          unfinished work are saved in your browser instead. The initial iPhone companion has
+          separate local preferences, described below. Approved creators can publish a profile and
+          submit designs for review. Please avoid putting private information in public designs or
+          reports.
         </p>
         <p>
           {operatorName} is responsible for Vibeset’s use of personal data. Questions and requests
@@ -66,7 +68,7 @@ export function PrivacyEn({
           <li>
             <strong>Technical requests:</strong> our infrastructure receives information such as IP
             addresses and browser/request details when serving the site, images and sign-in
-            messages. The application hashes IP identifiers before storing them in its session and
+            messages. The web server hashes IP identifiers before storing them in its session and
             rate-limit fields. A hash reduces direct exposure; it is not a promise of anonymity.
           </li>
         </ul>
@@ -241,6 +243,55 @@ export function PrivacyEn({
           The privacy page includes an optional view-statistics control. Its choice is separate from
           signing in, using a requested tool or clearing browser data. The details of that control
           and its storage are explained in the usage-counts section above.
+        </p>
+      </section>
+      <section aria-labelledby="privacy-native">
+        <h2 id="privacy-native">The iPhone companion and its widget</h2>
+        <p>
+          This section describes the initial iPhone implementation; it does not announce a public
+          beta. It uses the public catalogue without in-app sign-in or account sync. Requests to the
+          public API and image CDN include search terms, filters or theme identifiers needed to
+          retrieve your choices, including saved themes. They omit account credentials, but hosting
+          and delivery providers still receive IP addresses and request details. Opening a website
+          link uses your browser, with its separate cookies and preferences.
+        </p>
+        <p>
+          The app saves language, light/dark/system appearance, up to 500 favourite theme IDs,
+          hidden theme IDs, blocked creators’ public handles and display names, and a
+          selected-widget summary in local app storage at <code>vibeset:native-preferences:v1</code>
+          . The summary includes the public theme’s identifier, names, colours, creator handle where
+          present and the language chosen when applying it. Block and hide choices filter what this
+          app displays; they do not themselves change a creator’s account or a theme’s moderation
+          status. These favourites are not website account favourites. Local preferences are not
+          uploaded as account changes or synced across devices. The current app does not send the
+          website’s view, download, export, remix or setup-completion tracking events; the optional
+          browser view-statistics control applies to the website.
+        </p>
+        <p>
+          When you explicitly submit a report, the app sends the theme identifier, your selected
+          reason and any details you enter to Vibeset. A successful anonymous report is stored with
+          a salted IP-address hash for moderation and abuse prevention. This is separate from local
+          blocking or hiding and from optional view statistics. Use the details to explain the
+          content concern; do not include passwords, sign-in links or unnecessary personal or
+          sensitive information.
+        </p>
+        <p>
+          Applying a calendar/time widget also stores its selected public theme data, display
+          settings and dated timeline in an iOS App Group shared by the app and its WidgetKit
+          extension. The extension uses the device’s date, time zone and selected language to
+          refresh its calendar locally, without signing in or making network requests. Clearing the
+          widget choice replaces it with empty instructions. Local choices have no automatic expiry
+          set by Vibeset; website sign-out or account deletion does not clear this app storage.
+          Device backups, removal and restoration follow iOS settings and behaviour.
+        </p>
+        <p>
+          Only when you choose to save a wallpaper does the app request permission to add an image
+          to Photos. The current save feature does not read your existing photo library. Native
+          sharing opens only after you choose Share; you decide the destination, whose own terms and
+          data handling apply. A temporary image is downloaded to the app cache for saving or
+          sharing, and the app attempts to remove that copy afterwards. Saved Photos, backups and
+          copies sent elsewhere follow your device and destination settings; clearing app
+          preferences does not recall them.
         </p>
       </section>
       <section aria-labelledby="privacy-providers">

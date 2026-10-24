@@ -8,13 +8,15 @@ import { Catalog } from './components/Catalog';
 import { Detail } from './components/Detail';
 import { Settings } from './components/Settings';
 import { Widgets } from './components/Widgets';
-import { Button, Copy, Loading, palettes, UiContext } from './components/Ui';
+import { Button, Copy, Feedback, Loading, palettes, UiContext } from './components/Ui';
 import { createPreferencesStore, MAX_FAVORITES, PreferenceReadError } from './lib/preferences';
 import type { PreferencesPatch } from './lib/preferences';
 import type { ThemeDetailDTO } from './lib/api';
 import { translate } from './lib/i18n';
 import { applyThemeWidget, clearThemeWidget, refreshThemeWidget } from './lib/widgets';
 import { buildCalendarWidgetProps } from './widgets/model';
+import { hideContentOnDevice } from './lib/content-safety';
+import { isThemeHidden } from './lib/creator-blocks';
 
 type Tab = 'explore' | 'saved' | 'widgets' | 'settings';
 const tabs = [
@@ -118,6 +120,9 @@ export default function NativeApp(): ReactElement {
   const apply = (theme: ThemeDetailDTO): Promise<void> =>
     mutateWidget(async () => {
       await store.requireKnownBaseline();
+      const current = store.getSnapshot().preferences;
+      if (isThemeHidden(theme, current.blockedCreators, current.hiddenThemeIds))
+        throw new Error('Hidden content cannot be applied');
       await applyThemeWidget(theme, locale);
       const props = buildCalendarWidgetProps(theme, locale);
       await store.update({
@@ -130,6 +135,7 @@ export default function NativeApp(): ReactElement {
           ink: props.ink,
           accent: props.accent,
           appliedLocale: locale,
+          creatorHandle: theme.creator?.handle ?? null,
         },
       });
       if (mounted.current) setWidgetRefreshError(false);
@@ -141,6 +147,25 @@ export default function NativeApp(): ReactElement {
       await store.update({ widgetSelection: null });
       if (mounted.current) setWidgetRefreshError(false);
     });
+  const hide = (theme: ThemeDetailDTO, kind: 'theme' | 'creator'): Promise<void> =>
+    mutateWidget(async () => {
+      await hideContentOnDevice(store, theme, kind, clearThemeWidget);
+      if (mounted.current) {
+        setSlug((current) => (current === theme.slug ? null : current));
+        setWidgetRefreshError(false);
+      }
+    });
+  const unblock = (handle: string): void => {
+    void store
+      .update((current) => ({
+        blockedCreators: current.blockedCreators.filter((creator) => creator.handle !== handle),
+      }))
+      .catch((error: unknown) =>
+        Alert.alert(
+          t(error instanceof PreferenceReadError ? 'readStorageWarning' : 'storageWarning'),
+        ),
+      );
+  };
   const navigate = (value: Tab): void => {
     setSlug(null);
     setTab(value);
@@ -219,6 +244,11 @@ export default function NativeApp(): ReactElement {
         <View style={{ flex: 1 }}>
           {snapshot.loading ? (
             <Loading />
+          ) : snapshot.issue === 'READ_FAILED' ? (
+            <Feedback
+              message={t('readStorageWarning')}
+              onRetry={() => void store.retryPersistence()}
+            />
           ) : (
             <>
               <View
@@ -231,6 +261,8 @@ export default function NativeApp(): ReactElement {
                     key={tab}
                     saved={tab === 'saved'}
                     favoriteIds={preferences.favoriteIds}
+                    blockedCreators={preferences.blockedCreators}
+                    hiddenThemeIds={preferences.hiddenThemeIds}
                     onFavorite={favorite}
                     onOpen={setSlug}
                   />
@@ -243,7 +275,7 @@ export default function NativeApp(): ReactElement {
                     onRefresh={refreshWidget}
                   />
                 ) : (
-                  <Settings preferences={preferences} onChange={update} />
+                  <Settings preferences={preferences} onChange={update} onUnblock={unblock} />
                 )}
               </View>
               {slug ? (
@@ -253,6 +285,9 @@ export default function NativeApp(): ReactElement {
                   favoriteIds={preferences.favoriteIds}
                   onFavorite={favorite}
                   onApply={apply}
+                  blockedCreators={preferences.blockedCreators}
+                  hiddenThemeIds={preferences.hiddenThemeIds}
+                  onHide={hide}
                 />
               ) : null}
             </>

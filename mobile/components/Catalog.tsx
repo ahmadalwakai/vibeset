@@ -8,6 +8,8 @@ import { formatNumber, localizedName } from '../lib/i18n';
 import type { MessageKey } from '../lib/i18n';
 import { Button, Copy, Feedback, Loading, Panel, styles, useUi } from './Ui';
 import { thumbnailReducer } from './thumbnail-state';
+import { visibleCreatorThemes } from '../lib/creator-blocks';
+import type { BlockedCreator } from '../lib/creator-blocks';
 
 export function serviceMessage(error: unknown): MessageKey {
   if (!(error instanceof NativeServiceError)) return 'errorNetwork';
@@ -122,11 +124,15 @@ interface PageState {
 export function Catalog({
   saved,
   favoriteIds,
+  blockedCreators,
+  hiddenThemeIds,
   onFavorite,
   onOpen,
 }: {
   saved: boolean;
   favoriteIds: readonly string[];
+  blockedCreators: readonly BlockedCreator[];
+  hiddenThemeIds: readonly string[];
   onFavorite: (id: string) => void;
   onOpen: (slug: string) => void;
 }): ReactElement {
@@ -149,6 +155,7 @@ export function Catalog({
   const savedKey = saved ? favoriteIds.join(',') : '';
   const key = JSON.stringify([saved, savedKey, q, sort, cycle]);
   const current = page.key === key ? page : null;
+  const visibleItems = visibleCreatorThemes(current?.items ?? [], blockedCreators, hiddenThemeIds);
   useEffect(() => {
     const timer = setTimeout(() => setQ(text.trim().normalize('NFC')), 300);
     return () => clearTimeout(timer);
@@ -306,7 +313,7 @@ export function Catalog({
       )}
       <View style={{ flexDirection: row, alignItems: 'center', justifyContent: 'space-between' }}>
         <Copy style={{ color: colors.secondary, fontSize: 13 }}>
-          {t('catalogueCount')} · {formatNumber(locale, current?.items.length ?? 0)}
+          {t('catalogueCount')} · {formatNumber(locale, visibleItems.length)}
         </Copy>
         <Button secondary label={t('refresh')} onPress={() => setCycle((value) => value + 1)} />
       </View>
@@ -318,7 +325,7 @@ export function Catalog({
   return (
     <FlatList
       key={saved ? 'saved' : 'explore'}
-      data={current?.items ?? []}
+      data={visibleItems}
       numColumns={2}
       keyExtractor={(item) => item.id}
       columnWrapperStyle={{ gap: 12, marginBottom: 14, flexDirection: row }}
@@ -341,12 +348,14 @@ export function Catalog({
         ) : (
           <Panel>
             <Copy heading>{t(saved ? 'saved' : 'emptyTitle')}</Copy>
-            <Copy>{t(saved ? 'savedEmpty' : 'emptyDescription')}</Copy>
+            <Copy>
+              {t(current.items.length ? 'hiddenPage' : saved ? 'savedEmpty' : 'emptyDescription')}
+            </Copy>
           </Panel>
         )
       }
       ListFooterComponent={
-        current?.items.length ? (
+        current && (current.items.length > 0 || current.cursor) ? (
           <View style={{ gap: 16, paddingTop: 8 }}>
             {current.error ? (
               <Feedback message={t(current.error)} onRetry={() => void more()} />

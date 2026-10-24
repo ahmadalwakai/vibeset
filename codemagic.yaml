@@ -41,15 +41,18 @@ workflows:
         script: |
           set -euo pipefail
           test -d ios/Vibeset.xcworkspace
+          mkdir -p build
           xcodebuild -workspace ios/Vibeset.xcworkspace -scheme Vibeset \
             -configuration Debug -destination 'generic/platform=iOS' \
-            -derivedDataPath build/unsigned CODE_SIGNING_ALLOWED=NO build
+            -derivedDataPath build/unsigned CODE_SIGNING_ALLOWED=NO build \
+            2>&1 | tee build/unsigned-xcodebuild.log
           test -d build/unsigned/Build/Products/Debug-iphoneos/Vibeset.app
           ditto -c -k --sequesterRsrc --keepParent \
             build/unsigned/Build/Products/Debug-iphoneos/Vibeset.app \
             build/vibeset-unsigned-ios-app.zip
     artifacts:
-      - mobile/build/vibeset-unsigned-ios-app.zip
+      - $CM_BUILD_DIR/mobile/build/vibeset-unsigned-ios-app.zip
+      - $CM_BUILD_DIR/mobile/build/unsigned-xcodebuild.log
   ios-native-simulator:
     name: Vibeset native iPhone simulator diagnostics
     working_directory: mobile
@@ -156,9 +159,9 @@ workflows:
           }
           NODE
     artifacts:
-      - mobile/build/vibeset-simulator-ios-app.zip
-      - mobile/build/simulator-xcodebuild.log
-      - mobile/build/simulator-diagnostics/**
+      - $CM_BUILD_DIR/mobile/build/vibeset-simulator-ios-app.zip
+      - $CM_BUILD_DIR/mobile/build/simulator-xcodebuild.log
+      - $CM_BUILD_DIR/mobile/build/simulator-diagnostics/**
   web-production:
     name: Vibeset web production build
     instance_type: mac_mini_m2

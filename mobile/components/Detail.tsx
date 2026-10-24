@@ -9,17 +9,26 @@ import { localizedName, formatNumber } from '../lib/i18n';
 import type { MessageKey } from '../lib/i18n';
 import { serviceMessage } from './Catalog';
 import { Button, Copy, Feedback, Loading, Panel, styles, useUi } from './Ui';
+import { isThemeHidden } from '../lib/creator-blocks';
+import type { BlockedCreator } from '../lib/creator-blocks';
+import { ReportTheme } from './ReportTheme';
 
 export function Detail({
   slug,
   favoriteIds,
   onFavorite,
   onApply,
+  blockedCreators,
+  hiddenThemeIds,
+  onHide,
 }: {
   slug: string;
   favoriteIds: readonly string[];
   onFavorite: (id: string) => void;
   onApply: (theme: ThemeDetailDTO) => Promise<void>;
+  blockedCreators: readonly BlockedCreator[];
+  hiddenThemeIds: readonly string[];
+  onHide: (theme: ThemeDetailDTO, kind: 'theme' | 'creator') => Promise<void>;
 }): ReactElement {
   const { t, colors, locale, row } = useUi();
   const [theme, setTheme] = useState<ThemeDetailDTO | null>(null);
@@ -27,6 +36,7 @@ export function Detail({
   const [retry, setRetry] = useState(0);
   const [busy, setBusy] = useState<'save' | 'share' | 'widget' | null>(null);
   const [broken, setBroken] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const active = useRef(true);
   const operation = useRef<AbortController | null>(null);
   const performing = useRef(false);
@@ -75,6 +85,42 @@ export function Detail({
       if (active.current) setBusy(null);
     }
   };
+  const hide = (kind: 'theme' | 'creator'): void => {
+    if (!theme || performing.current) return;
+    Alert.alert(
+      t(kind === 'creator' ? 'blockCreator' : 'hideTheme'),
+      `${kind === 'creator' ? `${theme.creator?.displayName ?? ''}\n\n` : ''}${t(kind === 'creator' ? 'blockDescription' : 'hideDescription')}`,
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t(kind === 'creator' ? 'blockCreator' : 'hideTheme'),
+          style: 'destructive',
+          onPress: () => {
+            if (!active.current || performing.current) return;
+            performing.current = true;
+            setBusy('widget');
+            void onHide(theme, kind)
+              .catch((error: unknown) => {
+                if (active.current)
+                  Alert.alert(
+                    t(
+                      error instanceof PreferenceReadError
+                        ? 'readStorageWarning'
+                        : error instanceof RangeError
+                          ? 'hiddenLimit'
+                          : 'errorHide',
+                    ),
+                  );
+              })
+              .finally(() => {
+                performing.current = false;
+                if (active.current) setBusy(null);
+              });
+          },
+        },
+      ],
+    );
+  };
   if (!theme)
     return failure ? (
       <ScrollView contentContainerStyle={styles.page}>
@@ -88,6 +134,12 @@ export function Detail({
       </ScrollView>
     ) : (
       <Loading />
+    );
+  if (isThemeHidden(theme, blockedCreators, hiddenThemeIds))
+    return (
+      <ScrollView contentContainerStyle={styles.page}>
+        <Feedback message={t('contentHidden')} />
+      </ScrollView>
     );
   const name = localizedName(locale, theme);
   const image = theme.previewHomeUrl ?? theme.thumbUrl;
@@ -166,6 +218,33 @@ export function Detail({
           busy={busy === 'share'}
         />
       </Panel>
+      <Panel>
+        <Copy heading style={{ fontSize: 22 }}>
+          {t('contentControls')}
+        </Copy>
+        {theme.creator ? (
+          <Copy>
+            {theme.creator.displayName} · @{theme.creator.handle}
+          </Copy>
+        ) : null}
+        <Button secondary label={t('reportTheme')} onPress={() => setReportOpen(true)} />
+        <Button
+          secondary
+          label={t('hideTheme')}
+          disabled={busy !== null}
+          onPress={() => hide('theme')}
+        />
+        {theme.creator ? (
+          <Button
+            secondary
+            label={t('blockCreator')}
+            accessibilityLabel={`${t('blockCreator')} · ${theme.creator.displayName}`}
+            disabled={busy !== null}
+            onPress={() => hide('creator')}
+          />
+        ) : null}
+      </Panel>
+      {reportOpen ? <ReportTheme themeId={theme.id} onClose={() => setReportOpen(false)} /> : null}
       <Panel>
         <Copy heading style={{ fontSize: 22 }}>
           {t('widgetsTab')}

@@ -179,6 +179,7 @@ describe('native preferences boundary and persistence', () => {
       ink: '#16121d',
       accent: '#9734b1',
       appliedLocale: 'ar' as const,
+      creatorHandle: null,
     };
     await store.update({ widgetSelection: selection });
     expect(store.getSnapshot().preferences.widgetSelection).toEqual(selection);
