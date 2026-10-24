@@ -157,6 +157,10 @@ Native widgets, native Android icon-pack app, live/video wallpapers, in-app AI i
 - **Audience includes teens** → follow the UK ICO Children's Code: privacy by default, no tracking cookies, no profiling, no ads, minimal data, clear reporting. Creator programme is 18+.
 - UK GDPR: export and delete account self-serve. Copyright/takedown page + report button on every theme.
 - Content licence for users: free for personal use; no resale or redistribution as packs.
+- Public operator: **Ahmad Alwakai**; public support, privacy and content-removal contact: **ahmadalwakai@gmx.com**. These approved details appear in the English/Arabic Terms, Privacy and Copyright pages; they do not establish Apple seller identity or ownership of a sending domain.
+- Creator submissions grant a non-exclusive, royalty-free licence limited to running Vibeset and providing personal downloads/remixes. Account deletion removes private drafts/profile and account attribution, while published designs and referenced photos can remain. Published-content removal is a separate email request, assessed alongside applicable privacy/copyright rights; it is not a blanket refusal of erasure requests. The submission UI links to that grant and retention explanation.
+- Automatic theme-view statistics are **off by default**. The public Privacy page and Account settings share an explicit enable/disable control. This browser-wide choice is independent of the existing download, export, remix, setup-completion and favourite counters. Missing or invalid preferences keep views off; no initial preference is written. A failed save uses a disclosed current-tab fallback.
+- Legal texts are complete application source, dated 24 October 2026. Qualified English/Arabic legal review, actual provider/transfer arrangements, justified retention and a working monitored removal/rights process remain launch requirements; implementing the pages does not certify compliance.
 
 ---
 

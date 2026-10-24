@@ -43,4 +43,13 @@ describe('anonymous tracking transport', () => {
     await Promise.resolve();
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
+  it('does not start an abandoned optional view request', () => {
+    vi.stubGlobal('window', {});
+    const fetcher = vi.fn();
+    vi.stubGlobal('fetch', fetcher);
+    const controller = new AbortController();
+    controller.abort();
+    track(id, 'view', controller.signal);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
 });

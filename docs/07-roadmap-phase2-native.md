@@ -8,7 +8,7 @@ Phase 1 (web) cannot put live widgets on a home screen — no web app can. Phase
 
 ## 1. Shape
 
-- **Expo (React Native, TypeScript)** in `mobile/` inside the same repo — the same pattern as tyrerescue's `driver-app/` and `admin-app/` (EAS builds, `eas.json`).
+- **Expo (React Native, TypeScript)** in `mobile/` inside the same repo, with its own package/config and a dedicated Codemagic iOS build/sign/upload workflow after web verification. Keep the existing web workflow intact; choose one signing authority rather than independently managing the same identifiers through Codemagic and EAS.
 - Screens: Home (featured + trending from `/api/v1/themes`), Theme detail, My widgets, Icon exporter (same flow as web, native share sheet), Settings.
 - Auth (optional, for synced favourites): Better Auth's Expo integration against the same server — verify the current package/plugin name in Better Auth docs at that time.
 
@@ -16,8 +16,10 @@ Phase 1 (web) cannot put live widgets on a home screen — no web app can. Phase
 
 | Platform | Approach | Notes |
 |---|---|---|
-| iOS | **`expo-widgets`** — widgets written in TypeScript with `@expo/ui` SwiftUI components, config plugin, supports system and lock-screen families | Launched as alpha; check its status on the current Expo SDK. Fallback: a Swift WidgetKit target added via config plugin |
-| Android | Evaluate `react-native-android-widget` (JS-described widgets) vs a Jetpack Glance module via config plugin | Pick the one with active maintenance at that time |
+| iOS | **`expo-widgets`** — widgets written in TypeScript with Expo UI SwiftUI components and a config plugin | Verify required families/timelines on a real device; fallback: a Swift WidgetKit target via config plugin |
+| Android | Evaluate SDK 58 `expo-widgets` with Expo UI Jetpack Compose first | Android is opt-in with a smaller supported component/feature set; compare a native Glance module or maintained alternative only if needed |
+
+**Status checked 24 October 2026:** the [SDK 55 reference](https://docs.expo.dev/versions/v55.0.0/sdk/widgets/) labels widgets alpha; the [SDK 58 reference](https://docs.expo.dev/versions/v58.0.0/sdk/widgets/) no longer carries that warning and recommends `expo-widgets ~58.0.23`. It supports Android and iOS, requires a development build rather than Expo Go, and runs widget code separately without React hooks, app state or asynchronous work. This is a documentation-status update, not a claim of proven Vibeset compatibility or production stability; recheck the selected SDK patch before implementation.
 
 Widget catalogue v1: digital clock, analog clock, date + month calendar, countdown, photo (user picks a photo in the app), bilingual quote, weather (Open-Meteo, no API key, location optional). All styled only from theme tokens.
 
@@ -57,3 +59,21 @@ widgets read tokens + render natively (works offline, no server calls from widge
 | Android widgets | 1.5–2 weeks |
 | Icon exporter (native share) | 0.5 week |
 | Store assets, review cycles | 1 week |
+
+## 7. First TestFlight readiness — 24 October 2026
+
+**Verify web P00–P17 first, then implement and test the native companion through Codemagic.** Preparation does not require public adoption milestones, but it does not waive the agreed web gates. The repository currently has no `mobile/` scaffold, Expo/iOS project, widget extension, native signing configuration or IPA. No Apple team, registered app record or TestFlight upload has been verified. The existing `web-production` Codemagic archive is a web server artifact.
+
+Reuse `public/brand/app-icon-1024.png`, `app-icon.svg`, `logo-mark.svg`, the licensed fonts and generic glyph assets in the eventual native catalogue. Approved public operator/contact metadata is **Ahmad Alwakai — ahmadalwakai@gmx.com** (`lib/legal.ts`). It does not establish Apple membership, legal seller identity, mailbox verification or ownership of a `gmx` Bundle ID namespace.
+
+The current [Expo SDK 58 release](https://expo.dev/changelog/sdk-58) is dated 15 October 2026 and targets iOS 27/React Native 0.88. Apple currently requires uploads built with **Xcode 26 or later and iOS/iPadOS 26 SDK or later**; that is an upload floor, not the selected Expo toolchain or deployment target. Codemagic lists an [Xcode 27.1 image](https://docs.codemagic.io/specs-macos/xcode-27-1/) for M2/M4. Pin and validate a compatible released SDK/Xcode pair when native implementation starts; do not copy web dependency versions or select an edge image blindly. [Apple requirements](https://developer.apple.com/news/upcoming-requirements/).
+
+Before the first beta:
+
+1. **Reachable service:** verify stable HTTPS API/CDN origins, published content, provider-backed auth/storage and monitored privacy/support URLs. The native app receives public runtime configuration, never database credentials, R2 signing keys or internal secrets. Reuse `/api/v1` additively; browser DOM/canvas export helpers need native file/render/share adapters.
+2. **Team and identifiers:** confirm the intended paid Apple Developer team, agreements, roles and any existing app before creating anything. Choose an owner-controlled main Bundle ID, widget-extension ID and shared App Group only after that check. Configure matching entitlements and app-store distribution profiles for both targets. Create the App Store Connect record with the chosen main ID, language, SKU and access scope before upload; record its numeric app ID and increment build numbers. [Apple app records](https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app/).
+3. **Codemagic signing:** configure a dedicated App Store Connect integration/API key with the required App Manager permission, keeping Issuer ID, Key ID, `.p8` and certificate/private-key material in secure provider storage, never Git/chat. Add a separate native workflow using `distribution_type: app_store`, exact identifiers and all extension profiles; keep `submit_to_app_store: false` for beta-only delivery. Prove an unsigned native build before signing/archive/upload. [Codemagic signing](https://docs.codemagic.io/yaml-quick-start/building-a-react-native-app/), [publishing requirements](https://docs.codemagic.io/yaml-publishing/app-store-connect/).
+4. **Native privacy and device checks:** review actual dependencies, required-reason APIs/privacy manifests, encryption/export answers and native permission descriptions. Request only needed photo access; location remains optional with a manual alternative. Preserve privacy defaults and account deletion/reporting where those features are offered. Test EN/AR/RTL, accessibility, offline/errors, native save/share, widget App Group persistence and timeline updates on a real iPhone; web tests do not establish native correctness. [Expo privacy manifests](https://docs.expo.dev/guides/apple-privacy/).
+5. **Beta outcome:** upload, wait for Apple processing/compliance, assign an internal tester group and verify an actual installation. Internal testers are eligible App Store Connect users; external invitations require beta metadata and first-build Beta App Review. Builds expire after 90 days. Upload, processing, review approval and successful installation are separate milestones; no Apple acceptance/date is guaranteed. [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/).
+
+This section records readiness work only. It does not create a native scaffold, change an API, register identifiers, configure accounts or submit a build.

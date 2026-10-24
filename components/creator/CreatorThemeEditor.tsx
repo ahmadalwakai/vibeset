@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge, Button, Flex, Skeleton, Stack, Text } from '@chakra-ui/react';
+import { Badge, Button, Flex, Link as ChakraLink, Skeleton, Stack, Text } from '@chakra-ui/react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { ReactElement, RefObject } from 'react';
@@ -201,6 +201,17 @@ function CreatorEditorForm({
 
   const actions = (
     <Stack gap="3">
+      {status === 'draft' ? (
+        <Text textStyle="body.sm" color="fg.muted">
+          {t.rich('submissionTerms', {
+            terms: (chunks) => (
+              <ChakraLink asChild variant="underline">
+                <Link href="/legal/terms#terms-creator-content">{chunks}</Link>
+              </ChakraLink>
+            ),
+          })}
+        </Text>
+      ) : null}
       <Flex gap="2" flexWrap="wrap" align="center">
         <Badge>{statusLabel(status)}</Badge>
         {status === 'draft' ? (

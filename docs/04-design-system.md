@@ -4,6 +4,8 @@ Mobile-first, soft and polished, fast. Built on Chakra UI v3 tokens in `design/`
 
 `design/system.ts` composes Chakra's public `defaultBaseConfig`, the explicit defaults in `design/base-config.ts` and Vibeset's overrides. All default tokens, conditions, utilities, global styles and the 14 ordinary/24 slot recipes used by repository components are retained; unused recipes are omitted to reduce the shared client configuration. When introducing a new Chakra component or snippet, check its recipe and transitive indicators/loading controls and add any missing defaults before using it. Do not reintroduce the complete `defaultConfig` or recipe maps without measuring the client cost.
 
+Legal documents use the installed Chakra CLI's `components/ui/prose.tsx` snippet for semantic paragraphs, lists and headings, with token borders/shadows, underlined links and visible keyboard focus. Literal scoped selectors retain strict style types without unchecked assertions; explicit RTL overrides preserve zero tracking, normal emphasis and the documented ×1.1 body/heading line height. It needs no additional component recipes. The document page supplies one `h1`; body sections start at `h2`. Legal prose lives in typed locale TSX; interactive control and notice strings stay in matching `messages` keys.
+
 ---
 
 ## 1. Brand

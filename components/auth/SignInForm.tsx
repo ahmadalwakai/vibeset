@@ -7,6 +7,7 @@ import {
   Heading,
   Icon,
   Input,
+  Link as ChakraLink,
   Separator,
   Stack,
   Text,
@@ -21,7 +22,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactElement } from 'react';
 import { z } from 'zod';
-import { getPathname, useRouter } from '@/i18n/navigation';
+import { getPathname, Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import type { ErrorMessageCode } from '@/lib/result';
 import { formatNumber } from '@/lib/utils/format';
@@ -182,6 +183,20 @@ export function SignInForm({
           {t('signInDescription')}
         </Text>
       </Stack>
+      <Text textStyle="body.sm" color="fg.muted">
+        {t.rich('legalNotice', {
+          terms: (chunks) => (
+            <ChakraLink asChild variant="underline">
+              <Link href="/legal/terms">{chunks}</Link>
+            </ChakraLink>
+          ),
+          privacy: (chunks) => (
+            <ChakraLink asChild variant="underline">
+              <Link href="/legal/privacy">{chunks}</Link>
+            </ChakraLink>
+          ),
+        })}
+      </Text>
       {error && (
         <Alert.Root status="error" rounded="input">
           <Alert.Indicator />

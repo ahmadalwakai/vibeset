@@ -11,6 +11,9 @@ export const SITEMAP_STATIC_PATHS = [
   '/setup/ios',
   '/setup/android',
   '/setup/desktop',
+  '/legal/terms',
+  '/legal/privacy',
+  '/legal/copyright',
 ] as const;
 export interface SitemapEntity {
   path: string;

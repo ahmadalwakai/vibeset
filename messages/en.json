@@ -977,6 +977,7 @@
     "emailInvalid": "Enter a valid email address.",
     "sendLink": "Email me a sign-in link",
     "noPassword": "No password to remember. Just a secure link, made for you.",
+    "legalNotice": "Review our <terms>Terms of use</terms> and <privacy>Privacy notice</privacy> before signing in.",
     "checkInbox": "Check your inbox",
     "sentDescription": "We sent a sign-in link to {email}. Check your spam folder if you do not see it.",
     "expiry": "Your link expires in 10 minutes.",
@@ -1174,6 +1175,7 @@
       "save": "Save draft",
       "submit": "Submit for review",
       "submitReadyHint": "Your saved draft is ready for review.",
+      "submissionTerms": "Submitting grants the service licence described in our <terms>Terms of use</terms>. Published designs can remain after account deletion; request removal separately.",
       "withdraw": "Withdraw submission",
       "delete": "Delete theme",
       "deleteTitle": "Delete this theme?",
@@ -1831,6 +1833,16 @@
   "legal": {
     "terms": "Terms",
     "privacy": "Privacy",
-    "copyright": "Copyright"
+    "copyright": "Copyright",
+    "statistics": {
+      "title": "Optional view statistics",
+      "description": "Automatic theme view counts are off until you choose to enable them. When enabled, we remember which themes you have counted in this browser session to avoid counting repeat visits.",
+      "label": "Allow automatic theme view statistics",
+      "scope": "This choice applies to this browser. Counts for actions you take, such as downloading, exporting icons, remixing or completing setup, continue separately. We do not use this preference for ads or profiling.",
+      "loading": "Loading your choice…",
+      "enabled": "Automatic view statistics are on. You can turn them off here at any time.",
+      "disabled": "Automatic view statistics are off. No view marker is accessed and no automatic view event is sent.",
+      "sessionOnly": "Your browser could not save this choice. It applies only in this open tab and may reset when you reload or close it."
+    }
   }
 }

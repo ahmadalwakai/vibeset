@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent, ReactElement, RefObject } from 'react';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { ErrorState } from '@/components/common/ErrorState';
+import { ViewStatisticsControl } from '@/components/common/ViewStatisticsControl';
 import { toaster } from '@/components/ui/toaster';
 import { Link, useRouter } from '@/i18n/navigation';
 import type { AccountProfile } from '@/lib/account';
@@ -157,6 +158,7 @@ function AccountForm({
 
   return (
     <Stack gap="8" pb="12" maxW="2xl">
+      <ViewStatisticsControl />
       <Stack
         as="section"
         gap="5"
