@@ -134,7 +134,8 @@ workflows:
           const udid = simctl(['create', 'Vibeset diagnostic iPhone', device.identifier, runtime.identifier]).trim();
           try {
             simctl(['boot', udid]);
-            simctl(['bootstatus', udid, '-b'], 180_000);
+            // First iOS 27 boot performs DataMigration; allow a bounded ten-minute cold boot.
+            simctl(['bootstatus', udid, '-b'], 600_000);
             simctl(['ui', udid, 'appearance', 'light']);
             simctl(['status_bar', udid, 'override', '--time', '9:41', '--batteryState', 'charged', '--batteryLevel', '100']);
             simctl(['install', udid, app]);
@@ -162,6 +163,121 @@ workflows:
       - $CM_BUILD_DIR/mobile/build/vibeset-simulator-ios-app.zip
       - $CM_BUILD_DIR/mobile/build/simulator-xcodebuild.log
       - $CM_BUILD_DIR/mobile/build/simulator-diagnostics/**
+  ios-native-testflight:
+    name: Vibeset native iPhone TestFlight (internal only)
+    working_directory: mobile
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    # Manual only: no webhook/schedule trigger or public App Store submission.
+    integrations:
+      app_store_connect: Vibeset Codemagic
+    environment:
+      node: 24
+      xcode: '27.1'
+      cocoapods: default
+      groups:
+        - vibeset_native
+      # Fetch existing saved signing identities; never create/revoke certificates here.
+      # Codemagic also matches the separately registered .calendar extension.
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.ahmadalwakai.vibeset
+      vars:
+        VIBESET_NATIVE_GENERATE: '1'
+        VIBESET_IOS_BUNDLE_ID: com.ahmadalwakai.vibeset
+        VIBESET_IOS_WIDGET_BUNDLE_ID: com.ahmadalwakai.vibeset.calendar
+        VIBESET_IOS_APP_GROUP: group.com.ahmadalwakai.vibeset
+        VIBESET_IOS_TEAM_ID: BXK52CMHR2
+        APP_STORE_APPLE_ID: '6826572844'
+        CI: '1'
+        EXPO_NO_TELEMETRY: '1'
+    cache:
+      cache_paths:
+        - $HOME/.npm
+    scripts:
+      - name: Install shared contract dependencies
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          # Remove integration secrets before dependency lifecycle scripts can run.
+          for native_secret_name in ${!APP_STORE_CONNECT_@} CERTIFICATE_PRIVATE_KEY CERTIFICATE_PRIVATE_KEY_PASSWORD CERTIFICATE_PASSWORD CM_CERTIFICATE CM_CERTIFICATE_PASSWORD CM_PROVISIONING_PROFILE APP_SPECIFIC_PASSWORD; do
+            unset "$native_secret_name"
+          done
+          npm ci --prefix .. --include=dev --include=optional
+      - name: Install native app dependencies
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          for native_secret_name in ${!APP_STORE_CONNECT_@} CERTIFICATE_PRIVATE_KEY CERTIFICATE_PRIVATE_KEY_PASSWORD CERTIFICATE_PASSWORD CM_CERTIFICATE CM_CERTIFICATE_PASSWORD CM_PROVISIONING_PROFILE APP_SPECIFIC_PASSWORD; do
+            unset "$native_secret_name"
+          done
+          npm ci --include=dev --include=optional
+      - name: Verify real published catalogue and CDN before building
+        script: node --import tsx scripts/check-ios-release.ts preflight
+      - name: Check native dependency compatibility
+        script: node --import tsx scripts/check-ios-release.ts run-build npm run check:expo
+      - name: Native TypeScript and lint
+        script: |
+          set -euo pipefail
+          node --import tsx scripts/check-ios-release.ts run-build npm run typecheck
+          node --import tsx scripts/check-ios-release.ts run-build npm run lint
+      - name: Native contract tests
+        script: node --import tsx scripts/check-ios-release.ts run-build npm test
+      - name: Generate release application and calendar extension
+        script: node --import tsx scripts/check-ios-release.ts run-build npm run prebuild:ios
+      - name: Install iOS pods
+        script: |
+          set -euo pipefail
+          cd ios
+          node --import tsx ../scripts/check-ios-release.ts run-build pod install
+      - name: Apply both App Store profiles for internal TestFlight export
+        script: |
+          set -euo pipefail
+          mkdir -p build/ios-release
+          node --import tsx scripts/check-ios-release.ts run-build xcode-project use-profiles --project ios/Vibeset.xcodeproj \
+            --archive-method app-store \
+            --export-options-plist build/ios-release/export-options.plist \
+            --custom-export-options='{"testFlightInternalTestingOnly":true,"teamID":"BXK52CMHR2","signingStyle":"manual","manageAppVersionAndBuildNumber":false}'
+          node --import tsx scripts/check-ios-release.ts export-options
+      - name: Set a unique increasing build number from the project-wide CI counter
+        script: |
+          set -euo pipefail
+          # A failed ASC query aborts; only a successful empty lookup means no prior build.
+          app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" \
+            --platform IOS --all-versions > build/ios-release/latest-build-number.txt
+          native_build_number=$(node --import tsx scripts/check-ios-release.ts number)
+          native_version=$(node -p "require('./package.json').version")
+          echo "VIBESET_NATIVE_BUILD_NUMBER=$native_build_number" >> "$CM_ENV"
+          cd ios
+          node --import tsx ../scripts/check-ios-release.ts run-build agvtool new-marketing-version "$native_version"
+          node --import tsx ../scripts/check-ios-release.ts run-build agvtool new-version -all "$native_build_number"
+      - name: Archive and export a signed Release IPA with bundled JavaScript
+        script: |
+          set -euo pipefail
+          test -d ios/Vibeset.xcworkspace
+          node --import tsx scripts/check-ios-release.ts run-build xcode-project build-ipa --workspace ios/Vibeset.xcworkspace \
+            --scheme Vibeset --config Release --no-show-build-settings \
+            --archive-directory build/ios/xcarchive --ipa-directory build/ios/ipa \
+            --export-options-plist build/ios-release/export-options.plist \
+            2>&1 | tee build/release-xcodebuild.log
+      - name: Verify signatures and increasing version before releasing the IPA to publishing
+        script: |
+          set -euo pipefail
+          app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" \
+            --platform IOS --all-versions > build/ios-release/latest-build-number.txt
+          # Raw exports remain quarantined if any check fails, even if publishing still runs.
+          node --import tsx scripts/check-ios-release.ts publishable
+    artifacts:
+      - $CM_BUILD_DIR/mobile/build/ios/verified/*.ipa
+      - $CM_BUILD_DIR/mobile/build/ios/xcarchive/**/*.dSYM
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Upload plus explicit assignment to the verified internal group; no beta review.
+        submit_to_testflight: false
+        beta_groups:
+          - Vibeset Internal
+        submit_to_app_store: false
   web-production:
     name: Vibeset web production build
     instance_type: mac_mini_m2
